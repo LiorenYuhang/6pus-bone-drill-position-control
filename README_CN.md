@@ -1,7 +1,7 @@
 # 6PUS-Anti-Vibration
 
-> **中文项目名称**：6PUS 并联平台主动抑振研究框架  
-> **English Documentation**：[README.md](README.md)
+> [English](README.md) | 中文  
+> **中文项目名称**：6PUS 并联平台主动抑振研究框架
 
 ---
 

@@ -1,5 +1,6 @@
 # 6PUS-Anti-Vibration
 
+> [English] | [中文](README_CN.md)  
 > **A ROS 2 based real-time sensing and control framework for a 6PUS parallel platform with active vibration suppression.**
 
 ---
