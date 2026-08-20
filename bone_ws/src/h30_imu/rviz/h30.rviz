@@ -1,0 +1,37 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+Visualization Manager:
+  Class: ""
+  Global Options:
+    Background Color: 35; 35; 35
+    Fixed Frame: world
+    Frame Rate: 30
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Ground Grid
+      Enabled: true
+      Plane: XY
+      Cell Size: 0.5
+      Plane Cell Count: 20
+    - Class: rviz_default_plugins/TF
+      Name: IMU Orientation
+      Enabled: true
+      Frame Timeout: 15
+      Marker Scale: 1
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 4
+      Pitch: 0.55
+      Yaw: 0.75
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0
+Window Geometry:
+  Width: 1100
+  Height: 750

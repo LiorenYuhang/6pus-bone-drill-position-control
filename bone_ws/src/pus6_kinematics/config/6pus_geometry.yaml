@@ -1,0 +1,86 @@
+# 6PUS geometry/configuration contract.
+#
+# Values in this file are the current software reference model.  The complete
+# mechanism is not assembled, so every assembly-dependent value remains
+# explicitly pending final measurement/confirmation.  Do not replace pending
+# fields with guessed hardware measurements.
+schema_version: 1
+model_id: 6pus_preassembly_software_reference
+status: pending_final_assembly_confirmation
+source:
+  geometry_reference: hardware/调试工具/Kinematics.zip (params.m, inver.m)
+  actuator_reference: current J3/J4 software contract
+  final_assembly_measurement: pending
+
+units:
+  length: m
+  angle: rad
+  actuator_position: m
+  raw_position: step
+
+geometry:
+  # Nominal analytical model values migrated from analytical_6pus.py.
+  base_radius_m: 0.040000000000
+  platform_radius_m: 0.027500000000
+  strut_length_m: 0.084000000000
+  lambda_rad: 0.5235987755982988
+  mu_rad: 1.0471975511965976
+  nominal_height_m: 0.13261226796206452
+
+  # Anchor order is actuator ID 1..6.  These are model anchors, not final
+  # assembled measurements.
+  base_anchors_m:
+    - [-0.010352761804,  0.038637033052, 0.0]
+    - [-0.038637033052, -0.010352761804, 0.0]
+    - [-0.028284271247, -0.028284271247, 0.0]
+    - [ 0.028284271247, -0.028284271247, 0.0]
+    - [ 0.038637033052, -0.010352761804, 0.0]
+    - [ 0.010352761804,  0.038637033052, 0.0]
+  platform_anchors_body_m:
+    - [-0.013750000000,  0.023815698604, 0.0]
+    - [-0.027500000000,  0.000000000000, 0.0]
+    - [-0.013750000000, -0.023815698604, 0.0]
+    - [ 0.013750000000, -0.023815698604, 0.0]
+    - [ 0.027500000000,  0.000000000000, 0.0]
+    - [ 0.013750000000,  0.023815698604, 0.0]
+  confirmation:
+    base_anchors: pending_final_assembly_measurement
+    platform_anchors: pending_final_assembly_measurement
+    strut_length: pending_final_assembly_measurement
+    mounting_angles: pending_final_assembly_measurement
+
+actuator:
+  # Software reference: 1 mm = 40 steps, 1 step = 0.025 mm.
+  steps_per_meter: 40000.0
+  meters_per_step: 0.000025
+  storage_park_raw_steps: [0, 0, 0, 0, 0, 0]
+  operating_home_raw_steps: [1000, 1000, 1000, 1000, 1000, 1000]
+  operating_home_stroke_m: [0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+  stroke_limits_m:
+    min: 0.025
+    max: 0.075
+  absolute_raw_limits_steps:
+    min: 0
+    max: 2000
+  software_command_limits_steps:
+    min: 0
+    max: 1800
+  normal_motion_limits_steps:
+    min: 200
+    max: 1800
+  workspace_height_limits_m:
+    min: 0.05
+    max: 0.30
+  confirmation:
+    raw_zero_mapping: pending_final_six_axis_zero_confirmation
+    operating_home: pending_final_home_confirmation
+    stroke_limits: pending_final_actuator_measurement
+
+imu:
+  status: reserved_pending_final_installation
+  base_to_imu_rotation_matrix: null
+  base_to_imu_translation_m: null
+  platform_to_imu_rotation_matrix: null
+  platform_to_imu_translation_m: null
+  base_platform_lever_arm_m: null
+  confirmation: pending_final_dual_imu_extrinsic_and_lever_arm_calibration

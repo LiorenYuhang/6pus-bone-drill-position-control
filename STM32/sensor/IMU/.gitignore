@@ -1,0 +1,12 @@
+# Build output
+build/
+*.o
+*.elf
+*.hex
+*.bin
+*.map
+
+# IDE files
+.vscode/
+*.su
+*.stackdump

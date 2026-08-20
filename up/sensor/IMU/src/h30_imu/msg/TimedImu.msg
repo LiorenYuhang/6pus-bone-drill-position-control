@@ -1,0 +1,8 @@
+std_msgs/Header header
+uint16 tid
+bool has_sample_timestamp
+uint32 sample_timestamp_us
+bool has_data_ready_timestamp
+uint32 data_ready_timestamp_us
+int64 host_monotonic_arrival_time_ns
+sensor_msgs/Imu imu

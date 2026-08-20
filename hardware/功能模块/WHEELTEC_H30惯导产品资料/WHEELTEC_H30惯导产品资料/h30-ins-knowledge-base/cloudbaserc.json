@@ -1,0 +1,18 @@
+{
+  "envId": "",
+  "region": "",
+  "$schema": "https://framework-1258016615.tcloudbaseapp.com/schema/latest.json",
+  "version": "2.0",
+  "framework": {
+    "name": "h30-ins-knowledge-base",
+    "plugins": {
+      "client": {
+        "use": "@cloudbase/framework-plugin-website",
+        "inputs": {
+          "buildCommand": "npm run build",
+          "outputPath": "dist"
+        }
+      }
+    }
+  }
+}

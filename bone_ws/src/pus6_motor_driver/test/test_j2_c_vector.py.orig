@@ -1,0 +1,255 @@
+import sys
+from pathlib import Path
+
+import pytest
+
+WORKSPACE_ROOT = Path(__file__).resolve().parents[3]
+SCRIPT_ROOT = WORKSPACE_ROOT / "scripts"
+if str(SCRIPT_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_ROOT))
+
+import run_j2_c_vector as runner_module  # noqa: E402
+from run_j2_c_vector import DELTA_STEPS, J2CVectorRunner  # noqa: E402
+from pus6_motor_driver.fake_bus import FakeBus  # noqa: E402
+from pus6_motor_driver.protocol import (  # noqa: E402
+    CMD_RD_REGISTER,
+    CMD_RD_STATUS,
+    CMD_WR_REGISTER,
+    parse_frame,
+)
+from pus6_motor_driver.safety import HardwareMode  # noqa: E402
+from pus6_motor_driver.six_motor_controller import SixMotorController  # noqa: E402
+
+
+class VectorMotionBus(FakeBus):
+    """Fake six-axis bus with deterministic sequential motion feedback."""
+
+    def __init__(
+        self,
+        *,
+        runtime_current: int = 20,
+        runtime_fault: int = 0,
+        fail_target_id: int | None = None,
+        readback_mode_id: int | None = None,
+        stalled: bool = False,
+        read_only: bool = False,
+    ) -> None:
+        super().__init__(read_only=read_only)
+        self.runtime_current = runtime_current
+        self.runtime_fault = runtime_fault
+        self.fail_target_id = fail_target_id
+        self.readback_mode_id = readback_mode_id
+        self.stalled = stalled
+        self.configured_ids: set[int] = set()
+        self.target_ids: set[int] = set()
+        self.motion_started = False
+        self.paused = False
+        self.poll_cycle = 0
+        self.baselines = {mid: 50 for mid in range(1, 7)}
+        self.deltas = dict(zip(range(1, 7), DELTA_STEPS))
+
+    def _trajectory_position(self, mid: int, cycle: int) -> int:
+        baseline = self.baselines[mid]
+        target = baseline + self.deltas[mid]
+        if self.stalled:
+            return baseline
+        increments = [0, 1, 2, max(0, self.deltas[mid] - 2)]
+        return min(target - 2, baseline + increments[min(cycle, len(increments) - 1)])
+
+    def request(self, frame: bytes, **kwargs) -> bytes:
+        parsed = parse_frame(frame)
+
+        if (
+            parsed.command == CMD_RD_REGISTER
+            and parsed.motor_id == self.readback_mode_id
+            and parsed.register_addr == 0x25
+            and parsed.motor_id in self.configured_ids
+        ):
+            self.modes[parsed.motor_id] = 1
+
+        if parsed.command == CMD_RD_STATUS and self.motion_started and not self.paused:
+            cycle = self.poll_cycle
+            self.positions[parsed.motor_id] = self._trajectory_position(parsed.motor_id, cycle)
+            self.currents[parsed.motor_id] = self.runtime_current
+            self.faults[parsed.motor_id] = self.runtime_fault
+            if parsed.motor_id == 6:
+                self.poll_cycle += 1
+
+        response = super().request(frame, **kwargs)
+
+        if parsed.command == CMD_WR_REGISTER and parsed.register_addr == 0x25:
+            self.configured_ids.add(parsed.motor_id)
+        elif parsed.command == CMD_WR_REGISTER and parsed.register_addr == 0x29:
+            self.target_ids.add(parsed.motor_id)
+            if parsed.motor_id == self.fail_target_id:
+                raise OSError(f"Simulated target response failure on ID{parsed.motor_id}")
+            if self.target_ids == set(range(1, 7)):
+                self.motion_started = True
+                self.poll_cycle = 0
+                for mid in range(1, 7):
+                    self.positions[mid] = self.baselines[mid]
+                    self.currents[mid] = 0
+        elif parsed.command == CMD_WR_REGISTER and parsed.register_addr == 0x1A:
+            self.paused = True
+            for mid in range(1, 7):
+                self.positions[mid] = self._trajectory_position(mid, max(self.poll_cycle, 3))
+                self.currents[mid] = 0
+                self.faults[mid] = 0
+        return response
+
+
+def _run(tmp_path, bus: FakeBus):
+    controller = SixMotorController(bus=bus, hardware_mode=HardwareMode.MOCK)
+    runner = J2CVectorRunner(controller, log_file=tmp_path / "j2c.json")
+    return runner.run(), bus
+
+
+def _write_frames(bus: FakeBus):
+    return [event for event in bus.events if event[1] == CMD_WR_REGISTER]
+
+
+def test_j2c_success_has_exact_18_frame_order_and_timestamps(tmp_path):
+    result, bus = _run(tmp_path, VectorMotionBus())
+
+    assert result["outcome"] == "PASS"
+    assert result["references"] == {str(mid): 50 for mid in range(1, 7)}
+    assert result["targets"] == {
+        str(mid): 50 + DELTA_STEPS[mid - 1] for mid in range(1, 7)
+    }
+    frames = _write_frames(bus)
+    assert len(frames) == 18
+    assert [(event[0], event[2]) for event in frames] == (
+        [(mid, 0x25) for mid in range(1, 7)]
+        + [(mid, 0x29) for mid in range(1, 7)]
+        + [(mid, 0x1A) for mid in range(1, 7)]
+    )
+    assert result["write_audit"]["sequence_is_expected"] is True
+    assert result["write_audit"]["controller_write_count"] == 18
+    assert result["write_audit"]["no_retry"] is True
+    assert len(result["configuration_dispatch"]) == 6
+    assert len(result["target_dispatch"]["timestamps"]) == 6
+    assert len(result["target_dispatch"]["completion_timestamps_ns"]) == 6
+    assert all(
+        result["target_dispatch"]["completion_timestamps_ns"][str(mid)]
+        >= result["target_dispatch"]["timestamps_ns"][str(mid)]
+        for mid in range(1, 7)
+    )
+    assert result["pause"]["hard_stop_required"] is False
+    assert result["stop_confirmation"]["confirmed"] is True
+
+
+def test_j2c_invalid_target_vector_is_zero_write(tmp_path):
+    bus = VectorMotionBus()
+    bus.limits[1] = (0, 52)
+    result, bus = _run(tmp_path, bus)
+
+    assert result["outcome"] == "STOP"
+    assert "target vector validation failed" in result["error"]
+    assert _write_frames(bus) == []
+    assert result["write_audit"]["controller_write_count"] == 0
+
+
+def test_j2c_baseline_failure_is_zero_write(tmp_path):
+    bus = VectorMotionBus()
+    bus.currents[3] = 5
+    result, bus = _run(tmp_path, bus)
+
+    assert result["outcome"] == "STOP"
+    assert "pre-flight current" in result["error"]
+    assert _write_frames(bus) == []
+
+
+def test_j2c_raw_target_outside_deadband_is_zero_write(tmp_path):
+    bus = VectorMotionBus()
+    bus.targets[4] = 53
+    result, bus = _run(tmp_path, bus)
+
+    assert result["outcome"] == "STOP"
+    assert "0x29/reference deviation=3" in result["error"]
+    assert _write_frames(bus) == []
+
+
+def test_j2c_config_readback_failure_sends_no_targets_and_pauses_all(tmp_path):
+    result, bus = _run(tmp_path, VectorMotionBus(readback_mode_id=2))
+
+    assert result["outcome"] == "STOP"
+    assert "config readback mode" in result["error"]
+    frames = _write_frames(bus)
+    assert [event[2] for event in frames] == [0x25] * 6 + [0x1A] * 6
+    assert result["write_audit"]["target_write_counts"] == {
+        str(mid): 0 for mid in range(1, 7)
+    }
+    assert result["pause"]["all_axes_attempted"] == {
+        str(mid): True for mid in range(1, 7)
+    }
+
+
+def test_j2c_target_mid_dispatch_failure_pauses_all_without_retry(tmp_path):
+    result, bus = _run(tmp_path, VectorMotionBus(fail_target_id=3))
+
+    assert result["outcome"] == "FAIL"
+    frames = _write_frames(bus)
+    assert [event[2] for event in frames[:6]] == [0x25] * 6
+    assert [event[0] for event in frames[6:9]] == [1, 2, 3]
+    assert [event[2] for event in frames[9:]] == [0x1A] * 6
+    assert result["write_audit"]["target_write_counts"]["3"] == 1
+    assert result["write_audit"]["no_retry"] is True
+    assert result["pause"]["all_axes_attempted"] == {
+        str(mid): True for mid in range(1, 7)
+    }
+
+
+@pytest.mark.parametrize(
+    "kwargs, expected",
+    [
+        ({"runtime_current": 501}, "exceeds threshold 500mA"),
+        ({"runtime_fault": 4}, "fault error code 0x04"),
+    ],
+)
+def test_j2c_runtime_current_or_fault_stops_and_pauses_all(tmp_path, kwargs, expected):
+    result, bus = _run(tmp_path, VectorMotionBus(**kwargs))
+
+    assert result["outcome"] == "STOP"
+    assert expected in result["error"]
+    assert result["pause"]["all_axes_attempted"] == {
+        str(mid): True for mid in range(1, 7)
+    }
+
+
+def test_j2c_timeout_stops_and_pauses_all(tmp_path, monkeypatch):
+    monkeypatch.setattr(runner_module, "TIMEOUT_SEC", 0.01)
+    monkeypatch.setattr(runner_module, "POLL_PERIOD_SEC", 0.001)
+    result, bus = _run(tmp_path, VectorMotionBus(stalled=True))
+
+    assert result["outcome"] == "STOP"
+    assert "timeout" in result["error"]
+    assert result["pause"]["all_axes_attempted"] == {
+        str(mid): True for mid in range(1, 7)
+    }
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["--real-hardware"],
+        ["--real-hardware", "--confirm-motion"],
+        ["--real-hardware", "--confirm-motion", "--validated-config"],
+    ],
+)
+def test_j2c_real_cli_requires_all_gates_before_controller(monkeypatch, argv):
+    def fail_controller(*args, **kwargs):
+        raise AssertionError("controller must not be constructed without all J2-C gates")
+
+    monkeypatch.setattr(runner_module, "SixMotorController", fail_controller)
+    with pytest.raises(SystemExit):
+        runner_module.main(argv)
+
+
+def test_j2c_read_only_runner_performs_zero_writes(tmp_path):
+    bus = VectorMotionBus(read_only=True)
+    controller = SixMotorController(bus=bus, hardware_mode=HardwareMode.READ_ONLY)
+    result = J2CVectorRunner(controller, log_file=tmp_path / "readonly.json").run()
+
+    assert result["outcome"] == "STOP"
+    assert _write_frames(bus) == []
+    assert result["write_audit"]["controller_write_count"] == 0

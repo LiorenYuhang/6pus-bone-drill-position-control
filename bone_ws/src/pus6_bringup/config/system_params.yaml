@@ -1,0 +1,35 @@
+# Unified system configuration for 6PUS Robot Platform (J4 Continuous Cartesian Control Pipeline)
+
+pus6_motor_driver_node:
+  ros__parameters:
+    port: "/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0"
+    baudrate: 921600
+    timeout: 0.05
+    write_rate_hz: 50.0       # Dedicated high-rate UART dispatch loop (50 Hz)
+    poll_rate_hz: 10.0        # Background low-rate telemetry when idle (10 Hz)
+    hardware_mode: "mock"     # "mock" | "read_only" | "active"
+    auto_connect: true
+    auto_configure: false
+    speed: 50
+    mode: 2
+    max_current_mA: 500
+    motor_ids: [1, 2, 3, 4, 5, 6]
+    maintenance_mode: false
+
+pus6_kinematics_node:
+  ros__parameters:
+    # Geometry, actuator conversion, HOME/PARK and stroke limits are loaded
+    # exclusively from pus6_kinematics/config/6pus_geometry.yaml.
+    envelope_max_xy_m: 0.015
+    envelope_max_z_delta_m: 0.020
+    envelope_max_angle_rad: 0.10
+    enforce_software_envelope: true
+
+pus6_control_node:
+  ros__parameters:
+    control_rate_hz: 50.0          # 50 Hz continuous reference shaping
+    max_speed_m_per_sec: 0.005     # 200 step/s = 5.0 mm/s
+    max_accel_m_per_sec2: 0.050    # 2000 step/s^2 = 50.0 mm/s^2
+    max_jerk_m_per_sec3: 0.500     # 20000 step/s^3 = 500.0 mm/s^3
+    omega_n: 20.0                  # 3rd-order filter bandwidth (rad/s)
+    maintenance_mode: false

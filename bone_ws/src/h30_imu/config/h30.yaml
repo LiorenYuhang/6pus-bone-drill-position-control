@@ -1,0 +1,8 @@
+h30_imu:
+  ros__parameters:
+    port: /dev/serial/by-id/usb-1a86_USB_Single_Serial_5B32028000-if00
+    baud_rate: 460800
+    frame_id: imu_link
+    world_frame: world
+    imu_topic: imu/data
+    publish_euler: true

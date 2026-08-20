@@ -1,0 +1,41 @@
+### 1. 网络基座检查
+
+检查 NUC 热点: 热点 (Hotspot) 已自动开启，且名称为 robot_Net_ros2。
+IP 确认: 10.42.0.1 (通常热点网关 IP 是固定的)。
+
+### 2. 启动 AGENT
+
+**1. 激活环境 (因为本地编译，这一步必不可少)**
+
+`
+source ~/microros_ws/install/local_setup.bash
+`
+
+**2. 启动 Agent**
+
+`
+ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888
+`
+
+### 3. 握手建立 esp32
+
+1. 物理复位：按一下 esp32 上的 en/rst
+2. 观察 agent 终端，看到 `New session established` 字样跳出，说明握手成功。
+
+### 4. 验证
+
+`ros2 node list`          （看到 /esp32_bridge_node）
+`ros2 topic list`         （看到 /cmd_vel）
+`ros2 topic pub /cmd_vel ...` （ESP32 收到数据或 LED 闪烁）
+
+
+
+###0.关闭进程
+`sudo lsof -i :8888`              #查询8888端口的进程
+
+###会显示COMMAND     PID     USER   FD   TYPE DEVICE SIZE/OFF NODE NAME
+micro_ros 14505 lyapunov   22u  IPv4 145590      0t0  UDP *:8888 
+###
+
+`sudo fuser -k 8888/udp`           #杀死8888进程
+`sudo pkill -9 micro_ros_agent`    #杀死所有micro_ros_agent进程

@@ -1,0 +1,9 @@
+std_msgs/Header header
+geometry_msgs/Quaternion relative_quaternion
+geometry_msgs/Vector3 relative_angular_velocity
+float64 base_corrected_time_us
+float64 platform_corrected_time_us
+float64 dt_us
+uint16 base_tid
+uint16 platform_tid
+uint64 sequence

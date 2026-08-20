@@ -1,0 +1,12 @@
+第 1 步：唤醒底层大环境（挂载原生 ROS 2）
+source /opt/ros/jazzy/setup.bash
+
+第 2 步：进入你的目标“地盘”
+cd ~/dev_ws/
+
+第 3 步：激活虚拟环境
+source .venv/bin/activate
+
+第 4 步：挂载编译产物
+让系统知道你在这个工作空间里编译了哪些功能包
+source install/local_setup.bash

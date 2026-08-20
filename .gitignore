@@ -1,0 +1,51 @@
+# ROS 2 Build, Install, Log Artifacts
+build/
+install/
+log/
+**/build/
+**/install/
+**/log/
+*.log
+
+# Python Cache & Bytecode
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Python Virtual Environments & Pytest
+.venv/
+venv/
+**/.venv/
+.pytest_cache/
+**/.pytest_cache/
+
+# IDE & Editor Temp Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.claude/
+**/.claude/
+
+# MATLAB Temp Files
+*.asv
+*.m~
+*.slxc
+
+# ROS 2 Bag & MCAP Runtime Datasets (>50MB)
+*.bag
+*.mcap
+*.db3
+up/sensor/IMU/data/
+**/data/*.csv
+**/data/*.mcap
+**/data/*.db3
+
+# Large Vendor Software Archives (>100MB blocked by GitHub)
+hardware/功能模块/*.zip
+hardware/功能模块/**/*.zip
+hardware/功能模块/**/*.apk

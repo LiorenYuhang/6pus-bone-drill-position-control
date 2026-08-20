@@ -1,0 +1,35 @@
+h30_relative_attitude:
+  ros__parameters:
+    base_topic: /pus6/imu_base/timed
+    platform_topic: /pus6/imu_platform/timed
+    relative_topic: /pus6/imu_relative/data
+    quaternion_topic: /pus6/imu_relative/quaternion
+    angular_velocity_topic: /pus6/imu_relative/angular_velocity
+    diagnostics_topic: /pus6/imu_relative/diagnostics
+    frame_id: pus6_base_imu_link
+
+    # J5-B1 session-local device-clock skew baseline. The per-session origin is
+    # anchored from each first host-monotonic receive time, without changing
+    # the original H30 ROS header.stamp semantics.
+    base_clock_scale_ppm: -14.626217
+    platform_clock_scale_ppm: -17.555491
+    base_clock_offset_us: 0.0
+    platform_clock_offset_us: 0.0
+
+    # J5-B3-5A Fortified startup stationary gyro bias auto-initialization.
+    enable_auto_bias_init: true
+    bias_init_duration_s: 6.0
+    max_static_gyro_norm: 0.012
+    max_static_gyro_std: 0.004
+    bias_init_timeout_s: 30.0
+    trim_ratio: 0.05
+
+    # J5-B3-2A/B frozen sensor-frame calibration & fallback, SI units.
+    base_gyro_bias: [-7.9678928e-05, -7.09914984e-05, 4.02002268e-04]
+    platform_gyro_bias: [1.13674e-03, -9.5788e-04, 9.0635e-04]
+    # R_SB_SP, Platform sensor frame to Base sensor frame, [x, y, z, w].
+    r_sb_sp_xyzw: [-0.00271995, 0.00834791, 0.01094542, 0.99990155]
+
+    max_interpolation_gap_us: 15000.0
+    max_dt_s: 0.020
+

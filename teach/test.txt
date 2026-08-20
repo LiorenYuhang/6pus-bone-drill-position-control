@@ -1,0 +1,4 @@
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 3.14, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: -1.5}}" -1
+
+👉 linear_x 瞬间变成了 3.14
+👉 angular_z 瞬间变成了 -1.5

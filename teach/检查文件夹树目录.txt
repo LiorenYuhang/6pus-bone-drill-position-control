@@ -1,0 +1,3 @@
+#L后面的数字是指到查看当前目录下 4 层深度的结构，并忽略干扰文件夹
+tree -L 4 -I '.git|.pio|node_modules|build'
+

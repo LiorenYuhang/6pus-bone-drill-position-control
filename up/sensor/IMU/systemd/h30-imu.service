@@ -1,0 +1,12 @@
+[Unit]
+Description=WHEELTEC H30 ROS 2 IMU driver
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/bin/bash -lc 'source /opt/ros/jazzy/setup.bash && source /home/lyapunov/bone_drill/up/sensor/IMU/install/setup.bash && exec ros2 launch h30_imu h30.launch.py'
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=default.target

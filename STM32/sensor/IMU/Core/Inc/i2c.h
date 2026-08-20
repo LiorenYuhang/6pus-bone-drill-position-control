@@ -1,0 +1,26 @@
+/**
+  ******************************************************************************
+  * @file    i2c.h
+  * @brief   I2C1 configuration for H30 IMU communication.
+  *          PB6 - SCL, PB7 - SDA, 400 kHz Fast Mode.
+  ******************************************************************************
+  */
+
+#ifndef __I2C_H
+#define __I2C_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "stm32h7xx_hal.h"
+
+extern I2C_HandleTypeDef hi2c1;
+
+void MX_I2C1_Init(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __I2C_H */
