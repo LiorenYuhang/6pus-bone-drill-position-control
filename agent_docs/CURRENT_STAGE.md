@@ -1,6 +1,6 @@
 # 6PUS 当前开发阶段状态卡 (Current Stage State Sheet)
 
-**最后更新时间**: 2026-08-20 16:30  
+**最后更新时间**: 2026-08-21
 **当前状态**: $\mathbf{J5\ PRE\text{-}ASSEMBLY\ BASELINE\ FROZEN}$
 
 ---
@@ -20,6 +20,7 @@
   * **J5-B2 (最终双 IMU 外参与 lever arm)**: $\mathbf{DEFERRED\ \to\ J6}$（等待最终机构安装后执行）
   * **J5-B3 (双 IMU 实时相对姿态估计核心算法与实时链路)**: $\mathbf{PASS\ /\ FROZEN}$
     - 0x51 硬件采样时间戳已完全启用（双路 100% 具备，步长恒定 5000us）；
+    - USB 拓扑兼容性恢复已完成：Base H30 Class `0x04` 输出掩码恢复为 `0x80D8` 并固化，双路 `0x51/0x52` 重新验证为 100%，详见 [`agent_docs/J5_USB_TOPOLOGY_RECOVERY.md`](file:///home/lyapunov/bone_drill/agent_docs/J5_USB_TOPOLOGY_RECOVERY.md)；
     - 算法闭环：Software Sync $\to$ Session-Start 5% Trimmed Mean 自动零偏（Auto Bias COMPLETE，1200 样本，6.0s） $\to$ 初始 $\mathbf{R}_{SB,SP}$ $\to$ 双边李群 $\text{SO}(3)$ 姿态积分（122Hz 实时输出）；
     - 静态性能：漂移率降至 **$0.363^\circ/\text{min}$**；同板大动态共模抑制验证 ($80.8^\circ/\text{s}$ 大翻转) 动态 $\text{SO}(3)$ RMS $0.2767^\circ$，归零残差 $0.3899^\circ$；
   * **J5-B4 (平动/加速度融合估计)**: $\mathbf{DEFERRED\ \to\ J6/J7}$（待机械 FK 与双 IMU 最终外参建立后开展）
@@ -59,3 +60,4 @@
 6. **长期主实机指南**: [`6PUS_REAL_HARDWARE_OPERATION_GUIDE.md`](file:///home/lyapunov/bone_drill/6PUS_REAL_HARDWARE_OPERATION_GUIDE.md)
 7. **J5-B3 总结与冻结文档**: [`agent_docs/J5_B3_FINAL_SUMMARY.md`](file:///home/lyapunov/bone_drill/agent_docs/J5_B3_FINAL_SUMMARY.md)
 8. **J4 总结与冻结文档**: [`agent_docs/J4_FINAL_SUMMARY.md`](file:///home/lyapunov/bone_drill/agent_docs/J4_FINAL_SUMMARY.md)
+ 9. **J5 USB 拓扑恢复报告**: [`agent_docs/J5_USB_TOPOLOGY_RECOVERY.md`](file:///home/lyapunov/bone_drill/agent_docs/J5_USB_TOPOLOGY_RECOVERY.md)
