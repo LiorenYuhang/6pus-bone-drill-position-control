@@ -10,28 +10,22 @@
 
 ```
 /home/lyapunov/bone_drill/
-├── 6PUS_REAL_HARDWARE_OPERATION_GUIDE.md  <-- [用户实机总入口] 唯一权威实机操作与命令速查指南 (Root Entry)
-├── AGENTS.md                              <-- [Agent 工作规则] Agent 操作安全红线、测试纪律与工作准则 (本文档)
-├── agent_docs/                            <-- [阶段权威方案与交接] 项目全局架构、各阶段 (J2/J3/J4) 执行方案与设计归档
-│   ├── BONE_WS_ROS2_ARCHITECTURE_PLAN.md
-│   ├── J2-A_ROS2_READONLY_REAL_HARDWARE_PLAN.md
-│   ├── J2-B_ROS2_SINGLE_MOTOR_REAL_HARDWARE_PLAN.md
-│   ├── J2-B2_ROS2_SINGLE_MOTOR_POSITION_TRACKING_PLAN.md
-│   ├── J2-C_ROS2_SIX_AXIS_VECTOR_REAL_HARDWARE_PLAN.md
-│   ├── J2-F0_ROS2_READONLY_COMMUNICATION_PERFORMANCE_PLAN.md
-│   ├── J3_IK_REAL_HARDWARE_INTEGRATION_PLAN.md
-│   ├── J4_ROS2_CONTINUOUS_CARTESIAN_CONTROL_PLAN.md
-│   └── ROS2_UART_EXISTING_CODE_AUDIT.md
-├── bone_ws/                               <-- [正式 ROS2 工作空间] 源代码 (src/)、自动化测试与实机运行脚本 (scripts/)
-├── hardware/                              <-- [硬件与几何参数] 硬件规格书、机构几何解析定义 (Kinematics.zip)
-├── up/                                    <-- [UART 底层验证基线] 原始独立串口测试代码、日志与基线协议
+├── 6PUS_REAL_HARDWARE_OPERATION_GUIDE.md  <-- [根目录实机操作入口] 用户实机操作与命令速查指南
+├── AGENTS.md                              <-- [根目录 Agent 规则] 操作规则、安全约束、变更纪律与工程不变量 (本文档)
+├── agent_docs/                            <-- [架构与设计归档] 架构、阶段方案、设计决策与 Frozen Manifest
+├── reports/                               <-- [实验与验证归档] 实验日志、数值结果与验证报告
+├── bone_ws/                               <-- [正式 ROS2 工作空间] 源代码、测试与运行脚本
+├── hardware/                              <-- [硬件与几何数据] 硬件规格书与机构几何数据
+├── up/                                    <-- [UART 底层验证基线] 原始独立串口测试代码与基线协议
 └── STM32/ / teach/                        <-- [固件与示教器] 下位机工程与示教工具
 ```
 
 ### 职责边界规则：
-1. **`AGENTS.md` (本文档)**：负责 Agent 工作规则、安全底线、编码约束与环境纪律。**不记录具体的硬件时序数值或某个特定阶段的执行日志**。
-2. **`agent_docs/`**：负责技术方案、架构规范、算法数学公式、阶段规划与交接总结。**后续所有新生成的方案和阶段设计文档默认统一放入 `agent_docs/`**。
-3. **`6PUS_REAL_HARDWARE_OPERATION_GUIDE.md`**：面向操作人员的实机开机、回零、运动与关机速查表。**保留在根目录原位**。
+1. **`AGENTS.md` (本文档)**：仅负责 Agent 操作规则、安全约束、变更纪律与工程不变量。不得记录实验日志、数值结果、验证表格、阶段结论、控制器参数或 ADRC/PID/SAC 设计细节。
+2. **`agent_docs/`**：负责架构、阶段方案、设计决策、Frozen Manifest 与交接归档。后续新生成的方案和设计文档默认统一放入 `agent_docs/`。
+3. **`reports/`**：负责实验日志、数值结果、验证报告及其原始证据归档。
+4. **设计文档**：负责控制器、算法与其他研究设计细节；这些内容不得写入 `AGENTS.md`。
+5. **`6PUS_REAL_HARDWARE_OPERATION_GUIDE.md`**：面向操作人员的实机开机、回零、运动与关机速查表。保留在根目录原位。
 
 ---
 
@@ -53,7 +47,27 @@
 
 ---
 
-## 3. 核心技术约定 (Technical Standards)
+## 3. 冻结基线与验证资产保护 (Frozen Baseline Protection)
+
+1. **冻结资产只读原则**：J4 冻结资产、J5 冻结基线、PID 验证基线及后续所有冻结里程碑的资产，禁止原地修改；冻结不等于禁止使用，允许复制或基于其创建分支用于后续实验，但新开发必须在新版本、新分支或新的阶段命名空间中进行。
+2. **禁止原地改写**：Agent 不得直接修改、覆盖、删除或重命名任何冻结文件、冻结配置、验证输出、日志、报告、结果数据或其他已验证证据。
+3. **证据可恢复性**：已有验证证据必须保持可追溯、可恢复且不变；新实验或新验证不得覆盖已有的验证结果。
+4. **版本化变更**：任何新实验、行为变化或基线演进，必须在新版本、新分支或新的阶段命名空间中进行；原冻结基线及其验证证据必须保持不变并可恢复。
+5. **清单职责边界**：`AGENTS.md` 仅定义冻结保护规则，不维护冻结文件的详细清单；具体范围、版本标识与受保护文件以对应的 Frozen Manifest 或阶段权威文档为准。
+
+---
+
+## 4. 证据分级与结论真实性 (Evidence Classification)
+
+1. **仿真结果 (Simulation Result)**：指 MATLAB/Simscape 及其他基于模型的运行结果，仅能支持模型层面的观察和结论。
+2. **软件测试结果 (Software Test Result)**：指单元测试、集成测试、Mock/FakeBus 测试、调度测试及其他无实机验证结果，仅能支持软件行为、接口或调度结论。
+3. **真实硬件验证 (Real Hardware Validation)**：指在实际物理平台上完成、具有记录证据且符合实机安全授权要求的实验，方可支持真实硬件行为结论。
+4. **结论与证据一致性**：Agent 严禁将仿真结果或软件测试结果表述为真实硬件性能；所有结论必须与实际证据等级一致，并明确其验证边界。
+5. **可信度与可追溯性**：本规则用于维护研究结论可信度与工程验证可追溯性，不限制控制算法研究、控制器选择或控制器参数设计。
+
+---
+
+## 5. 核心技术约定 (Technical Standards)
 
 1. **单位制**：
    - 上层 ROS2 节点内部一律严格采用 **SI 国际标准单位制**（位置：米 $\text{m}$，速度：$\text{m/s}$，角度：弧度 $\text{rad}$，角速度：$\text{rad/s}$，电流：安培 $\text{A}$，力：牛顿 $\text{N}$）；
@@ -64,3 +78,7 @@
 3. **调度与解耦**：
    - ROS2 订阅回调一律采用 **Latest-Value-Wins (无锁/单槽原子覆盖)**，严禁在 Subscriber Callback 中执行阻塞式硬件通信，严禁累积 FIFO 队列。
    - 驱动节点内建 **Stale-Target Watchdog**，在上层目标流中断时自动挂起写流，严禁无限重发陈旧目标。
+4. **控制架构不变量 (Control Architecture Invariants)**：
+   - 坐标系定义与名称、原点定义、轴方向与 handedness、电机编号与支链编号、运动学几何约定、`OPERATING_HOME`、`STORAGE_PARK`、软件零位定义、SI 单位制以及仿真到硬件的坐标映射，均属于项目级工程不变量。
+   - Agent 不得随意修改上述定义。
+   - 任何有意修改必须创建新版本，并同步完成权威文档更新、跨仿真与 ROS2/硬件链路的影响评估，以及受影响接口的回归验证。
