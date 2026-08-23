@@ -257,7 +257,7 @@ ls -lt /home/lyapunov/bone_drill/bone_ws/log/j4_f1e_real_cartesian_6dof_*.json |
 
 ## 7. J5-C2 软件最终冻结与装配前操作边界（2026-08-20）
 
-本节是对前文历史快照的最终收尾，后续操作以本节和 `agent_docs/J5_C2_FINAL_SUMMARY.md` 为准。
+本节是对前文历史快照的最终收尾，后续操作以本节和 `agent_docs/frozen/J5_C2_FINAL_SUMMARY.md` 为准。
 
 ### 7.1 当前 J5 工程状态
 
@@ -459,7 +459,7 @@ python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j5_c2_hw_acceptance.py \
   --output-prefix /tmp/j5_c2_hw_acceptance
 ```
 
-该脚本只消费 `TimedJointFeedback` 形状的数据，输出 JSON/CSV，不打开串口、不启动 ROS executor、不产生运动。装配后门禁顺序和报告字段见 `agent_docs/J5_C2_HW_ACCEPTANCE_TOOLCHAIN.md`；报告中的软件 `FK_OK` 不能替代真实机构验收。
+该脚本只消费 `TimedJointFeedback` 形状的数据，输出 JSON/CSV，不打开串口、不启动 ROS executor、不产生运动。装配后门禁顺序和报告字段见 `agent_docs/stages/J5/J5_C2_HW_ACCEPTANCE_TOOLCHAIN.md`；报告中的软件 `FK_OK` 不能替代真实机构验收。
 
 ### 9.6 本轮冷启动执行验收记录（2026-08-20）
 

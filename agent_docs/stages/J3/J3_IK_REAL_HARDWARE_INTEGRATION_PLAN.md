@@ -8,7 +8,7 @@
 **权威依据**:
 - 机构参数权威源：`/home/lyapunov/bone_drill/hardware/调试工具/Kinematics.zip`（`params.m`, `inver.m`, `test.m`）
 - 电机与总线规范：`/home/lyapunov/bone_drill/up/motor/uart_multi/UART六电机编号与测试方案.md`
-- 架构总览：`/home/lyapunov/bone_drill/agent_docs/BONE_WS_ROS2_ARCHITECTURE_PLAN.md`
+- 架构总览：`/home/lyapunov/bone_drill/agent_docs/architecture/BONE_WS_ROS2_ARCHITECTURE_PLAN.md`
 - 实机总入口指南：`/home/lyapunov/bone_drill/6PUS_REAL_HARDWARE_OPERATION_GUIDE.md`
 
 ---

@@ -2,8 +2,8 @@
 """Stage J2-F0 — ROS 2 + UART 6-Motor Read-Only Real-Time Communication Performance Characterization Runner.
 
 Adheres strictly to:
-- /home/lyapunov/bone_drill/agent_docs/J2-F0_ROS2_READONLY_COMMUNICATION_PERFORMANCE_PLAN.md (Rev 2.1.1)
-- /home/lyapunov/bone_drill/agent_docs/BONE_WS_ROS2_ARCHITECTURE_PLAN.md
+- /home/lyapunov/bone_drill/agent_docs/stages/J2/J2-F0_ROS2_READONLY_COMMUNICATION_PERFORMANCE_PLAN.md (Rev 2.1.1)
+- /home/lyapunov/bone_drill/agent_docs/architecture/BONE_WS_ROS2_ARCHITECTURE_PLAN.md
 
 Safety Guarantees:
 - hardware_mode = read_only (0 hardware write guaranteed at driver & bus levels)

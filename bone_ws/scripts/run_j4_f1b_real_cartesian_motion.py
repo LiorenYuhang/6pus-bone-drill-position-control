@@ -17,7 +17,7 @@ Phases:
 Authoritative References:
   - /home/lyapunov/bone_drill/6PUS_REAL_HARDWARE_OPERATION_GUIDE.md
   - /home/lyapunov/bone_drill/AGENTS.md
-  - /home/lyapunov/bone_drill/agent_docs/J4_ROS2_CONTINUOUS_CARTESIAN_CONTROL_PLAN.md
+  - /home/lyapunov/bone_drill/agent_docs/stages/J4/J4_ROS2_CONTINUOUS_CARTESIAN_CONTROL_PLAN.md
 """
 
 from __future__ import annotations

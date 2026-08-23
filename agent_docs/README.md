@@ -1,33 +1,43 @@
-# 6PUS 并联机器人 Agent 阶段方案与架构设计文档库 (agent_docs)
+# 6PUS 并联机器人 Agent 文档库 (agent_docs)
 
-本文档库为 6PUS 并联骨科手术机器人所有历史、当前与后续开发阶段的**权威架构设计、阶段规划、技术规范与交接总结**归档中心。
+本目录保存 6PUS 并联骨科手术机器人的架构、阶段方案、冻结基线、设计决策和研究路线文档。目录按文档职责组织，阶段编号不再直接混排在 `agent_docs/` 根目录。
 
----
+## 1. 目录结构
 
-## 1. 核心架构与参考方案索引
+```text
+agent_docs/
+├── README.md                         # 本索引与迁移映射
+├── architecture/                     # 系统架构与 ROS2 架构文档
+├── stages/
+│   ├── J2/                           # J2 通信与执行器验证阶段
+│   ├── J3/                           # J3 IK 与执行器集成阶段
+│   ├── J4/                           # J4 连续笛卡尔控制阶段
+│   ├── J5/                           # J5 装配前软件与台架验证阶段
+│   └── J6/                           # J6 装配后 commissioning 阶段
+├── frozen/                            # Frozen Manifest、冻结基线与冻结验证证据
+├── decisions/                         # 当前状态指针与设计/架构决策记录
+└── research/                          # 未来研究主题与研究路线备忘
+```
 
-| 阶段 / 文档名称 | 定位与核心内容 | 当前状态 |
-| :--- | :--- | :---: |
-| [`BONE_WS_ROS2_ARCHITECTURE_PLAN.md`](file:///home/lyapunov/bone_drill/agent_docs/BONE_WS_ROS2_ARCHITECTURE_PLAN.md) | **全局 ROS2 架构总览**：分层拓扑、话题/服务契约、参数管理与安全状态机 | 权威基线 |
-| [`CURRENT_STAGE.md`](file:///home/lyapunov/bone_drill/agent_docs/CURRENT_STAGE.md) | **轻量级当前阶段状态卡**：记录当前推进阶段、最后 PASS Gate、当前待验证 Gate 与下一步 | 动态维护 |
-| [`J2-A_ROS2_READONLY_REAL_HARDWARE_PLAN.md`](file:///home/lyapunov/bone_drill/agent_docs/J2-A_ROS2_READONLY_REAL_HARDWARE_PLAN.md) | **J2-A 六机只读通信实机验证方案**：60s 连续数据采集与 0-write 验证 | COMPLETE / PASS |
-| [`J2-B_ROS2_SINGLE_MOTOR_REAL_HARDWARE_PLAN.md`](file:///home/lyapunov/bone_drill/agent_docs/J2-B_ROS2_SINGLE_MOTOR_REAL_HARDWARE_PLAN.md) | **J2-B 单机微动 (ID4) 实机验证方案**：`+10 step` 微位移与闭环特性 | COMPLETE / PASS |
-| [`J2-B2_ROS2_SINGLE_MOTOR_POSITION_TRACKING_PLAN.md`](file:///home/lyapunov/bone_drill/agent_docs/J2-B2_ROS2_SINGLE_MOTOR_POSITION_TRACKING_PLAN.md) | **J2-B2 单机连续跟踪特性方案**：阶跃响应与时延分析 | COMPLETE / PASS |
-| [`J2-C_ROS2_SIX_AXIS_VECTOR_REAL_HARDWARE_PLAN.md`](file:///home/lyapunov/bone_drill/agent_docs/J2-C_ROS2_SIX_AXIS_VECTOR_REAL_HARDWARE_PLAN.md) | **J2-C 六机同步矢量运动方案**：六轴同时微动与同步到达特性 | COMPLETE / PASS |
-| [`J2-F0_ROS2_READONLY_COMMUNICATION_PERFORMANCE_PLAN.md`](file:///home/lyapunov/bone_drill/agent_docs/J2-F0_ROS2_READONLY_COMMUNICATION_PERFORMANCE_PLAN.md) | **J2-F0 只读实时通信表征方案**：单总线线时、抖动与 Auditor 审计架构 | PLANNING / PASS |
-| [`J3_IK_REAL_HARDWARE_INTEGRATION_PLAN.md`](file:///home/lyapunov/bone_drill/agent_docs/J3_IK_REAL_HARDWARE_INTEGRATION_PLAN.md) | **J3 IK/执行器闭环与预装配验证记录**：$X/Y/Z/\text{Roll}/\text{Pitch}/\text{Yaw}/\text{M13}$ | COMPLETE / PASS（不等于总装机械 FK） |
-| [`J4_ROS2_CONTINUOUS_CARTESIAN_CONTROL_PLAN.md`](file:///home/lyapunov/bone_drill/agent_docs/J4_ROS2_CONTINUOUS_CARTESIAN_CONTROL_PLAN.md) | **J4 连续笛卡尔控制管线架构**：50Hz 调度、状态滤波整形器、Watchdog 与实机爬坡方案 | PASS / FROZEN |
-| [`J5_B3_FINAL_SUMMARY.md`](file:///home/lyapunov/bone_drill/agent_docs/J5_B3_FINAL_SUMMARY.md) | **J5-B3 双 IMU 相对姿态算法与实时链路冻结总结**；同板共刚体验证边界 | PASS / FROZEN |
-| [`J5_C2_FINAL_SUMMARY.md`](file:///home/lyapunov/bone_drill/agent_docs/J5_C2_FINAL_SUMMARY.md) | **J5-C1/C2 软件冻结总结**：Timed q、Fixed-Lag、FK、A-F 实时消融与装配入口 | PASS / FROZEN（软件） |
-| [`J5_FUTURE_OPTIMIZATION.md`](file:///home/lyapunov/bone_drill/agent_docs/J5_FUTURE_OPTIMIZATION.md) | **J5 未来优化/备忘**：Hardware SYNC、外参、杆臂、融合候选 | 非当前开发任务 |
-| [`ROS2_UART_EXISTING_CODE_AUDIT.md`](file:///home/lyapunov/bone_drill/agent_docs/ROS2_UART_EXISTING_CODE_AUDIT.md) | **历史 UART 代码审计与接管记录**：协议复用与架构边界梳理 | 归档 |
+## 2. 稳定入口
 
----
+- 全局 Agent 规则：根目录 `AGENTS.md`。
+- 实机操作入口：根目录 `6PUS_REAL_HARDWARE_OPERATION_GUIDE.md`。
+- 当前项目状态：`decisions/CURRENT_STAGE.md`。
+- 全局 ROS2 架构：`architecture/BONE_WS_ROS2_ARCHITECTURE_PLAN.md`。
+- 冻结基线索引：`frozen/` 内的 Frozen Manifest 和冻结发布文档。
+- J6 装配后权威规程：`stages/J6/6PUS_POST_ASSEMBLY_COMMISSIONING_PLAN.md`。
 
-## 2. 维护规则与规范
+## 3. 分类维护规则
 
-1. **统一入口**：后续所有由 Agent（ChatGPT / Codex / Claude / Antigravity）生成的 stage plan、architecture spec、review report 或 handoff summary 均**默认存放在本 `agent_docs/` 目录**。
-2. **职责边界**：
-   - 根目录 [`AGENTS.md`](file:///home/lyapunov/bone_drill/AGENTS.md) 维护全局 Agent 规则与安全纪律；
-   - 根目录 [`6PUS_REAL_HARDWARE_OPERATION_GUIDE.md`](file:///home/lyapunov/bone_drill/6PUS_REAL_HARDWARE_OPERATION_GUIDE.md) 维护面向实验人员的实机操作总入口；
-   - 本目录专注于技术方案细节，避免同一事实在多处反复冗余记录。
+1. `architecture/` 只保存系统架构、ROS2 架构和长期接口边界文档。
+2. `stages/Jn/` 保存对应阶段的计划、执行记录、审计和工具链准备文档。
+3. `frozen/` 保存冻结版本、基线清单和与冻结版本绑定的验收证据；冻结文件不得因目录迁移而改写正文。
+4. `decisions/` 保存动态状态指针、架构审计和设计决策记录。
+5. `research/` 保存尚未成为当前工程基线的未来研究主题和路线备忘。
+
+## 4. 本次迁移映射
+
+本次迁移使用 `git mv` 保留文件历史。阶段文件按 J2/J3/J4/J5/J6 分组，冻结总结和基线文件统一移入 `frozen/`，`CURRENT_STAGE.md` 移入 `decisions/`。仓内非冻结文档和脚本中的旧路径已更新为新 canonical path；冻结文档正文中的历史路径保持不变，以保持冻结证据和 SHA256 指纹。
+
+后续新增文档应直接放入对应分类目录，不再将新的阶段文档、冻结清单或设计决策放在 `agent_docs/` 根目录。

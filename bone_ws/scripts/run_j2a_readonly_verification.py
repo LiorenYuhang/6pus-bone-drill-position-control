@@ -2,8 +2,8 @@
 """Stage J2-A — ROS 2 Formal Driver 6-Motor Read-Only Real Hardware Verification Runner.
 
 Strictly adheres to:
-- /home/lyapunov/bone_drill/agent_docs/J2-A_ROS2_READONLY_REAL_HARDWARE_PLAN.md
-- /home/lyapunov/bone_drill/agent_docs/BONE_WS_ROS2_ARCHITECTURE_PLAN.md
+- /home/lyapunov/bone_drill/agent_docs/stages/J2/J2-A_ROS2_READONLY_REAL_HARDWARE_PLAN.md
+- /home/lyapunov/bone_drill/agent_docs/architecture/BONE_WS_ROS2_ARCHITECTURE_PLAN.md
 - /home/lyapunov/bone_drill/up/motor/uart_multi/AGENTS.md
 
 Enforces:

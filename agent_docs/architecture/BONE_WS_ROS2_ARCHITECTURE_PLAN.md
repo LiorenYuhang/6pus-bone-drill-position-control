@@ -1,6 +1,6 @@
 # Bone Drill / 6PUS ROS2 正式工程目录与迁移实施方案
 
-> **状态覆盖说明（2026-08-20）**：本文是架构规划/迁移历史文档。文中早期“已装配验证 PASS”或类似表述不覆盖当前物理状态；当前完整机构尚未总装，两个 IMU 仍在同一块测试板上。当前阶段以 `agent_docs/CURRENT_STAGE.md` 为准：J4 控制算法/安全策略冻结且 UART transport 已应用 batch-atomicity hotfix，J5-C1/C2 软件与实时软件均 PASS/FROZEN，实机 FK/最终外参/融合尚未开始。
+> **状态覆盖说明（2026-08-20）**：本文是架构规划/迁移历史文档。文中早期“已装配验证 PASS”或类似表述不覆盖当前物理状态；当前完整机构尚未总装，两个 IMU 仍在同一块测试板上。当前阶段以 `agent_docs/decisions/CURRENT_STAGE.md` 为准：J4 控制算法/安全策略冻结且 UART transport 已应用 batch-atomicity hotfix，J5-C1/C2 软件与实时软件均 PASS/FROZEN，实机 FK/最终外参/融合尚未开始。
 
 > 本文件作为后续 Agent 执行 ROS2 工程整理与初始化的权威任务说明。
 >
@@ -723,7 +723,7 @@ test
   - 故障与电流：全机 fault 恒为 `0x00`，电流恒为 `0 mA`。
 
 ### J2-F0：ROS2 + UART 六机 READ_ONLY 实时通信能力表征 — [PLANNING / NOT EXECUTED]
-- 方案规范：`/home/lyapunov/bone_drill/agent_docs/J2-F0_ROS2_READONLY_COMMUNICATION_PERFORMANCE_PLAN.md` (Rev 2.1.1)
+- 方案规范：`/home/lyapunov/bone_drill/agent_docs/stages/J2/J2-F0_ROS2_READONLY_COMMUNICATION_PERFORMANCE_PLAN.md` (Rev 2.1.1)
 - 核心目标：解耦端到端 Python 驱动基准、协议帧长影响与 Driver-Side ROS 发布及端到端传输开销，实测确定 1~20Hz 防抖通信带宽基线。
 - 4 个实验组 / 6 个逻辑子测试 / $N$ 个计时窗口（各 30s 采样窗口，0-write 红线，全量采用 `time.perf_counter_ns()` 单调纳秒计时与独立 `/pus6/benchmark_stamp` 插桩）：
   - **Group A (F0-A)**: Full-state / No ROS (全状态端到端背靠背基准，0x30 帧，168B 总线线时 1.823ms)
@@ -732,7 +732,7 @@ test
   - **Group D**: Position-only / ROS Publish (精简 ROS 2 驱动管线，包含 F0-D1 50Hz 稳态验证与 F0-D2 最大可持续 ROS 速率判定测试，Pre/Post 0x30 安全快照)
 
 ### J2-B：正式 ROS2 Driver 单机极微位移验证 — [COMPLETE / PASS]
-- 权威方案：`/home/lyapunov/bone_drill/agent_docs/J2-B_ROS2_SINGLE_MOTOR_REAL_HARDWARE_PLAN.md`；
+- 权威方案：`/home/lyapunov/bone_drill/agent_docs/stages/J2/J2-B_ROS2_SINGLE_MOTOR_REAL_HARDWARE_PLAN.md`；
 - 权威日志：`/home/lyapunov/bone_drill/bone_ws/log/j2b2_tracking_motor4_20260818_134547.json`；
 - ID4 `+10 step`、`50 step/s`、`3.0 s`，reference=`63`，target=`73`，final=`71`，final error=`-2 step`；
 - first positive motion=`288.217 ms`，first error `<=2`=`1306.487 ms`，peak current=`33 mA`；
@@ -740,7 +740,7 @@ test
 - UART `223` transactions，retry/timeout/checksum/protocol/failure 全部为 0。
 
 ### J2-C：正式 ROS2 Driver 六轴协调/同步运动特性验证 — [COMPLETE / PASS]
-- 方案：`/home/lyapunov/bone_drill/agent_docs/J2-C_ROS2_SIX_AXIS_VECTOR_REAL_HARDWARE_PLAN.md`；
+- 方案：`/home/lyapunov/bone_drill/agent_docs/stages/J2/J2-C_ROS2_SIX_AXIS_VECTOR_REAL_HARDWARE_PLAN.md`；
 - 权威日志：`/home/lyapunov/bone_drill/bone_ws/log/j2c_vector_20260818_161601.json`；
 - 模式：`hardware_mode:=active`；
 - 增量与速度：$\Delta q = [+10, +10, +10, +10, +10, +10]\text{ step}$，$\text{speed} = 50\text{ step/s}$；

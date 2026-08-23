@@ -96,7 +96,7 @@ hardware write_count = 0
 其审计报告：
 
 ```text
-/home/lyapunov/bone_drill/agent_docs/ROS2_UART_EXISTING_CODE_AUDIT.md
+/home/lyapunov/bone_drill/agent_docs/decisions/ROS2_UART_EXISTING_CODE_AUDIT.md
 ```
 
 不得覆盖当前 `uart_multi` 已通过 M2 / M4 / M6 实机验证得到的最新协议与安全结论。

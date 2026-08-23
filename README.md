@@ -148,10 +148,10 @@ pytest /home/lyapunov/bone_drill/bone_ws/src -v
 
 ## Documentation Links
 
-* [J5 Frozen Release Manifest](agent_docs/J5_PRE_ASSEMBLY_FROZEN_v1.0.md)
-* [J5 Final Test Acceptance Report](agent_docs/J5_FINAL_TEST_REPORT.md)
-* [Software Environment & Interface Specification](agent_docs/J5_SOFTWARE_ENVIRONMENT.md)
-* [Post-Assembly Commissioning Plan (J6)](agent_docs/6PUS_POST_ASSEMBLY_COMMISSIONING_PLAN.md)
+* [J5 Frozen Release Manifest](agent_docs/frozen/J5_PRE_ASSEMBLY_FROZEN_v1.0.md)
+* [J5 Final Test Acceptance Report](agent_docs/frozen/J5_FINAL_TEST_REPORT.md)
+* [Software Environment & Interface Specification](agent_docs/frozen/J5_SOFTWARE_ENVIRONMENT.md)
+* [Post-Assembly Commissioning Plan (J6)](agent_docs/stages/J6/6PUS_POST_ASSEMBLY_COMMISSIONING_PLAN.md)
 * [Real Hardware Operation Guide](6PUS_REAL_HARDWARE_OPERATION_GUIDE.md)
 * [ROS 2 Code Learning & Architecture Tutorial](6PUS_ROS2_CODE_LEARNING_TUTORIAL.md)
 

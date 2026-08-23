@@ -6,8 +6,8 @@
 **权威依据**:
 - 机构几何与逆解模型：`/home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics`
 - 电机驱动与单总线时序：`/home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver`
-- 架构总览：`/home/lyapunov/bone_drill/agent_docs/BONE_WS_ROS2_ARCHITECTURE_PLAN.md`
-- J3 验证总结：`/home/lyapunov/bone_drill/agent_docs/J3_IK_REAL_HARDWARE_INTEGRATION_PLAN.md`
+- 架构总览：`/home/lyapunov/bone_drill/agent_docs/architecture/BONE_WS_ROS2_ARCHITECTURE_PLAN.md`
+- J3 验证总结：`/home/lyapunov/bone_drill/agent_docs/stages/J3/J3_IK_REAL_HARDWARE_INTEGRATION_PLAN.md`
 - 实机总入口指南：`/home/lyapunov/bone_drill/6PUS_REAL_HARDWARE_OPERATION_GUIDE.md`
 
 > **后续状态覆盖说明**：本文件是 2026-08-18 的架构方案和当时的验证计划，下面的 `J4-F0 Status` 为历史快照。当前 J4 控制算法与安全策略为 **PASS / FROZEN**，UART transport 后续已应用 batch-atomicity hotfix；完整机构仍未装配，当前实机操作边界以 `CURRENT_STAGE.md` 和根目录操作指南为准。
