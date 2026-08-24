@@ -14,6 +14,7 @@ from pus6_motor_driver.safety import (
     TargetValidationError,
     validate_status_feedback,
     validate_target_vector,
+    uint16_to_int16,
 )
 
 
@@ -40,11 +41,18 @@ def test_validate_target_vector_type_error():
 
 
 def test_validate_target_vector_global_bounds():
+    assert validate_target_vector([2000] * 6) == [2000] * 6
+    assert validate_target_vector([2000] * 6, limits={mid: (0, 2000) for mid in MOTOR_IDS}) == [2000] * 6
+
     with pytest.raises(TargetValidationError, match="outside safe boundary"):
         validate_target_vector([-1, 100, 100, 100, 100, 100])
 
     with pytest.raises(TargetValidationError, match="outside safe boundary"):
-        validate_target_vector([100, 100, 100, 100, 100, 1801])
+        validate_target_vector([100, 100, 100, 100, 100, 2001])
+
+    # A signed feedback value is never a valid motion target.
+    with pytest.raises(TargetValidationError, match="outside safe boundary"):
+        validate_target_vector([-2, 0, 0, 0, 0, 0])
 
 
 def test_validate_target_vector_hardware_limits():
@@ -106,8 +114,9 @@ def test_validate_status_feedback_overcurrent():
         validate_status_feedback(status, motor_id=1)
 
 
-def test_validate_status_feedback_out_of_bounds():
-    bad_pos = StatusFeedback(
+def test_validate_status_feedback_uses_feedback_range_not_command_limits():
+    # A status position may exceed a caller's nominal command envelope.
+    within_feedback_range = StatusFeedback(
         target_position=100,
         current_position=1500,
         current_mA=50,
@@ -116,8 +125,44 @@ def test_validate_status_feedback_out_of_bounds():
         temperature=30,
         error_code=0,
     )
-    with pytest.raises(SafetyViolation, match="outside physical limits"):
-        validate_status_feedback(bad_pos, motor_id=1, limits=(0, 1000))
+    validate_status_feedback(within_feedback_range, motor_id=1, limits=(0, 1000))
+
+    outside_feedback_range = StatusFeedback(
+        target_position=100,
+        current_position=2006,
+        current_mA=50,
+        force_g=0,
+        force_adc=0,
+        temperature=30,
+        error_code=0,
+    )
+    with pytest.raises(SafetyViolation, match="outside feedback range"):
+        validate_status_feedback(outside_feedback_range, motor_id=1, limits=(0, 1000))
+
+
+def test_validate_status_feedback_accepts_zero_offset_tolerance_only():
+    def status_at(position):
+        return StatusFeedback(
+            target_position=1000,
+            current_position=position,
+            current_mA=50,
+            force_g=0,
+            force_adc=0,
+            temperature=30,
+            error_code=0,
+        )
+
+    for position in (-5, 2005):
+        validate_status_feedback(status_at(position), motor_id=3, limits=(0, 1800))
+    for position in (-6, 2006):
+        with pytest.raises(SafetyViolation, match="outside feedback range"):
+            validate_status_feedback(status_at(position), motor_id=3, limits=(0, 1800))
+
+
+def test_uint16_feedback_decode_is_explicit_and_offset_free():
+    assert [uint16_to_int16(value) for value in (0xFFFE, 0xFFFF, 0x0000, 0x03E8)] == [-2, -1, 0, 1000]
+    with pytest.raises(ValueError):
+        uint16_to_int16(0x10000)
 
 
 def test_unit_conversions():

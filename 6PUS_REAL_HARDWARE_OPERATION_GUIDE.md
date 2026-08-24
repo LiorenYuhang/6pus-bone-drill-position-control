@@ -3,9 +3,9 @@
 > **权威性声明**：本文档为 **6PUS 并联骨科手术机器人平台唯一权威实机操作指南**（根目录唯一权威版本）。  
 > 本文档基于已通过实机闭环验证的驱动代码、解析逆解、连续控制管线（J4 冻结版本）与安全参数编写，面向实验人员日常开机、运动控制、异常处理与关机操作。所有命令与参数均经源码实际解析核对。
 >
-> **当前物理边界优先于历史命令表**：完整 6PUS 机构尚未装配，两个 IMU 仍固定在同一块测试板。本文件前部保留 J3/J4 历史命令作为冻结接口速查；在当前状态下，不执行 HOME、J3 Cartesian 或 J4 实机轨迹。允许范围和命令前置条件以第 8、9 节为准。
+> **当前物理边界优先于历史命令表**：J6 电机级 HOME/PARK 已在真实硬件上完成验证；其冻结 commissioning 基线为 mode=0、speed=50，详见第 8.6 节。该验证不等同于完整 6PUS 平台装配后的笛卡尔运动验收。完整机构尚未装配、两个 IMU 仍固定在同一块测试板时，J3 Cartesian、J4 轨迹和融合实验仍禁止执行。
 >
-> **装配前执行门禁（当前有效）**：第 0.1--0.3 节的 `--real-hardware` 命令是总装完成后的历史/冻结接口参考，当前不得复制执行。当前仅允许 source、路径/import、`--help`、Mock/dry-run、READ_ONLY 和 FK 只读 smoke；任何真实 HOME、PARK、J3 Cartesian 或 J4 轨迹都必须等待机构总装并取得单独授权。
+> **装配前执行门禁（当前有效）**：第 0.1--0.3 节中的 J6 HOME/PARK 仅可按第 8.6 节的已验证基线、现场安全检查和明确授权执行；其余 `--real-hardware` 命令仍是历史/冻结接口参考，必须等待完整机构装配并取得单独授权。Mock/dry-run、READ_ONLY 和 FK 只读 smoke 不产生运动。
 
 ---
 
@@ -31,9 +31,9 @@ python3 -c "import pus6_msgs, pus6_kinematics; print('ROS2_IMPORT_OK')"
 ### 0.1 开关机与基准位姿管理 (J3 静态点到点)
 | 操作目标 | 直接运行命令 (终端直接复制执行) | 硬件动作 | 运行前状态 | 结束状态 | 典型耗时 |
 | :--- | :--- | :---: | :---: | :---: | :---: |
-| **开机平滑就位 (Home)** | `python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j3_startup_homing.py --action home --speed 200 --real-hardware --confirm-motion --validated-config` | 协调顶升 | 停放位 `[0]*6` 或任意位置 | 工作零位 `[1000]*6` | ~11s |
-| **实验结束安全收拢关机 (Park)** | `python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j3_startup_homing.py --action park --speed 200 --real-hardware --confirm-motion --validated-config` | 协调缩回最底 | `OPERATING_HOME` | 停放位 `[0]*6` (可断电) | ~11s |
-| **中途任意位置平滑回零** | `python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j3_startup_homing.py --action home --speed 200 --real-hardware --confirm-motion --validated-config` | 协调回零 | 任意偏离位置 | `[1000]*6` | 3~11s |
+| **J6 开机平滑就位 (HOME)** | `python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j3_startup_homing.py --action home --speed 50 --real-hardware --confirm-motion --validated-config` | 协调顶升 | 停放位 `[0]*6` 或任意位置 | 工作零位 `[1000]*6` | 以现场日志为准 |
+| **J6 实验结束安全收拢 (PARK)** | `python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j3_startup_homing.py --action park --speed 50 --real-hardware --confirm-motion --validated-config` | 协调缩回最底 | `OPERATING_HOME` | 停放位 `[0]*6` | 以现场日志为准 |
+| **J6 任意位置回 HOME** | `python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j3_startup_homing.py --action home --speed 50 --real-hardware --confirm-motion --validated-config` | 协调回到工作零位 | 任意偏离位置 | `[1000]*6` | 以现场日志为准 |
 
 ### 0.2 J3 静态点到点单自由度/复合位姿验证 (返回 HOME)
 | 操作目标 | 直接运行命令 (终端直接复制执行) | 运动特征 | 运行前状态 | 结束状态 | 典型耗时 |
@@ -135,7 +135,7 @@ graph TD
 ```bash
 python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j3_startup_homing.py \
     --action home \
-    --speed 200 \
+    --speed 50 \
     --real-hardware \
     --confirm-motion \
     --validated-config
@@ -162,7 +162,7 @@ python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j4_f1b_real_cartesian_moti
 ```bash
 python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j3_startup_homing.py \
     --action park \
-    --speed 200 \
+    --speed 50 \
     --real-hardware \
     --confirm-motion \
     --validated-config
@@ -365,7 +365,7 @@ python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j3_startup_homing.py --hel
 
 # 3) Mock/dry-run；不要添加 --real-hardware
 python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j3_startup_homing.py \
-    --action park --speed 200
+    --action park --speed 50
 ```
 
 READ_ONLY 审计脚本是函数式入口，没有 argparse `--help`；不要直接给它传 `--help`，应使用：
@@ -377,9 +377,9 @@ python3 -c "from run_j2a_readonly_verification import run_j2a_verification; rais
 
 该流程强制 `hardware_mode=read_only`，并在 startup、runtime、shutdown 检查 `total hardware writes = 0`。它只读取 `/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0` 的六轴遥测，不发送运动、配置或 pause 写命令。若 by-id 链接不存在，停止并先核对 UART，不要改成猜测性的串口节点。
 
-### 8.4 实机 PARK / HOME 的标准流程（总装后授权流程；当前禁止）
+### 8.4 完整机构 J3/J4 实机运动门禁（J6 例外见 8.6）
 
-以下命令会产生实机写入或运动，只能在完整机构装配、机械几何/零位复核、READ_ONLY 与 Mock 均通过，并取得单独书面授权后执行。**当前未装配状态禁止执行，即使目标已经是 raw `[0]*6`。**
+以下 J3/J4 命令会产生实机写入或运动，只能在完整机构装配、机械几何/零位复核、READ_ONLY 与 Mock 均通过，并取得单独书面授权后执行。J6 电机级 HOME/PARK 的已验证操作流程见 8.6；完整平台运动仍受本节门禁约束。
 
 授权后先核对 validated by-id 串口：
 
@@ -390,21 +390,21 @@ test -e /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0
 
 上述检查失败就停止。当前核对结果为 by-id 链接存在并指向 `/dev/ttyUSB0`。只有在明确核对了替代设备后，才使用 `--port /dev/具体设备` override。
 
-PARK（会产生实机写入；用于安全收拢）：
+HOME/PARK 历史入口（请以 8.6 J6 基线为准；会产生实机写入）：
 
 ```bash
 python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j3_startup_homing.py \
-    --action park --speed 200 --real-hardware --confirm-motion --validated-config
+    --action park --speed 50 --real-hardware --confirm-motion --validated-config
 ```
 
-HOME（会产生实机写入并顶升至约 50 mm 伸出；当前完整机构未装配时禁止执行）：
+HOME 历史入口（请以 8.6 J6 基线为准；完整机构未装配时禁止执行）：
 
 ```bash
 python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j3_startup_homing.py \
-    --action home --speed 200 --real-hardware --confirm-motion --validated-config
+    --action home --speed 50 --real-hardware --confirm-motion --validated-config
 ```
 
-执行结束必须核对日志中的 `Final Raw Steps`、`Final Position Errors`、`Safety Invariants Kept`。当前不执行上述命令；本轮只做 Mock 和 READ_ONLY。不要以 HOME、PARK、J4 轨迹或 FK 数值结果替代真实机械装配验证。
+执行结束必须核对日志中的 `Final Raw Steps`、`Final Position Errors`、`Safety Invariants Kept`。不要以 J6 电机级结果替代完整平台机械装配验证。
 
 ### 8.5 J4 与 FK 启动边界
 
@@ -420,6 +420,28 @@ ros2 run pus6_kinematics fk_node
 
 它订阅 `/pus6/joint_feedback/timed`，发布 `/pus6/fk/state` 和 `/pus6/fk/pose`，内部使用独立 `SingleThreadedExecutor`，不依赖 HOME/PARK，也不发送电机运动命令。
 
+### 8.6 J6 已验证 HOME / PARK commissioning 基线（真实硬件）
+
+本节只适用于 J6 电机级 HOME/PARK。该基线已由用户在真实硬件上重复验证超过 10 个循环；本次文档整理不执行硬件。它不授权完整 6PUS 平台的 J3 Cartesian、J4 连续轨迹或 IMU/FK 融合实验。
+
+固定参数：`0x25=0`（Positioning Mode）、standalone `10 Hz`、speed `50`；HOME `[1000,1000,1000,1000,1000,1000]`；PARK `[0,0,0,0,0,0]`。speed=60、100、200 不稳定，不属于基线。
+
+HOME：
+
+```bash
+python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j3_startup_homing.py \
+    --action home --speed 50 --real-hardware --confirm-motion --validated-config
+```
+
+PARK：
+
+```bash
+python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j3_startup_homing.py \
+    --action park --speed 50 --real-hardware --confirm-motion --validated-config
+```
+
+操作前确认机械无干涉、急停可用、串口 by-id 与轴映射正确，并完成 Mock/READ_ONLY 及现场授权门禁。出现 fault、overcurrent、通信失败、无效状态或 tracking watchdog STOP 时，立即按第 4.1 节停止；不得提高 speed 或放宽安全门限重试。
+
 ## 9. 当前操作判定、常见排查与阅读建议
 
 ### 9.1 当前操作判定
@@ -429,8 +451,9 @@ ros2 run pus6_kinematics fk_node
 | import、`--help`、Mock/dry-run | 允许 | 否 |
 | J2-A READ_ONLY | 允许 | 否；必须核对日志 `total hardware writes = 0` |
 | `ros2 run pus6_kinematics fk_node` | 允许，仅观测 | 否 |
-| PARK | 当前禁止；总装后仅 maintenance 授权流程 | 是；目标为 raw `[0]*6` |
-| HOME、J3 Cartesian、J4 实机轨迹 | 当前禁止 | 是；等待完整机构装配 |
+| J6 PARK（mode=0、speed=50） | 按 8.6 基线并经现场授权 | 是；目标为 raw `[0]*6` |
+| J6 HOME（mode=0、speed=50） | 按 8.6 基线并经现场授权 | 是；目标为 raw `[1000]*6` |
+| J3 Cartesian、J4 实机轨迹 | 当前禁止 | 是；等待完整机构装配 |
 | J5-C2-HW、最终外参、lever arm、融合/ESKF | 当前禁止 | 不得启动 |
 
 ### 9.2 常见现象与排查边界
@@ -443,11 +466,11 @@ ros2 run pus6_kinematics fk_node
 
 ### 9.3 `maintenance_mode` 语义
 
-`maintenance_mode` 只适用于 ROS `pus6_control`/`pus6_motor_driver` 的受控维护路径：默认 `false` 时，普通运行包络为 `[200,1800]`，raw `[0]*6` PARK 被拒绝；显式 `maintenance_mode=true` 后，且其他反馈新鲜度、fault、批次原子性和步进门禁均通过，才允许受控 PARK 进入绝对范围 `[0,2000]`。它不改变 J4 算法、安全策略或 UART 协议，也不把普通运动包络扩大为可运行空间。独立 `run_j3_startup_homing.py` 不通过该参数绕过门禁，真实运行仍需 `--real-hardware --confirm-motion --validated-config`；当前未装配时两条路径都禁止真实运动。
+`maintenance_mode` 只适用于 ROS `pus6_control`/`pus6_motor_driver` 的受控维护路径：默认 `false` 时，普通运行包络为 `[200,1800]`，raw `[0]*6` PARK 被拒绝；显式 `maintenance_mode=true` 后，且其他反馈新鲜度、fault、批次原子性和步进门禁均通过，才允许受控 PARK 进入绝对范围 `[0,2000]`。它不改变 J4 算法、安全策略或 UART 协议，也不把普通运动包络扩大为可运行空间。独立 `run_j3_startup_homing.py` 不通过该参数绕过门禁，真实运行仍需 `--real-hardware --confirm-motion --validated-config`；独立脚本的 J6 HOME/PARK 仅按 8.6 基线执行；ROS2 维护路径和完整平台运动仍须等待相应装配与授权。
 
 ### 9.4 当前阅读建议
 
-需要连接、诊断或执行任何实机相关命令时先读本手册第 0.0、5.1、8、9 节，再回看历史命令表。当前学习和操作停止在“软件冻结、等待机构装配”：机构总装、几何/零位复核完成后，从第 7.7 节的 J5-C2-HW 清单继续；在此之前不以 HOME、J4 或数值 FK 结果宣称真实机械精度。
+需要连接、诊断或执行任何实机相关命令时先读本手册第 0.0、5.1、8、9 节，再回看历史命令表。J6 电机级 HOME/PARK 已完成基线验证；其余学习和操作仍停止在“软件冻结、等待机构装配”，机构总装、几何/零位复核完成后，从第 7.7 节的 J5-C2-HW 清单继续；在此之前不以 HOME、J4 或数值 FK 结果宣称真实机械精度。
 
 ### 9.5 C2-HW 离线验收工具
 

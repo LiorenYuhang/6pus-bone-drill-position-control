@@ -518,6 +518,14 @@ $$\text{Latest Target} \longrightarrow \text{Vector Slew Recovery (必要时)} \
 
 ---
 
+### 6.5.1 standalone commissioning 与未来 ROS 2 控制管线
+
+`run_j3_startup_homing.py` 的 J6 HOME/PARK standalone 路径用于电机级 commissioning：验证 mode=0、目标寄存器 `0x29`、反馈读取、停止确认和安全门禁。它是可审计的点到点入口，不替代 ROS 2 的连续笛卡尔控制。
+
+两条路径共享 `pus6_motor_driver` 的电机通信与安全抽象；standalone runner 直接调用六电机控制器，ROS 2 则由 `pus6_control` 产生目标并交给 `pus6_motor_driver_node`。J6 已验证的 `OPERATING_HOME=[1000]*6`、`STORAGE_PARK=[0]*6` 和目标限位语义可作为未来 ROS 2 启动/维护服务的接口基线，但 standalone 的 10 Hz 调度结果不能宣称为 ROS 2 50 Hz 管线的实机性能。
+
+推荐先在 Mock/FakeBus 中复用同一驱动层和 write-audit，核对 HOME/PARK 状态机与 ROS 2 service/topic 入口；完整机构装配并获单独授权后，再进行分阶段实机验证。
+
 ### 6.6 常见误解与避坑指南
 1. **误解：在正常控制流中随意拿实际反馈 $q_{\text{actual}}$ 去更新命令基准**  
    * *澄清*：正常运动中严禁混淆命令基准与物理基准；物理重锚**仅且仅在** Delivery-Uncertain 异常处理路径中触发一次。

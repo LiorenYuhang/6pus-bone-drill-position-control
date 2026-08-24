@@ -43,6 +43,7 @@ class FakeBus:
         self.limits = {mid: (0, 1800) for mid in MOTOR_IDS}
         self.modes = {mid: 2 for mid in MOTOR_IDS}
         self.speeds = {mid: 50 for mid in MOTOR_IDS}
+        self.hold_positions_on_target_write = False
 
     def request(self, frame, **kwargs):
         parsed = parse_frame(frame)
@@ -91,7 +92,8 @@ class FakeBus:
 
         elif cmd == CMD_WR_REGISTER:
             if reg == TARGET_POSITION_ADDR and payload:
-                self.positions[mid] = payload[0]
+                if not self.hold_positions_on_target_write:
+                    self.positions[mid] = payload[0]
             elif reg == CONTROL_MODE_ADDR and len(payload) >= 4:
                 self.modes[mid] = payload[0]
                 self.speeds[mid] = payload[3]
@@ -150,8 +152,25 @@ def test_six_motor_controller_configure_all():
     writes = [e for e in bus.events if e[1] == CMD_WR_REGISTER and e[2] == CONTROL_MODE_ADDR]
     assert len(writes) == 6
     for e in writes:
-        # payload should be [mode, 0, 0, speed, safety_max]
-        assert e[3] == [2, 0, 0, 50, 1800]
+        # Configuration stops at 0x28; 0x29 is target_position and must not
+        # be included in the setup block.
+        assert e[3] == [2, 0, 0, 50]
+
+
+    assert not [e for e in bus.events if e[1] == CMD_WR_REGISTER and e[2] == TARGET_POSITION_ADDR]
+
+
+def test_configure_all_never_emits_target_position_write():
+    bus = FakeBus()
+    ctrl = SixMotorController(bus=bus)
+    ctrl.connect()
+
+    ctrl.configure_all(mode=2, speed=50)
+
+    writes = [e for e in bus.events if e[1] == CMD_WR_REGISTER]
+    assert len(writes) == 6
+    assert all(e[2] == CONTROL_MODE_ADDR for e in writes)
+    assert all(e[3] == [2, 0, 0, 50] for e in writes)
 
 
 def test_six_motor_controller_command_positions_success():
@@ -213,6 +232,30 @@ def test_six_motor_controller_pause_all():
     assert all(res.values())
     pause_writes = [e for e in bus.events if e[1] == CMD_WR_REGISTER and e[2] == PAUSE_ADDR]
     assert len(pause_writes) == 6
+
+
+def test_actual_position_register_decodes_signed_int16_feedback():
+    bus = FakeBus()
+    bus.positions.update({3: 0xFFFE, 4: 0xFFFF, 5: 0xFFFE, 6: 0xFFFE})
+    ctrl = SixMotorController(bus=bus)
+    ctrl.connect()
+    assert ctrl.read_positions_snapshot().positions_steps == [50, 50, -2, -1, -2, -2]
+
+
+def test_command_dispatch_validates_target_not_stale_feedback_position():
+    bus = FakeBus()
+    bus.hold_positions_on_target_write = True
+    bus.positions.update({3: 0xFFFE, 4: 0xFFFF, 5: 0xFFFE, 6: 0xFFFE})
+    ctrl = SixMotorController(bus=bus)
+    ctrl.connect()
+
+    # Target writes receive stale encoder feedback at -2/-1; this is allowed
+    # by the feedback tolerance while the commanded vector remains [0, 2000].
+    ctrl.command_positions([1000] * 6)
+    target_writes = [event for event in bus.events if event[1] == CMD_WR_REGISTER and event[2] == TARGET_POSITION_ADDR]
+    assert len(target_writes) == 6
+    assert [event[3][0] for event in target_writes] == [1000] * 6
+
 
 
 def test_six_motor_controller_snapshot_and_metrics():
@@ -312,3 +355,24 @@ def test_six_motor_controller_mock_mode_zero_real_serial():
     assert ctrl.is_connected
     assert ctrl.hardware_mode == HardwareMode.MOCK
     ctrl.close()
+
+
+def test_positioning_mode_keeps_0x29_target_dispatch_separate():
+    bus = FakeBus()
+    ctrl = SixMotorController(bus=bus)
+    ctrl.connect()
+
+    targets = [1000, 1001, 1002, 1003, 1004, 1005]
+    ctrl.configure_all(mode=0, speed=50)
+    ctrl.command_positions(targets)
+
+    writes = [event for event in bus.events if event[1] == CMD_WR_REGISTER]
+    config_writes = [event for event in writes if event[2] == CONTROL_MODE_ADDR]
+    target_writes = [event for event in writes if event[2] == TARGET_POSITION_ADDR]
+
+    assert len(config_writes) == 6
+    assert all(event[3] == [0, 0, 0, 50] for event in config_writes)
+    assert not [event for event in config_writes if event[2] == TARGET_POSITION_ADDR]
+    assert len(target_writes) == 6
+    assert [event[0] for event in target_writes] == list(MOTOR_IDS)
+    assert [event[3][0] for event in target_writes] == targets

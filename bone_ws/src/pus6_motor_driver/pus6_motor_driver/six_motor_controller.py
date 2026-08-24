@@ -40,6 +40,7 @@ try:
         meters_to_steps,
         parse_hardware_mode,
         steps_to_meters,
+        uint16_to_int16,
         steps_to_mm,
         validate_status_feedback,
         validate_target_vector,
@@ -79,6 +80,7 @@ except ImportError:
         meters_to_steps,
         parse_hardware_mode,
         steps_to_meters,
+        uint16_to_int16,
         steps_to_mm,
         validate_status_feedback,
         validate_target_vector,
@@ -210,6 +212,7 @@ class SixMotorController:
         self._connected: bool = False
         self._last_snapshot: SixAxisStateSnapshot | None = None
         self._write_count: int = 0
+        self._last_pause_results: dict[int, bool] = {}
 
         # Handle hardware mode with backward compatibility for is_mock
         if is_mock is not None:
@@ -400,7 +403,9 @@ class SixMotorController:
                 t_axis_start_ns = time.perf_counter_ns()
                 resp = motor.read_register(ACTUAL_POSITION_ADDR, count=1)
                 t_axis_end_ns = time.perf_counter_ns()
-                pos = _unwrap_register_value(resp)
+                # Reg 0x2A carries signed int16 step feedback in a uint16 transport field.
+                # Other register reads remain unsigned configuration/limit values.
+                pos = uint16_to_int16(_unwrap_register_value(resp))
 
                 per_axis_ts[mid] = t_axis_start
                 per_axis_start_ts_ns[mid] = t_axis_start_ns
@@ -434,23 +439,20 @@ class SixMotorController:
         mode: int = SPEED_MODE,
         speed: int = DEFAULT_SPEED,
     ) -> None:
-        """Configure control mode, speed, and safety max for all 6 motors via 0x25.
+        """Configure control mode and speed for all 6 motors via 0x25.
 
-        Uses the verified 5-register write payload:
-        [mode, 0 (voltage), 0 (force), speed, safety_max]
+        The configuration block intentionally stops at register 0x28:
+        [0x25 mode, 0x26 voltage, 0x27 force, 0x28 speed].
+        Register 0x29 is the absolute target-position register and is written
+        only by ``command_positions``.
         """
         self._ensure_connected()
         if self._hardware_mode == HardwareMode.READ_ONLY:
             raise ReadOnlyModeError("configure_all is strictly forbidden in READ_ONLY mode (0 writes enforced).")
 
-        if not self._limits:
-            self.read_limits()
-
         for mid in MOTOR_IDS:
             motor = self._motors[mid]
-            _, upper = self._limits[mid]
-            safety_max = min(upper, SOFTWARE_UPPER_LIMIT)
-            payload = [mode, 0, 0, speed, safety_max]
+            payload = [mode, 0, 0, speed]
             motor.write_register(CONTROL_MODE_ADDR, payload)
             self._write_count += 1
 
@@ -498,6 +500,7 @@ class SixMotorController:
         if self._hardware_mode == HardwareMode.READ_ONLY:
             raise ReadOnlyModeError("command_positions is strictly forbidden in READ_ONLY mode (0 writes enforced).")
 
+        # q_targets is the trajectory command vector, never feedback actual_position.
         # Step 2: Pre-validate vector length and data types immediately (zero bus activity)
         validate_target_vector(q_targets)
 
@@ -821,7 +824,14 @@ class SixMotorController:
             except Exception as exc:
                 logger.error("Failed to pause motor ID%d: %s", mid, exc)
                 results[mid] = False
+
+        self._last_pause_results = dict(results)
         return results
+
+    @property
+    def last_pause_results(self) -> dict[int, bool]:
+        """Results from the most recent six-axis pause attempt."""
+        return dict(self._last_pause_results)
 
     def pause_single_axis(self, motor_id: int) -> StatusFeedback:
         """Pause exactly one axis and return its immediate status feedback."""

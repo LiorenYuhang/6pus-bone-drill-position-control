@@ -48,6 +48,14 @@ SOFTWARE_UPPER_LIMIT: int = _GEOMETRY_CONFIG.software_command_max_steps
 NORMAL_MOTION_LOWER_LIMIT: int = _GEOMETRY_CONFIG.normal_motion_min_steps
 NORMAL_MOTION_UPPER_LIMIT: int = _GEOMETRY_CONFIG.normal_motion_max_steps
 
+# Commanded targets and encoder feedback have different safety contracts. A
+# target is never allowed outside the absolute raw command range. Feedback is
+# permitted a small signed zero-reference deviation so values such as -2 from
+# an encoder at software zero do not abort an otherwise valid motion command.
+FEEDBACK_POSITION_TOLERANCE_STEPS: int = 5
+FEEDBACK_LOWER_LIMIT: int = ABSOLUTE_RAW_LOWER_LIMIT - FEEDBACK_POSITION_TOLERANCE_STEPS
+FEEDBACK_UPPER_LIMIT: int = ABSOLUTE_RAW_UPPER_LIMIT + FEEDBACK_POSITION_TOLERANCE_STEPS
+
 # Validated standalone-runner UART default. Keep this aligned with
 # pus6_motor_driver/config/motors.yaml and the ROS bringup configuration.
 DEFAULT_SERIAL_PORT: str = "/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0"
@@ -68,6 +76,20 @@ MM_PER_STEP: float = METERS_PER_STEP * 1000.0
 def steps_to_meters(steps: int | float) -> float:
     """Convert device step counts to SI meters."""
     return float(steps) * METERS_PER_STEP
+
+
+def uint16_to_int16(value: int) -> int:
+    """Decode one uint16 transport value as a signed int16 step count.
+
+    Position feedback registers are transported as uint16 on the wire but
+    represent signed step counts. This conversion is explicit and applies
+    no offset and no safety-limit relaxation.
+    """
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise TypeError(f"uint16 register value must be an integer, got {type(value).__name__}")
+    if not 0 <= value <= 0xFFFF:
+        raise ValueError(f"uint16 register value outside [0, 65535]: {value}")
+    return value - 0x10000 if value >= 0x8000 else value
 
 
 def meters_to_steps(meters: float) -> int:
@@ -152,6 +174,8 @@ def validate_target_vector(
     limits: Mapping[int, tuple[int, int]] | None = None,
 ) -> list[int]:
     """Atomically validate a 6-element target vector for ID1..ID6.
+    This function validates commanded trajectory targets only; feedback positions
+    must be kept separate and must not be passed here.
 
     Args:
         targets: 6-element integer sequence corresponding to ID1..ID6.
@@ -176,8 +200,11 @@ def validate_target_vector(
                 f"Target position for ID{mid} must be an integer, got {type(val).__name__} ({val})"
             )
 
-        lower = SOFTWARE_LOWER_LIMIT
-        upper = SOFTWARE_UPPER_LIMIT
+        # This is a commanded trajectory target, so use the absolute raw
+        # command range. The normal-motion envelope (currently [200, 1800])
+        # is a separate planning policy and must not reject PARK/HOME targets.
+        lower = ABSOLUTE_RAW_LOWER_LIMIT
+        upper = ABSOLUTE_RAW_UPPER_LIMIT
 
         if limits is not None and mid in limits:
             hw_lower, hw_upper = limits[mid]
@@ -198,15 +225,20 @@ def validate_status_feedback(
     motor_id: int,
     limits: tuple[int, int] | None = None,
 ) -> None:
-    """Validate status feedback against fault, current, and position limits.
+    """Validate status feedback health and the independent encoder range.
+
+    The optional ``limits`` argument is retained for API compatibility with
+    callers that also validate commanded targets; feedback position checking
+    intentionally uses the dedicated zero-offset tolerance below.
 
     Args:
         status: Feedback status frame.
         motor_id: Logical motor ID (1..6).
-        limits: Optional (lower_limit, upper_limit) for this motor.
+        limits: Optional command-limit tuple retained for call-site compatibility.
 
     Raises:
-        SafetyViolation: If fault code != 0, current > 500mA, or position out of range.
+        SafetyViolation: If the status reports a fault, overcurrent, or
+            feedback position outside the monitoring range.
     """
     if status.error_code != 0:
         raise SafetyViolation(
@@ -218,11 +250,8 @@ def validate_status_feedback(
             f"Motor ID{motor_id} current {status.current_mA}mA exceeds threshold {MAX_CURRENT_MA}mA"
         )
 
-    if limits is not None:
-        lower, upper = limits
-        effective_upper = min(upper, SOFTWARE_UPPER_LIMIT)
-        if not (lower <= status.current_position <= effective_upper):
-            raise SafetyViolation(
-                f"Motor ID{motor_id} actual position {status.current_position} "
-                f"outside physical limits [{lower}, {effective_upper}]"
-            )
+    if not (FEEDBACK_LOWER_LIMIT <= status.current_position <= FEEDBACK_UPPER_LIMIT):
+        raise SafetyViolation(
+            f"Motor ID{motor_id} actual position {status.current_position} "
+            f"outside feedback range [{FEEDBACK_LOWER_LIMIT}, {FEEDBACK_UPPER_LIMIT}]"
+        )

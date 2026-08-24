@@ -22,14 +22,80 @@ from pus6_control.joint_trajectory_controller import (
     compute_synchronized_trajectory_point,
     quintic_progress,
 )
+from pus6_motor_driver.fake_bus import FakeBus
+from pus6_motor_driver.protocol import CMD_RD_STATUS, CMD_WR_REGISTER, parse_frame
+from pus6_motor_driver.six_motor_controller import SixMotorController
 from pus6_motor_driver.safety import (
+    CONTROL_MODE_ADDR,
+    TARGET_POSITION_ADDR,
     OPERATING_HOME_RAW_STEPS,
     STORAGE_PARK_RAW_STEPS,
     DEFAULT_SERIAL_PORT,
+    MOTOR_IDS,
     raw_to_relative_steps,
     relative_to_raw_steps,
 )
 from run_j3_startup_homing import run_homing_session
+
+
+class TrackingWatchdogBus(FakeBus):
+    """Mock feedback source for transient/persistent watchdog tests."""
+
+    def __init__(self, scenario: str):
+        super().__init__()
+        self.scenario = scenario
+        self.status_cycle = -1
+        self.transient_used = False
+
+    def request(self, frame, **kwargs):
+        parsed = parse_frame(frame)
+        if parsed.command == CMD_RD_STATUS:
+            if parsed.motor_id == MOTOR_IDS[0]:
+                self.status_cycle += 1
+                if self.status_cycle == 0:
+                    self.positions = {
+                        mid: value
+                        for mid, value in zip(MOTOR_IDS, [0, 0, -2, -1, -2, -2])
+                    }
+                elif self.scenario == "transient":
+                    if not self.transient_used and max(self.targets.values()) >= 20:
+                        self.positions = {
+                            mid: max(0, self.targets[mid] - 11)
+                            for mid in MOTOR_IDS
+                        }
+                        self.transient_used = True
+                    else:
+                        self.positions = dict(self.targets)
+                elif self.scenario == "persistent":
+                    if max(self.targets.values()) >= 20:
+                        self.positions = {
+                            mid: max(0, self.targets[mid] - 11)
+                            for mid in MOTOR_IDS
+                        }
+                    else:
+                        self.positions = dict(self.targets)
+                elif self.scenario == "fault":
+                    self.faults[1] = 1
+                elif self.scenario == "communication":
+                    raise OSError("simulated feedback communication failure")
+        return super().request(frame, **kwargs)
+
+
+def _run_watchdog_session(scenario: str):
+    bus = TrackingWatchdogBus(scenario)
+    controller = SixMotorController(bus=bus)
+    return run_homing_session(
+        action="home",
+        speed=50,
+        control_rate_hz=10.0,
+        real_hardware=False,
+        custom_start=[0, 0, -2, -1, -2, -2],
+        duration=0.5 if scenario == "transient" else 4.0,
+        settle_time=0.0,
+        sleep_fn=lambda _seconds: None,
+        stop_verify_interval_s=0.0,
+        controller=controller,
+    )
 
 
 def test_homing_uses_validated_serial_port_default():
@@ -147,3 +213,79 @@ def test_controlled_parking_mock_execution():
     assert report["q_final_raw"] == [0, 0, 0, 0, 0, 0]
     assert report["q_final_relative"] == [-1000, -1000, -1000, -1000, -1000, -1000]
     assert report["tracking_tolerable"] is True
+
+
+
+def test_single_transient_tracking_violation_does_not_stop():
+    report = _run_watchdog_session("transient")
+
+    assert report["safety_aborted"] is False
+    assert report["abort_reason"] == ""
+    assert report["q_final_raw"] == [1000] * 6
+
+
+def test_persistent_tracking_violation_still_stops_after_debounce():
+    report = _run_watchdog_session("persistent")
+
+    assert report["safety_aborted"] is True
+    assert "Tracking failure" in report["abort_reason"]
+    assert "consecutive samples" in report["abort_reason"]
+    assert report["stop_result"]["pause_results"]
+
+
+def test_motor_fault_still_stops_immediately():
+    report = _run_watchdog_session("fault")
+
+    assert report["safety_aborted"] is True
+    assert "Motor hardware fault" in report["abort_reason"]
+
+
+def test_feedback_communication_failure_still_stops_immediately():
+    report = _run_watchdog_session("communication")
+
+    assert report["safety_aborted"] is True
+    assert "Communication failure during feedback read" in report["abort_reason"]
+
+
+@pytest.mark.parametrize(
+    ("action", "custom_start", "expected_target"),
+    [
+        ("home", [0, 0, 0, 0, 0, 0], [1000, 1000, 1000, 1000, 1000, 1000]),
+        ("park", [1000, 1000, 1000, 1000, 1000, 1000], [0, 0, 0, 0, 0, 0]),
+    ],
+)
+def test_home_park_phase2_positioning_mode_preserves_target_dispatch(
+    action, custom_start, expected_target
+):
+    """Commissioning uses mode 0 while retaining the 0x29 trajectory path."""
+    bus = FakeBus()
+    controller = SixMotorController(bus=bus)
+    report = run_homing_session(
+        action=action,
+        speed=50,
+        control_rate_hz=10.0,
+        real_hardware=False,
+        custom_start=custom_start,
+        duration=0.1,
+        settle_time=0.0,
+        stop_verify_interval_s=0.0,
+        controller=controller,
+    )
+
+    assert report["q_target_raw"] == expected_target
+    assert report["q_final_raw"] == expected_target
+
+    writes = [event for event in bus.events if event[1] == CMD_WR_REGISTER]
+    config_writes = [event for event in writes if event[2] == CONTROL_MODE_ADDR]
+    target_writes = [event for event in writes if event[2] == TARGET_POSITION_ADDR]
+
+    assert len(config_writes) == 6
+    assert all(event[3][0] == 0 for event in config_writes)
+    assert all(len(event[3]) == 4 for event in config_writes)
+    assert all(event[3][3] == report["motor_reg_speed_0x28"] for event in config_writes)
+    assert all(event[2] != TARGET_POSITION_ADDR for event in writes[:6])
+
+    assert target_writes
+    assert all(event[2] == TARGET_POSITION_ADDR for event in target_writes)
+    assert [event[0] for event in target_writes[-6:]] == list(MOTOR_IDS)
+    assert [event[3][0] for event in target_writes[-6:]] == expected_target

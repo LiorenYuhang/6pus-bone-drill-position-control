@@ -88,11 +88,11 @@ def test_j3_ik_pitch_differential_pipeline_to_mock_controller():
 
 
 def test_j3_ik_target_out_of_stroke_bounds_is_rejected():
-    """Verify software stroke limit rejects out-of-bound targets."""
-    # Near upper limit 1795
-    live_ref = [1795, 1795, 1795, 1795, 1795, 1795]
+    """Verify the absolute command limit rejects out-of-bound targets."""
+    # Near absolute command limit 1995
+    live_ref = [1995, 1995, 1995, 1995, 1995, 1995]
     delta_steps = [10, 10, 10, 10, 10, 10]
-    target_raw_steps = [r + d for r, d in zip(live_ref, delta_steps)]  # 1805 > 1800 limit
+    target_raw_steps = [r + d for r, d in zip(live_ref, delta_steps)]  # 2005 > 2000 command limit
 
     with pytest.raises(TargetValidationError, match="outside safe boundary"):
         validate_target_vector(target_raw_steps)

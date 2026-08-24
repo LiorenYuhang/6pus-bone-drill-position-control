@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "tool": "j6_phase3_motion_observation_logger",
+  "phase": "J6_PHASE3",
+  "timestamp": null,
+  "session_id": null,
+  "hardware_mode": "offline",
+  "hardware_motion_executed": false,
+  "hardware_write_count": 0,
+  "control_loop_enabled": false,
+  "home_executed": false,
+  "park_executed": false,
+  "ik_executed": false,
+  "cartesian_motion_executed": false,
+  "operator": {
+    "name": null,
+    "reviewer": null,
+    "date": null,
+    "notes": null
+  },
+  "source_contracts": {
+    "motor_feedback": "pus6_msgs/TimedJointFeedback",
+    "imu_base_topic": "/pus6/imu_base/timed",
+    "imu_platform_topic": "/pus6/imu_platform/timed",
+    "imu_base_frame_id": "pus6_base_imu_link",
+    "imu_platform_frame_id": "pus6_platform_imu_link",
+    "camera_enabled": false
+  },
+  "clock_contract": {
+    "canonical_domain": "host_CLOCK_MONOTONIC_ns",
+    "motor_time_fields": [
+      "snapshot_start_monotonic_ns",
+      "snapshot_end_monotonic_ns",
+      "per_axis_rx_done_monotonic_ns"
+    ],
+    "imu_time_fields": [
+      "sample_timestamp_us",
+      "data_ready_timestamp_us",
+      "host_monotonic_arrival_time_ns"
+    ],
+    "camera_time_domain": null,
+    "alignment_method": null,
+    "extrapolation_used": false
+  },
+  "event_segments": [
+    {
+      "segment": "baseline_static",
+      "start_monotonic_ns": null,
+      "end_monotonic_ns": null,
+      "operator_observations": {
+        "platform_motion": "unrecorded",
+        "ball_joint_condition": "unrecorded",
+        "interference": "unrecorded",
+        "abnormal_sound": "unrecorded",
+        "observer_notes": null
+      }
+    },
+    {
+      "segment": "forward_perturbation",
+      "start_monotonic_ns": null,
+      "end_monotonic_ns": null,
+      "operator_observations": {
+        "platform_motion": "unrecorded",
+        "ball_joint_condition": "unrecorded",
+        "interference": "unrecorded",
+        "abnormal_sound": "unrecorded",
+        "observer_notes": null
+      }
+    },
+    {
+      "segment": "observation_hold",
+      "start_monotonic_ns": null,
+      "end_monotonic_ns": null,
+      "operator_observations": {
+        "platform_motion": "unrecorded",
+        "ball_joint_condition": "unrecorded",
+        "interference": "unrecorded",
+        "abnormal_sound": "unrecorded",
+        "observer_notes": null
+      }
+    },
+    {
+      "segment": "return_authorized",
+      "start_monotonic_ns": null,
+      "end_monotonic_ns": null,
+      "operator_observations": {
+        "platform_motion": "unrecorded",
+        "ball_joint_condition": "unrecorded",
+        "interference": "unrecorded",
+        "abnormal_sound": "unrecorded",
+        "observer_notes": null
+      }
+    }
+  ],
+  "samples": [
+    {
+      "sample_index": 0,
+      "segment": "baseline_static",
+      "observation_timestamp_monotonic_ns": null,
+      "motor_feedback": {
+        "snapshot_start_monotonic_ns": null,
+        "snapshot_end_monotonic_ns": null,
+        "per_axis_rx_done_monotonic_ns": [null, null, null, null, null, null],
+        "uart_cycle_sequence": null,
+        "target_positions_steps": [null, null, null, null, null, null],
+        "actual_positions_steps": [null, null, null, null, null, null],
+        "positions_meters": [null, null, null, null, null, null],
+        "currents_mA": [null, null, null, null, null, null],
+        "fault_codes": [null, null, null, null, null, null],
+        "temperatures_C": [null, null, null, null, null, null]
+      },
+      "imu": {
+        "base": {
+          "frame_id": "pus6_base_imu_link",
+          "topic": "/pus6/imu_base/timed",
+          "tid": null,
+          "sample_timestamp_us": null,
+          "data_ready_timestamp_us": null,
+          "host_monotonic_arrival_time_ns": null,
+          "quaternion_xyzw": [null, null, null, null],
+          "roll_pitch_yaw_rad": [null, null, null],
+          "angular_velocity_rad_s": [null, null, null],
+          "linear_acceleration_m_s2": [null, null, null]
+        },
+        "platform": {
+          "frame_id": "pus6_platform_imu_link",
+          "topic": "/pus6/imu_platform/timed",
+          "tid": null,
+          "sample_timestamp_us": null,
+          "data_ready_timestamp_us": null,
+          "host_monotonic_arrival_time_ns": null,
+          "quaternion_xyzw": [null, null, null, null],
+          "roll_pitch_yaw_rad": [null, null, null],
+          "angular_velocity_rad_s": [null, null, null],
+          "linear_acceleration_m_s2": [null, null, null]
+        }
+      },
+      "relative_attitude": {
+        "convention": "base_to_platform",
+        "quaternion_xyzw": [null, null, null, null],
+        "source": null,
+        "base_sample_reference": null,
+        "platform_sample_reference": null,
+        "pairing_error_ns": null,
+        "interpolation_used": false,
+        "extrapolation_used": false,
+        "valid": false
+      },
+      "camera": {
+        "enabled": false,
+        "snapshot_timestamp_monotonic_ns": null,
+        "clock_domain": null,
+        "camera_id": null,
+        "frame_id": null,
+        "path": null
+      }
+    }
+  ],
+  "statistics": {
+    "motor_sample_count": null,
+    "imu_base_sample_count": null,
+    "imu_platform_sample_count": null,
+    "relative_attitude_sample_count": null,
+    "camera_snapshot_count": null,
+    "motor_scan_span_ns": null,
+    "imu_pairing_error_ns": {
+      "min": null,
+      "mean": null,
+      "p95": null,
+      "max": null
+    },
+    "timestamp_duplicate_count": null,
+    "timestamp_backward_count": null,
+    "missing_sample_count": null
+  },
+  "pass_conditions": {
+    "six_axis_feedback_complete": false,
+    "motor_timestamps_traceable": false,
+    "dual_imu_streams_traceable": false,
+    "relative_attitude_convention_declared": true,
+    "relative_attitude_source_traceable": false,
+    "camera_optional_channel_consistent": true,
+    "timestamps_ordered": false,
+    "raw_inputs_preserved": false,
+    "no_control_side_effect": true
+  },
+  "outcome": "NOT_STARTED",
+  "pass": false,
+  "failure_reasons": [],
+  "evidence": {
+    "motor_feedback_path": null,
+    "imu_base_path": null,
+    "imu_platform_path": null,
+    "relative_attitude_path": null,
+    "camera_index_path": null,
+    "manifest_path": null,
+    "sha256": {}
+  }
+}
