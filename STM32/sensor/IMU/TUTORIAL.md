@@ -385,7 +385,7 @@ H30 也支持 UART 通信（460800 baud），可以获取 GPS 位置、速度、
 
 ## 参考资料
 
-- [WHEELTEC H30 产品资料目录](../../docs/WHEELTEC_H30惯导产品资料/)
+- [WHEELTEC H30 产品资料目录](../../../hardware/功能模块/WHEELTEC_H30惯导产品资料/)
   - 用户手册
   - YIS 通讯协议文档
   - I2C/串口例程

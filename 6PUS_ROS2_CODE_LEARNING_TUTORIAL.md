@@ -1,7 +1,8 @@
 # 6PUS 并联手术机器人 ROS 2 项目全栈源码教学与系统解析教程
 
-> **适用对象**：希望通过真实 6PUS 并联骨科手术机器人项目系统掌握 ROS 2 架构设计、多轴电机通信驱动、并联机构解析逆解与数值正解、在线轨迹平滑与安全控制全栈技术的工程师与研究生。  
-> **测试回归语境说明**：ROS 2 工作空间核心功能包全量单元测试为 **162 项 PASS**（执行 `pytest /home/lyapunov/bone_drill/bone_ws/src -v`，耗时约 39.85s，包含 `pus6_kinematics`, `pus6_motor_driver`, `pus6_control`, `h30_imu`）；整个工程根目录历史用例全量收集数为 **468 collected**（执行 `pytest /home/lyapunov/bone_drill --collect-only`，包含 162 项工作空间用例 + 306 项历史独立硬件台架用例）。两者范围不同，严禁混用。  
+> **适用对象**：希望通过真实 6PUS 并联骨科手术机器人项目系统掌握 ROS 2 架构设计、多轴电机高频伺服通信驱动、并联机构解析逆解与数值正解、在线轨迹平滑与安全控制全栈技术的工程师与研究生。  
+> **当前冻结基线**：$\mathbf{J7\ SIX\text{-}AXIS\ 50Hz\ SERVO\ HARDWARE\ BASELINE\ FROZEN\ v1.0}$ (`v1.0-j7-servo-hardware-frozen`)。  
+> **测试回归语境说明**：ROS 2 工作空间核心功能包全量单元测试为 **304 项 PASS**（执行 `pytest /home/lyapunov/bone_drill/bone_ws/src -v`，耗时约 43.75s，覆盖 `pus6_kinematics`, `pus6_motor_driver`, `pus6_control`, `h30_imu`）；整个工程根目录历史用例全量收集数为 **468+ collected**。两者范围不同，严禁混用。  
 > **物理装配边界**：完整 6PUS 机构尚未总装，两个 H30 IMU 仍固定在同一块测试板。最终 IMU 外参 (J5-B2)、lever arm、实机机械 FK 验收 (J5-C2-HW)、平动融合与 ESKF 尚未开始。
 
 ---
@@ -9,7 +10,7 @@
 ## 目录
 1. [项目架构全景与双链路设计 (System Architecture & Dual-Pipeline Philosophy)](#1-项目架构全景与双链路设计-system-architecture--dual-pipeline-philosophy)
 2. [底层通信与 UART 协议层实现 (UART Protocol & Serial Reality)](#2-底层通信与-uart-协议层实现-uart-protocol--serial-reality)
-3. [六电机驱动节点与高频并发解耦架构 (Motor Driver & Concurrency Architecture)](#3-六电机驱动节点与高频并发解耦架构-motor-driver--concurrency-architecture)
+3. [六电机驱动层与 J7 50Hz Servo 伺服架构 (Motor Driver & J7 50Hz Servo Architecture)](#3-六电机驱动节点与高频并发解耦架构-motor-driver--concurrency-architecture)
 4. [6PUS 并联机构解析逆运动学 (Analytical Inverse Kinematics & Geometry Config)](#4-6pus-并联机构解析逆运动学-analytical-inverse-kinematics--geometry-config)
 5. [在线轨迹整形与连续控制算法 (Stateful Shaper & Continuous Control)](#5-在线轨迹整形与连续控制算法-stateful-shaper--continuous-control)
 6. [安全门禁、故障恢复与 HOME/PARK 状态机 (Safety Gates, Recovery & State Machine)](#6-安全门禁故障恢复与-homepark-状态机-safety-gates-recovery--state-machine)
@@ -48,15 +49,15 @@
              │
              ▼  (/pus6/command_joint_steps 唯一权威控制入口, QoS: BestEffort, KeepLast(1))
   ┌────────────────────────┐
-  │ pus6_motor_driver_node │ ── Latest-Value-Wins 缓冲 + 矢量斜率自愈 + 6级安全硬门禁
+  │ J7 50Hz ServoTransport │ ── 50Hz 连续 0x29 纯写批次下发 (均值 3.38ms) + Slew 自愈 + 6级安全硬门禁
   └────────────────────────┘
              │
-             ▼  (RS485 / UART 半双工单总线 921600 8N1, 0x29 串行下发)
+             ▼  (RS485 / UART 半双工单总线 921600 8N1, 0x29 纯写原子批次)
   ========================= [ 6PUS 物理机构 (ID1 ~ ID6 一体化电缸) ] =========================
              │
-             ▼  (0x29 伴随 Piggyback 状态帧回传, 记录 Host CLOCK_MONOTONIC 接收完成时刻)
+             ▼  (Round-Robin 轮询调度器: 每 20ms 周期查询 1 轴 0x30 状态, 单轴约 8.33Hz)
   ┌────────────────────────┐
-  │ pus6_motor_driver_node │ ── 组装 TimedJointFeedback 消息
+  │ J7 FeedbackScheduler   │ ── 组装 TimedJointFeedback 消息 (记录 CLOCK_MONOTONIC)
   └────────────────────────┘
              │
              ▼  (/pus6/joint_feedback/timed)
@@ -239,7 +240,29 @@ bone_ws/
 
 ---
 
-## 3. 六电机驱动节点与高频并发解耦架构 (Motor Driver & Concurrency Architecture)
+
+---
+
+### 2.7 J6 定位模式 (mode=0) $\to$ J7 伺服模式 (mode=1) 的演进与机理
+
+#### (1) J6 定位模式 (mode=0) 的卡顿机理分析
+在 J6 基线中，电机工作在定位模式（`mode=0`，10Hz 轮询）。每次下发 0x29 时等待 15 字节伴随回包，整批耗时约 24~30ms。
+* **微停顿与冲击机理**：在 10Hz 离散目标下，电机内部梯形加减速曲线在每个离散目标点之间频繁经历加速、减速与微停顿，导致实机运动产生明显的阶跃卡顿，峰值电流高达 $145\,\text{mA}$。
+
+#### (2) J7 伺服模式 (mode=1) 50Hz 纯写批次下发
+在 J7 伺服模式下：
+* **目标刷新率提高 5 倍**：从 10Hz 提高到 **50Hz**（周期 20ms）；
+* **纯写批次下发 (Write-Only Batch)**：上位机以原子批次依次向 ID1 ~ ID6 发送 0x29 目标指令，不等待回包。在 921600 波特率下，6 轴纯写耗时**均值仅 $3.38\,\text{ms}$（最大 $\le 6.83\,\text{ms}$）**，在 20ms 控制周期内留有 $>13\,\text{ms}$ 的充裕时序裕量；
+* **残余响应与 Stale Response 处理**：纯写下发不代表电机物理上永不返回数据（下位机仍可能产生异步回包或残余响应）。驱动层必须具备非阻塞 drain 与残余缓冲清洗机制；
+* **消除运行期 0x25 模式回读**：严禁在运行期周期性读取 0x25 模式寄存器作为硬门禁（读 0x25 会严重破坏 50Hz 连续下发时序，引发超时）；0x25 仅在开机预检阶段校验一次。
+
+#### (3) 非阻塞轮询反馈调度器 (Round-Robin Feedback)
+由于单总线半双工带宽限制，上位机无法在每个 20ms 内查询全部六轴（6 轴完整问答耗时 $>24\,\text{ms}$，会超出 20ms 周期导致时序崩溃）。
+* **设计策略**：每 20ms 周期在纯写下发后，仅向 1 个轴发起 0x30 状态查询（ID1 $\to$ ID2 $\to \dots \to$ ID6 $\to$ ID1）；
+* **有效采样率**：单轴遥测状态更新周期为 $120\,\text{ms}$（单轴采样率 $\approx 8.33\,\text{Hz}$）；
+* **规范声明**：该数据为单轴约 8.33Hz 的异步轮询采样，**绝不能声称为六轴 50Hz 同步测量误差**。
+
+## 3. 六电机驱动层与 J7 50Hz Servo 伺服架构 (Motor Driver & Concurrency Architecture)
 
 ### 3.1 为什么需要生产者-消费者解耦与单槽覆盖缓冲
 * **生产侧**：上层 ROS 2 连续轨迹规划流以 **50Hz nominal** 频率发布目标（周期 20ms）；
@@ -955,6 +978,22 @@ executor.spin()
 
 ---
 
+
+---
+
+### 8. J7 50Hz Servo 时序预算与单总线带宽收敛 (J7-C2)
+* **[现象/问题]**：试图在 50Hz 周期内进行 6 轴 0x29 伴随问答时，总通信耗时达 24~30ms，超出 20ms 周期限制导致控制频率腰斩。
+* **[根因边界]**：单总线半双工物理往返延时无法压缩。
+* **[修复方案]**：将 0x29 改为纯写批次（耗时降至 3.38ms），搭配每周期 1 轴的 Round-Robin 0x30 轮询（耗时约 3.5ms），总耗时严格控制在 7ms 以内。
+* **[工程经验]**：高频多轴控制必须分离控制下发与状态观测的时序预算。
+
+---
+
+### 9. 运行期 0x25 模式回读隐患消除 (J7-C4)
+* **[现象/问题]**：运行期尝试读取 0x25 确认 Servo 模式，频繁触发 UART 读超时与丢包。
+* **[修复方案]**：开机预检阶段一次性确认 0x25=1，运行期彻底禁止 0x25 读请求。
+* **[工程经验]**：高频实时循环中严禁混入非必要的低频状态回读。
+
 ## 11. 测试驱动开发 (TDD) 与回归测试体系 (Testing Architecture)
 
 ### 11.1 分层测试体系与验证目标
@@ -991,7 +1030,7 @@ executor.spin()
 
 > [!IMPORTANT]
 > **测试数量与收集范围语境规范**：在提及测试通过数量时，必须明确具体的测试命令与收集范围，严禁混用或制造虚假断言：
-> * **ROS 2 工作空间核心功能包全量测试**：执行 `pytest /home/lyapunov/bone_drill/bone_ws/src -v` $\to$ **162 项 PASS**（耗时约 39.85s，覆盖逆解、正解、LM、FixedLag、驱动协议、多电机控制器、安全前检与控制整形全部当前功能包）；
+> * **ROS 2 工作空间核心功能包全量测试**：执行 `pytest /home/lyapunov/bone_drill/bone_ws/src -v` $\to$ **304 项 PASS**（耗时约 43.75s，覆盖逆解、正解、LM、FixedLag、驱动协议、多电机控制器、安全前检与控制整形全部当前功能包）；
 > * **根目录全仓库历史用例收集**：执行 `pytest /home/lyapunov/bone_drill --collect-only` $\to$ **468 collected**（包含 `bone_ws/src` 162 项 + `up/motor/uart_multi` 306 项历史独立硬件台架用例）。
 
 ---
@@ -1023,15 +1062,11 @@ executor.spin()
 
 | 阶段代号 | 当前状态 | 阶段边界与冻结结论 |
 | :--- | :---: | :--- |
-| **J1 / J2** | **PASS / FROZEN** | 单总线半双工 921600 8N1 驱动、0x29 伴随反馈与基准性能已冻结 |
-| **J3 / J4** | **PASS / FROZEN** | 闭式解析逆解、三阶状态整形滤波、安全门禁与自愈状态机已冻结；UART 应用批次原子性锁 |
-| **J5-A / B1 / B3** | **PASS / FROZEN** | 接口定义、双 IMU 软件时钟同步与同板相对姿态李群解算已冻结 |
-| **J5-B2** | **DEFERRED** | 最终双 IMU 空间安装外参与 lever arm 标定（等待机构总装） |
-| **J5-B4** | **PENDING** | 平动与加速度融合估计（尚未启动） |
-| **J5-C1** | **PASS / FROZEN** | Host `CLOCK_MONOTONIC` 统一时间轴、Timed Telemetry 契约与 Batch Atomicity 已冻结 |
-| **J5-C2-SW** | **PASS / FROZEN** | 解析雅可比 LM 数值正解数学核心、IK↔FK 一致性验证已冻结 |
-| **J5-C2-RT-SW** | **PASS / FROZEN** | Fixed-Lag 零外推对齐与 `Pus6FkNode` 实时解算已冻结；**独占 SingleThreadedExecutor 硬约束** |
-| **J5-C2-HW** | **DEFERRED** | 真实机械平台 FK 精度与实际 $T_{BP}$ 联调（必须等待机构总装） |
+| **J1 ~ J4** | **PASS / FROZEN** | 单总线 921600 驱动协议、解析逆解、三阶 Jerk 轨迹整形与安全自愈状态机已冻结 |
+| **J5** | **PASS / FROZEN** | 纳秒统一时间轴 (Host `CLOCK_MONOTONIC`)、Fixed-Lag 零外推状态重构、解析雅可比 LM 正解与双 H30 微秒同步已冻结 |
+| **J6** | **PASS / FROZEN** | 总装调试与定位模式 (mode=0, 10Hz, speed=50) HOME/PARK 基线已冻结，作为可靠 fallback |
+| **J7 (当前)** | **PASS / FROZEN** | **六轴 50Hz Servo 伺服运动控制硬件基线已冻结**（50Hz 目标流、纯写批次 3.38ms、Round-Robin 反馈、PARK $\leftrightarrow$ HOME 全行程 PASS） |
+| **未来规划** | **PLANNED** | 动平台与基座 Dual-IMU / FK 误差状态卡尔曼滤波 (ESKF) 融合与主动振动抑制控制 |
 
 ---
 
