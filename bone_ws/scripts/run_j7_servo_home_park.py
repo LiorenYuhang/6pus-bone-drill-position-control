@@ -265,7 +265,7 @@ def run_servo_home_park(
         print(f"  q_target  = {list(target)}")
 
         # Step 2: Configure Servo mode (mode=1, speed=50) with write ACK verification
-        print(f"\n[{action.upper()} Phase 2] Configuring six axes into Servo mode (mode=1, speed=50)...")
+        print(f"\n[{action.upper()} Phase 2] Configuring six axes into Servo mode (mode=1, motor_reg_speed=50)...")
         configs = writer.configure_servo(speed=50)
         if len(configs) != 6 or any(c.mode != 1 for c in configs):
             raise RuntimeError("Servo mode configuration failed or not acknowledged")
