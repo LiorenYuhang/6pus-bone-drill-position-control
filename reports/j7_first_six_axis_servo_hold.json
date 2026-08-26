@@ -1,0 +1,242 @@
+{
+  "baudrate": 921600,
+  "check_feedback": [
+    {
+      "current_mA": 0,
+      "error": null,
+      "fault": 0,
+      "feedback_age_ns": 5276896,
+      "mode": 0,
+      "motor_id": 1,
+      "position": 0,
+      "timeout": false,
+      "timestamp_ns": 26501901302916
+    },
+    {
+      "current_mA": 0,
+      "error": null,
+      "fault": 0,
+      "feedback_age_ns": 10511650,
+      "mode": 0,
+      "motor_id": 2,
+      "position": 0,
+      "timeout": false,
+      "timestamp_ns": 26501906537670
+    },
+    {
+      "current_mA": 0,
+      "error": null,
+      "fault": 0,
+      "feedback_age_ns": 15731899,
+      "mode": 0,
+      "motor_id": 3,
+      "position": 0,
+      "timeout": false,
+      "timestamp_ns": 26501911757919
+    },
+    {
+      "current_mA": 0,
+      "error": null,
+      "fault": 0,
+      "feedback_age_ns": 20656626,
+      "mode": 0,
+      "motor_id": 4,
+      "position": 0,
+      "timeout": false,
+      "timestamp_ns": 26501916682646
+    },
+    {
+      "current_mA": 0,
+      "error": null,
+      "fault": 0,
+      "feedback_age_ns": 25966846,
+      "mode": 0,
+      "motor_id": 5,
+      "position": 1,
+      "timeout": false,
+      "timestamp_ns": 26501921992866
+    },
+    {
+      "current_mA": 0,
+      "error": null,
+      "fault": 0,
+      "feedback_age_ns": 31608940,
+      "mode": 0,
+      "motor_id": 6,
+      "position": 1,
+      "timeout": false,
+      "timestamp_ns": 26501927634960
+    }
+  ],
+  "error": "RuntimeError: ID1 mode=0, expected 1",
+  "feedback": {
+    "defer_count": 0,
+    "malformed_count": 0,
+    "mismatch_count": 0,
+    "rx_residual_count": 9,
+    "stale_response_count": 9,
+    "stop_reason": null,
+    "stopped": true,
+    "timeout_count": 0
+  },
+  "hold_seconds_requested": 5.0,
+  "metrics": {
+    "cycles_sent": 1,
+    "deadline_misses": 0,
+    "max_current_mA": 0,
+    "max_cycle_jitter_ns": 0,
+    "max_feedback_age_ns": 13147758,
+    "max_position_deviation_steps": 0,
+    "max_rx_residual_frames": 0,
+    "max_target_age_ns": 0,
+    "max_transport_residual_frames": 0,
+    "max_tx_skew_ns": 0
+  },
+  "mode_write": [
+    {
+      "mode": 1,
+      "mode_readback": null,
+      "motor_id": 1,
+      "speed": 50,
+      "speed_readback": null
+    },
+    {
+      "mode": 1,
+      "mode_readback": null,
+      "motor_id": 2,
+      "speed": 50,
+      "speed_readback": null
+    },
+    {
+      "mode": 1,
+      "mode_readback": null,
+      "motor_id": 3,
+      "speed": 50,
+      "speed_readback": null
+    },
+    {
+      "mode": 1,
+      "mode_readback": null,
+      "motor_id": 4,
+      "speed": 50,
+      "speed_readback": null
+    },
+    {
+      "mode": 1,
+      "mode_readback": null,
+      "motor_id": 5,
+      "speed": 50,
+      "speed_readback": null
+    },
+    {
+      "mode": 1,
+      "mode_readback": null,
+      "motor_id": 6,
+      "speed": 50,
+      "speed_readback": null
+    }
+  ],
+  "motor_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "port": "/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0",
+  "q_current": [
+    0,
+    0,
+    0,
+    0,
+    1,
+    1
+  ],
+  "requested_cycles": 250,
+  "requested_period_ns": 20000000,
+  "requests": 20,
+  "runner": {
+    "feedback_cycles": 2,
+    "servo_cycles": 1,
+    "state": "STOP",
+    "stop_count": 1,
+    "stop_reason": "hold_test_safety_stop",
+    "watchdog_count": 0
+  },
+  "rx_owner": {
+    "feedback_response_count": 20,
+    "malformed_count": 0,
+    "overflow_count": 0,
+    "residual_bytes": 0,
+    "residual_frames": 0,
+    "stale_response_count": 3
+  },
+  "started": true,
+  "stop": {
+    "callback_count": 1,
+    "reason": "hold_test_safety_stop",
+    "records": [
+      {
+        "error": null,
+        "motor_id": 1,
+        "response_received": true,
+        "timeout": false,
+        "tx_end_ns": 26501949384038,
+        "tx_start_ns": 26501946621827
+      },
+      {
+        "error": null,
+        "motor_id": 2,
+        "response_received": true,
+        "timeout": false,
+        "tx_end_ns": 26501952351524,
+        "tx_start_ns": 26501949392248
+      },
+      {
+        "error": null,
+        "motor_id": 3,
+        "response_received": true,
+        "timeout": false,
+        "tx_end_ns": 26501955186118,
+        "tx_start_ns": 26501952378447
+      },
+      {
+        "error": null,
+        "motor_id": 4,
+        "response_received": true,
+        "timeout": false,
+        "tx_end_ns": 26501957841313,
+        "tx_start_ns": 26501955189712
+      },
+      {
+        "error": null,
+        "motor_id": 5,
+        "response_received": true,
+        "timeout": false,
+        "tx_end_ns": 26501960718775,
+        "tx_start_ns": 26501957845076
+      },
+      {
+        "error": null,
+        "motor_id": 6,
+        "response_received": true,
+        "timeout": false,
+        "tx_end_ns": 26501963483831,
+        "tx_start_ns": 26501960724656
+      }
+    ],
+    "success": true
+  },
+  "test": "J7 first real six-axis Servo hold",
+  "transport": {
+    "delivery_uncertain": false,
+    "motion_retry_count": 0,
+    "response_wait_count": 0,
+    "stop_reason": "hold_test_safety_stop",
+    "stopped": true
+  },
+  "violations": [
+    "ID1 mode=0, expected 1"
+  ]
+}

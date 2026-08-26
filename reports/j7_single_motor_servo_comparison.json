@@ -1,0 +1,151 @@
+{
+  "baudrate": 921600,
+  "commands_allowed": [
+    "0x30",
+    "0x31",
+    "0x32@0x25",
+    "0x29",
+    "0x1A(ID1 only)"
+  ],
+  "error": null,
+  "first_0x29": {
+    "bytes_written": 10,
+    "response_wait": false,
+    "retry_count": 0,
+    "target_position": 0,
+    "timestamp_ns": 27329214059051
+  },
+  "first_after": {
+    "current_mA": 0,
+    "fault": 0,
+    "mode": 0,
+    "position": 0,
+    "target_position": 0,
+    "timestamp_ns": 27329220032787
+  },
+  "id1_stop": {
+    "motor_id": 1,
+    "reason": "single_axis_observation_complete",
+    "response_received": true,
+    "timeout": false,
+    "tx_end_ns": 27329327222511,
+    "tx_start_ns": 27329324562031
+  },
+  "initial": {
+    "current_mA": 0,
+    "fault": 0,
+    "mode": 0,
+    "position": 0,
+    "target_position": 0,
+    "timestamp_ns": 27329211286958
+  },
+  "mode_write": {
+    "mode": 1,
+    "response_received": true,
+    "timestamp_ns": 27329211290467
+  },
+  "motor_id": 1,
+  "observe_elapsed_ns": 104513557,
+  "port": "/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0",
+  "request_count": 26,
+  "rx_owner": {
+    "feedback_response_count": 26,
+    "malformed_count": 0,
+    "overflow_count": 0,
+    "residual_bytes": 0,
+    "residual_frames": 0,
+    "stale_response_count": 1
+  },
+  "samples": [
+    {
+      "current_mA": 0,
+      "fault": 0,
+      "mode": 0,
+      "position": 0,
+      "target_position": 0,
+      "timestamp_ns": 27329220032787
+    },
+    {
+      "current_mA": 0,
+      "fault": 0,
+      "mode": 0,
+      "position": 0,
+      "target_position": 0,
+      "timestamp_ns": 27329225343392
+    },
+    {
+      "current_mA": 0,
+      "fault": 0,
+      "mode": 0,
+      "position": 0,
+      "target_position": 0,
+      "timestamp_ns": 27329235805498
+    },
+    {
+      "current_mA": 0,
+      "fault": 0,
+      "mode": 0,
+      "position": 0,
+      "target_position": 0,
+      "timestamp_ns": 27329246073296
+    },
+    {
+      "current_mA": 0,
+      "fault": 0,
+      "mode": 0,
+      "position": 0,
+      "target_position": 0,
+      "timestamp_ns": 27329256387884
+    },
+    {
+      "current_mA": 0,
+      "fault": 0,
+      "mode": 0,
+      "position": 0,
+      "target_position": 0,
+      "timestamp_ns": 27329266780840
+    },
+    {
+      "current_mA": 0,
+      "fault": 0,
+      "mode": 0,
+      "position": 0,
+      "target_position": 0,
+      "timestamp_ns": 27329277107029
+    },
+    {
+      "current_mA": 0,
+      "fault": 0,
+      "mode": 0,
+      "position": 0,
+      "target_position": 0,
+      "timestamp_ns": 27329287437853
+    },
+    {
+      "current_mA": 0,
+      "fault": 0,
+      "mode": 0,
+      "position": 0,
+      "target_position": 0,
+      "timestamp_ns": 27329298349001
+    },
+    {
+      "current_mA": 0,
+      "fault": 0,
+      "mode": 0,
+      "position": 0,
+      "target_position": 0,
+      "timestamp_ns": 27329308895873
+    },
+    {
+      "current_mA": 0,
+      "fault": 0,
+      "mode": 0,
+      "position": 0,
+      "target_position": 0,
+      "timestamp_ns": 27329319468143
+    }
+  ],
+  "test": "J7 single-motor real Servo comparison",
+  "violations": []
+}

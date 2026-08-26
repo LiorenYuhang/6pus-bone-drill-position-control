@@ -20,19 +20,24 @@
 
 ## 2. 当前阶段状态 (Project Status)
 
-**当前冻结里程碑**：$\mathbf{J5\ PRE\text{-}ASSEMBLY\ BASELINE\ FROZEN\ v1.0}$  
-*(官方 Release Tag: `v1.0-j5-pre-assembly-frozen`)*
+**当前冻结里程碑**：$\mathbf{J7\ SIX\text{-}AXIS\ 50Hz\ SERVO\ HARDWARE\ BASELINE\ FROZEN\ v1.0}$  
+*(官方 Release Tag: `v1.0-j7-servo-hardware-frozen`)*
 
-装配前软件全链路与独立执行器台架验证已全部封顶冻结：
-* **六轴执行器串口通信**：外层 10.0Hz 轮询，单次六轴串行通讯耗时均值 18.18ms，ID1 $\to$ ID6 扫描跨度均值 15.18ms，Batch 零交错；
-* **READ_ONLY 0 写入物理审计**：60.0s 真实硬件连续只读监听，严格断言 `hardware_writes = 0`，零硬件侵入；
-* **HOME / PARK 独立台架验证**：6 轴独立电缸以 50 step/s 完成一键顶升 HOME（`[1000]*6` 步，50.0mm）与关机收拢 PARK（`[0]*6` 步），稳态定位误差 $\le 2\text{ steps}$；
-* **双 IMU 硬件微秒时间戳**：双路 100.00% 具备 0x51 硬件采样时间戳（$\Delta t = 5000\,\mu\text{s}$ 恒定步长），0 丢包；
-* **相对姿态与自动零偏估计**：开机 6.0s 自动收集 1200 样本完成 5% 截尾均值零偏收敛（`COMPLETE`），122Hz 实时发布相对四元数，同板 $80.8^\circ/\text{s}$ 大动态共模抑制 RMS $0.2767^\circ$；
-* **统一时间轴与 Timed Telemetry**：`TimedJointFeedback` 统一绑定 Host `CLOCK_MONOTONIC` 接收完成时刻；
-* **Fixed-Lag 严格零外推状态重构**：1500 次连续查询达成 97.07% SYNCED，微观通信抖动下严格拒绝外推并触发 `WAIT_FUTURE_SAMPLE`；
-* **FK 实时观测节点**：单线程独立执行器（`SingleThreadedExecutor`）以 90.6Hz 稳定输出正解，几何残差均值 $< 10^{-11}\text{ m}$；
-* **全量单元测试基准**：工作空间核心功能包测试集 `pytest bone_ws/src -v` **162 项测试 100% PASS**（耗时 37.02s）。
+六轴 50Hz Servo 伺服运动控制基线与全行程实机验证已全部完成并正式冻结：
+* **六轴 50Hz 连续目标流**：50.00Hz 循环频率（周期均值 $20.00\,\text{ms} \pm 0.10\,\text{ms}$），单总线原子化纯写 0x29 批次下发（均值 $3.38\,\text{ms}$，最大 $\le 6.83\,\text{ms}$）；
+* **非阻塞轮询状态观测 (Round-Robin)**：每周期轮询 1 轴 0x30 状态（单轴采样率 $\approx 8.33\,\text{Hz}$），反馈延迟均值 $6.84\,\text{ms}$，运行期严格禁止 0x25 模式回读；
+* **PARK $\leftrightarrow$ HOME 全行程实机验证**：1000 步（$25.0\,\text{mm}$）五次多项式 S 曲线平滑过渡与驻留保持（$v_{\text{peak}} = 100\,\text{steps/s}$，总计 2326 周期，时长 46.50s）；
+* **与 J6 定位模式定量 A/B 实测比对**：
+  * 目标刷新率从 10Hz 提高到 50Hz（目标刷新率提高 5 倍）；
+  * 全行程最大离散跟踪误差：$19\,\text{步} \to 11\,\text{步}$；
+  * 全行程综合 RMS 跟踪误差从 $7.53\,\text{步}$ 降至 $2.89\,\text{步}$（降低 61.6%）；
+  * 峰值冲击电流从 $145\,\text{mA}$ 降至 $77\,\text{mA}$（降低 46.9%）；
+  * 平均电流从 $34.2\,\text{mA}$ 降至 $29.9\,\text{mA}$；
+  * 电流抖动明显降低（标准差降低 $\sim 48\%$），有效抑制电机加减速冲击；
+  * 速度阶跃与微停顿事件减少 $>50\%$，实机摄像头观察运动平滑度显著优于原定位模式；
+  * PARK 最终回位保持高精度（误差 $\le 1\,\text{步}$，各轴回位离散度 0 步）；
+* **安全机制与急停**：0 故障（Fault=0）、0 超时（Timeout=0）、全六轴 0x1A 干净停机确认（Stop ACK=True）；
+* **全量单元测试基准**：工作空间核心功能包测试集 `pytest bone_ws/src` **304 项测试 100% PASS**（耗时 43.75s）。
 
 ---
 
@@ -47,19 +52,21 @@
 ┌───────────────────────────────────────────────────────────────────────┐
 │                       运动学与控制层 (Kinematics & Control)           │
 │  • pus6_kinematics_node : 50Hz 纯几何闭式解析逆解 (Analytical IK)     │
-│  • pus6_control_node    : Stateful Jerk-Limited 三阶轨迹平滑整形      │
+│  • pus6_control_node    : 有状态三阶加加速度连续整形控制器            │
 └───────────────────────────────────────────────────────────────────────┘
                                    │
                                    ▼  (/pus6/command_joint_steps, LVW)
 ┌───────────────────────────────────────────────────────────────────────┐
 │                       电机驱动层 (Motor Driver Layer)                 │
-│  • pus6_motor_driver_node: 6 级安全硬门禁、Slew 自愈与 Batch 全局锁   │
-│  • RS485 半双工单总线 (921600 8N1, 0x29 伴随反馈状态回传)            │
+│  • J7 50Hz 六轴 Servo Transport（单总线纯写批次下发）                 │
+│  • J7 轮询反馈调度器（每周期 1 轴 0x30 状态非阻塞查询）              │
+│  • pus6_motor_driver_node: 6 级安全硬门禁与 Batch 总线锁              │
+│  • RS485 半双工单总线 (921600 8N1)                                    │
 └───────────────────────────────────────────────────────────────────────┘
              │                                              │
              ▼ (电机遥测数据流)                             ▼ (物理硬件)
 ┌──────────────────────────────────────┐       ┌────────────────────────┐
-│      状态观测与主动抑振感知层        │       │         硬件层         │
+│        观测与感知层 (Sensing)        │       │         硬件层         │
 │  • TimedJointFeedback 发布器         │       │  • 6 轴一体化推杆电缸  │
 │  • FixedLagJointSynchronizer 零外推  │       │  • Base H30 IMU 模块   │
 │  • Pus6FkNode 单线程正运动学解算     │       │  • Platform H30 IMU    │
@@ -74,27 +81,22 @@
 ```text
 6PUS-Anti-Vibration/
 ├── agent_docs/                     # 项目权威设计、阶段基线与测试报告文档
-│   ├── CURRENT_STAGE.md            # 全局阶段演变状态卡 (J5 Frozen 声明)
-│   ├── J5_FROZEN_MANIFEST.md       # J5 冻结清单与 J6 路线规划
-│   ├── J5_FINAL_TEST_REPORT.md     # 12 项系统级测试验收总报告
-│   ├── J5_SOFTWARE_ENVIRONMENT.md  # 操作系统、ROS 2、Python 及 By-ID 串口规格书
-│   ├── J5_TUTORIAL_EXECUTION_AUDIT.md # 教程 12 章代码与接口一致性审计报告
-│   ├── J5_PRE_ASSEMBLY_FROZEN_v1.0.md # 最终冻结发布归档清单与 SHA256 指纹
-│   ├── PRE_ASSEMBLY_DOCUMENT_AND_HARDWARE_ACCEPTANCE.md # 硬件台架验收报告
-│   └── 6PUS_POST_ASSEMBLY_COMMISSIONING_PLAN.md # 机械总装后 9 阶段现场调试规程
+│   ├── decisions/                  # 决策记录、时序预算与阶段状态卡
+│   ├── frozen/                     # 历史归档冻结基线清单与报告
+│   └── stages/                     # 分阶段调试规程
 │
 ├── bone_ws/                        # 核心 ROS 2 工作空间源码
 │   ├── src/
 │   │   ├── pus6_msgs/              # 自定义 ROS 2 接口定义 (TimedJointFeedback 等)
 │   │   ├── pus6_kinematics/        # 解析逆解、LM 正解求解器、FixedLag 同步器
 │   │   │   └── config/6pus_geometry.yaml # 生产环境唯一权威几何与安全参数真值源
-│   │   ├── pus6_motor_driver/      # RS485 串口驱动、六电机控制器与安全前检门禁
+│   │   ├── pus6_motor_driver/      # RS485 串口驱动、J7 50Hz Servo 传输与反馈调度器
 │   │   ├── pus6_control/           # 三阶轨迹整形器与关节轨迹控制器
 │   │   ├── pus6_bringup/           # 系统级 Launch 启动文件与参数配置
 │   │   └── h30_imu/                # C++ Yesense H30 IMU 驱动与相对姿态解算节点
 │   └── scripts/                    # 已验证的实机执行脚本与性能基准工具
 │
-├── hardware/                       # 电机手册、传感器资料、电路原理图与机构 CAD 模型
+├── hardware/                       # 硬件手册、传感器资料、电路原理图与机构 CAD 模型
 ├── up/                             # 历史独立硬件测试集与传感器独立开发工具链
 │
 ├── README.md                       # GitHub 英文展示首页
@@ -112,10 +114,12 @@
   * J2: 六轴同步通信、0x29 伴随状态反馈与性能基准；
   * J3: 解析逆解与独立电缸点到点 S 曲线 PARK/HOME 闭环就位；
   * J4: 连续笛卡尔轨迹整形、Latest-Value-Wins 缓冲与 UART batch-atomicity 全局锁。
-* **J5 阶段（装配前基线冻结 -- 当前版本）**：
+* **J5 阶段（装配前基线已冻结）**：
   * 纳秒统一时间轴（`CLOCK_MONOTONIC`）、Fixed-Lag 严格零外推多轴同步重构、解析雅可比 LM 正解观测链、双 H30 硬件微秒采样时间戳与开机自动陀螺零偏估计。
-* **J6 阶段（机械总装与现场调试 -- 下一步入口）**：
-  * 依据 `6PUS_POST_ASSEMBLY_COMMISSIONING_PLAN.md` 开展 9 阶段现场调试：机械静态检查 $\to$ READ_ONLY 审计 $\to$ 零位映射 $\to$ 极小单轴微动方向确认 $\to$ 机构可达性 $\to$ 小幅协调运动 $\to$ 最终几何参数冻结 $\to$ J5-C2-HW 真实机构正解精度验收 $\to$ 双 IMU 最终空间外参标定（J5-B2）。
+* **J6 阶段（总装调试基线已冻结）**：
+  * 定位模式（mode=0, 10Hz, speed=50）六轴独立 HOME (`[1000]*6`) / PARK (`[0]*6`) 启动与收拢调试，通过连续 10 循环实机测试。
+* **J7 阶段（六轴 50Hz 伺服模式实机基线已冻结 -- 当前版本）**：
+  * 高频 50Hz 六轴 Servo 模式（mode=1），非阻塞轮询反馈（$\approx 8.33\,\text{Hz}$/轴），全行程 PARK $\leftrightarrow$ HOME S 曲线实测，A/B 对比证实 RMS 跟踪误差下降 61.6%、峰值冲击电流下降 46.9%、运动平滑性显著提升。
 * **未来研究规划**：
   * Dual-IMU / 6PUS-FK 误差状态卡尔曼滤波（ESKF）位姿与线加速度融合；
   * 基于扰动观测器（DOB）与加速度反馈的主动高频振动抑制控制；
@@ -146,6 +150,6 @@ cd /home/lyapunov/bone_drill/bone_ws
 colcon build --symlink-install
 source /home/lyapunov/bone_drill/bone_ws/install/setup.bash
 
-# 3. 运行工作空间全量单元测试 (162 项)
+# 3. 运行工作空间全量单元测试 (304 项)
 pytest /home/lyapunov/bone_drill/bone_ws/src -v
 ```

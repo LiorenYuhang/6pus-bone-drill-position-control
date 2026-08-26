@@ -20,19 +20,24 @@ Key capabilities include:
 
 ## Project Status
 
-**Current Milestone**: $\mathbf{J5\ PRE\text{-}ASSEMBLY\ BASELINE\ FROZEN\ v1.0}$  
-*(Tag: `v1.0-j5-pre-assembly-frozen`)*
+**Current Milestone**: $\mathbf{J7\ SIX\text{-}AXIS\ 50Hz\ SERVO\ HARDWARE\ BASELINE\ FROZEN\ v1.0}$  
+*(Tag: `v1.0-j7-servo-hardware-frozen`)*
 
-The pre-assembly software and independent actuator bench baseline has been fully verified and frozen:
-* **RS485 Six-Actuator Communication**: 10.0Hz outer polling, 18.18ms serial communication duration, 15.18ms scan span, zero-overlap batch atomicity.
-* **READ_ONLY Hardware Verification**: 60.0s continuous serial telemetry capture with strict `hardware_writes = 0` audit.
-* **HOME / PARK Bench Validation**: Independent actuator S-curve homing (`[1000]*6` raw steps, 50.0mm) and parking (`[0]*6` raw steps) with steady-state error $\le 2\text{ steps}$.
-* **Dual H30 IMU Timestamp Synchronization**: Dual-channel 100% active 0x51 hardware sample timestamps ($\Delta t = 5000\,\mu\text{s}$), zero drop rate.
-* **Relative Attitude & Gyro Bias Estimation**: Session-start 6.0s 1200-sample 5% trimmed mean auto-bias estimation (`COMPLETE`), 122Hz $\text{SO}(3)$ relative attitude publishing, and co-rigid dynamic disturbance RMS $0.2767^\circ$ at $80.8^\circ/\text{s}$.
-* **Timed Telemetry (`TimedJointFeedback`)**: Unified nanosecond timeline tagged at serial reception done (`per_axis_rx_done_monotonic_ns`).
-* **Fixed-Lag State Reconstruction**: Sliding timeline synchronizer with strict zero-extrapolation gating (97.07% synced, deterministic WAIT under microsecond UART jitter).
-* **Real-Time FK Observation (`Pus6FkNode`)**: Dedicated `SingleThreadedExecutor` achieving 90.6Hz execution rate with mean geometric residual $< 10^{-11}\text{ m}$.
-* **Core Unit Test Suite**: 162 tests passed (100% PASS in 37.02s).
+The six-axis 50Hz Servo motion control baseline and hardware verification are fully verified and frozen:
+* **Six-Axis 50Hz Continuous Target Stream**: 50.00Hz cycle rate (mean period $20.00\,\text{ms} \pm 0.10\,\text{ms}$), atomic write-only 0x29 batch transmission ($\text{mean } 3.38\,\text{ms}$, $\le 6.83\,\text{ms}$).
+* **Non-Blocking Round-Robin Telemetry**: 1-axis 0x30 status query per 20ms cycle (~8.33Hz per-axis sampling rate), mean feedback latency $6.84\,\text{ms}$, zero runtime 0x25 mode readback.
+* **PARK $\leftrightarrow$ HOME Full-Stroke Hardware Validation**: 1000 steps ($25.0\,\text{mm}$) quintic S-curve smooth trajectory with 3.0s station holds ($v_{\text{peak}} = 100\,\text{steps/s}$, 2326 cycles, 46.50s total duration).
+* **Quantitative A/B Benchmark vs J6 Positioning Baseline**:
+  * Target dispatch rate increased from 10Hz to 50Hz (5.0x higher target dispatch rate).
+  * Max discrete tracking error reduced from $19\,\text{steps}$ to $11\,\text{steps}$.
+  * Overall RMS tracking error reduced from $7.53\,\text{steps}$ to $2.89\,\text{steps}$ (-61.6%).
+  * Peak current reduced from $145\,\text{mA}$ to $77\,\text{mA}$ (-46.9%).
+  * Average current reduced from $34.2\,\text{mA}$ to $29.9\,\text{mA}$.
+  * Current standard deviation / electrical fluctuation reduced by $\sim 48\%$, significantly damping acceleration/deceleration spikes.
+  * Velocity step / micro-pause stutter events reduced by $>50\%$, yielding significantly smoother motion verified via camera observation.
+  * Final PARK return repeatability error: $\le 1\,\text{step}$ ($0\,\text{step}$ return skew).
+* **Safety & Emergency Stop**: 0 faults, 0 timeouts, and verified 0x1A stop ACK across all 6 axes.
+* **Core Unit Test Suite**: 304 tests passed (100% PASS in 43.75s).
 
 ---
 
@@ -53,8 +58,10 @@ The pre-assembly software and independent actuator bench baseline has been fully
                                    ▼  (/pus6/command_joint_steps, LVW)
 ┌───────────────────────────────────────────────────────────────────────┐
 │                          Motor Driver Layer                           │
+│  • J7 Six-Axis 50Hz Servo Transport (Single-bus write-only batch)     │
+│  • J7 Round-Robin Feedback Scheduler (1 axis/cycle 0x30 status query) │
 │  • pus6_motor_driver_node: 6-Stage Safety Preflight & Batch Lock      │
-│  • RS485 Half-Duplex Single Bus (921600 8N1, 0x29 Piggyback Protocol) │
+│  • RS485 Half-Duplex Single Bus (921600 8N1)                          │
 └───────────────────────────────────────────────────────────────────────┘
              │                                              │
              ▼ (Motor Telemetry)                            ▼ (Hardware)
@@ -74,21 +81,16 @@ The pre-assembly software and independent actuator bench baseline has been fully
 ```text
 6PUS-Anti-Vibration/
 ├── agent_docs/                     # Authoritative design, baseline, and test documentation
-│   ├── CURRENT_STAGE.md            # Global development stage tracking card
-│   ├── J5_FROZEN_MANIFEST.md       # J5 release scope, verified features & roadmap
-│   ├── J5_FINAL_TEST_REPORT.md     # Comprehensive 12-item test acceptance report
-│   ├── J5_SOFTWARE_ENVIRONMENT.md  # OS, ROS 2, Python, and By-ID serial specification
-│   ├── J5_TUTORIAL_EXECUTION_AUDIT.md # Chapter-by-chapter tutorial code audit
-│   ├── J5_PRE_ASSEMBLY_FROZEN_v1.0.md # Frozen release archive & SHA256 hashes
-│   ├── PRE_ASSEMBLY_DOCUMENT_AND_HARDWARE_ACCEPTANCE.md # Hardware acceptance report
-│   └── 6PUS_POST_ASSEMBLY_COMMISSIONING_PLAN.md # Post-assembly 9-phase commissioning plan
+│   ├── decisions/                  # Decision logs, timing audits, and stage status
+│   ├── frozen/                     # Archived frozen baseline manifests & reports
+│   └── stages/                     # Stage-specific commissioning guides
 │
 ├── bone_ws/                        # Core ROS 2 Workspace
 │   ├── src/
 │   │   ├── pus6_msgs/              # Custom ROS 2 interfaces (TimedJointFeedback, etc.)
 │   │   ├── pus6_kinematics/        # Analytical IK, LM numerical FK, FixedLag synchronizer
 │   │   │   └── config/6pus_geometry.yaml # Single source of truth geometry configuration
-│   │   ├── pus6_motor_driver/      # RS485 UART driver, 6-motor controller, safety preflight
+│   │   ├── pus6_motor_driver/      # RS485 UART driver, J7 50Hz Servo transport & schedulers
 │   │   ├── pus6_control/           # Stateful trajectory shaper & joint trajectory controller
 │   │   ├── pus6_bringup/           # System launch files and parameter configurations
 │   │   └── h30_imu/                # C++ Yesense H30 IMU driver & relative attitude node
@@ -110,10 +112,12 @@ The pre-assembly software and independent actuator bench baseline has been fully
   * J2: 6-Axis synchronous communication & baseline performance.
   * J3: Analytical IK & point-to-point S-curve homing/parking.
   * J4: Continuous Cartesian trajectory shaping, LVW buffer & UART batch-atomicity.
-* **J5 (Pre-Assembly Baseline Frozen -- Current Release)**:
+* **J5 (Pre-Assembly Baseline Frozen)**:
   * Timed telemetry (`CLOCK_MONOTONIC`), Fixed-Lag zero-extrapolation synchronizer, numerical FK observer with analytical Jacobian, dual H30 hardware microsecond timestamping, and session-start gyro bias initialization.
-* **J6 (Post-Assembly Commissioning -- Next Stage)**:
-  * Full 6PUS mechanical assembly, zero mapping verification, micro-jog direction check, physical reachability, J5-C2-HW real mechanism FK acceptance, and final dual-IMU installation extrinsic calibration (J5-B2).
+* **J6 (Post-Assembly Commissioning Baseline Frozen)**:
+  * Six-axis independent actuator HOME (`[1000]*6`) / PARK (`[0]*6`) commissioning in Positioning Mode (mode=0, 10Hz, speed=50), verified >10 consecutive cycles.
+* **J7 (Six-Axis 50Hz Servo Hardware Baseline Frozen -- Current Release)**:
+  * High-frequency 50Hz 6-axis Servo streaming (mode=1), non-blocking round-robin telemetry (~8.33Hz/axis), full-stroke PARK $\leftrightarrow$ HOME quintic S-curve verification, and quantitative A/B benchmark demonstrating 61.6% RMS error reduction and 46.9% peak current reduction over J6.
 * **Future Milestones**:
   * Dual-IMU / FK Error-State Kalman Filter (ESKF) fusion.
   * Translational acceleration modeling and state estimation.
@@ -140,7 +144,7 @@ cd /home/lyapunov/bone_drill/bone_ws
 colcon build --symlink-install
 source /home/lyapunov/bone_drill/bone_ws/install/setup.bash
 
-# 3. Run core test suite (162 tests)
+# 3. Run core test suite (304 tests)
 pytest /home/lyapunov/bone_drill/bone_ws/src -v
 ```
 
