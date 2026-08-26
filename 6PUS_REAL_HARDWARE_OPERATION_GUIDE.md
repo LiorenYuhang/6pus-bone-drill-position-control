@@ -29,15 +29,14 @@ python3 -c "import pus6_msgs, pus6_kinematics; print('ROS2_IMPORT_OK')"
 > [!IMPORTANT]
 > **当前推荐运动后端**：**`J7 mode=1 Six-Axis 50Hz Servo`**  
 > * **核心技术特征**：
->   * 50Hz 连续 0x29 目标流（20ms 控制周期）；
->   * 六轴单总线纯写批次下发（Write-Only Batch，耗时均值 $3.38\,\text{ms} \le 6.83\,\text{ms}$）；
->   * 非阻塞轮询状态观测（Round-Robin Feedback，每周期查询 1 轴 0x30 状态，单轴采样率 $\approx 8.33\,\text{Hz}$）；
->   * 运行期严格禁止 0x25 模式回读作为硬门禁（消除 UART 阻塞）；
->   * PARK $\leftrightarrow$ HOME 全行程（1000 步 / 25.0mm）已在真实硬件上 PASS；
->   * 实机视觉表现显著平滑，彻底消除原 Positioning 模式的离散台阶与微停顿。
+>   * **启动时序**：0x30 状态/Fault 通信检查 $\to$ 写入 0x25=1 并收到合法 ACK $\to$ 立即进入 50Hz 0x29 目标流；
+>   * **50Hz 连续目标流**：20ms 刷新周期，六轴单总线纯写批次下发（Write-Only Batch，耗时均值 $3.38\,\text{ms} \le 6.83\,\text{ms}$）；
+>   * **非阻塞轮询状态观测**：Round-Robin Feedback，每周期查询 1 轴 0x30 状态，单轴采样率 $\approx 8.33\,\text{Hz}$；
+>   * **运行期取消 0x25 Mode 回读**：运行期不再使用 0x25 回读作为硬门禁，避免错误 mode 门禁与额外 UART/RX residual 交互；
+>   * **实机验证状态**：PARK $\leftrightarrow$ HOME 全行程（1000 步 / 25.0mm）已在真实硬件上 PASS，实机视觉运动明显比原 Positioning 路径平滑。
 > * **当前执行入口说明**：
 >   * 当前 J7 提供了完整的 PARK $\leftrightarrow$ HOME 往返实机 Runner（`j7_real_six_axis_park_home_runner`）作为**当前硬件验证入口 (Validated Hardware Runner)**；
->   * 目前尚未将其封装为单独的 `--action home` / `--action park` 生产级日常命令行参数；
+>   * 目前尚未将其封装为单独的 `--action home` / `--action park` 生产级日常命令行工具；
 >   * 单独的点到点 HOME / PARK 开关机操作仍使用 J6 独立脚本作为可靠 fallback（见 0.2 节）。
 
 | 操作目标 | 终端直接执行命令 (Direct Command) | 控制模式与频率 | 运动特征 | 运行状态变化 | 典型指标与表现 |
@@ -55,8 +54,8 @@ python3 -c "import pus6_msgs, pus6_kinematics; print('ROS2_IMPORT_OK')"
 > [!NOTE]
 > **J6/J3 mode=0 定位模式**：保留作为**现场装配调试 (Commissioning)**、**故障应急排查**与**可靠点到点回退 (Fallback)** 方案。  
 > **关键概念澄清**：
-> * 命令中的 `--speed 50` 是电机内部梯形限速寄存器的速度参数（单位 $\text{step/s} = 1.25\,\text{mm/s}$）；
-> * **绝对不是 J7 的 50Hz 控制刷新率**（J6 调度频率为 10Hz 轮询，J7 控制频率为 50Hz 连续流）。二者完全不同！
+> * **`--speed 50` 与 0x28 限速寄存器的关系**：CLI 参数 `--speed 50` 是上位机规划轨迹的巡航限速参数（$v_{\text{cruise}} = 50\,\text{step/s} = 1.25\,\text{mm/s}$）；脚本根据五次多项式峰值速度 $v_{\text{peak}}$ 计算电机底层 0x28 限速寄存器，实际写入值为 `motor_reg_speed = max(50, int(round(planned_peak_speed * 1.2)))`（留有 20% 裕量，且下限为 50）。两者存在换算与裕量关系，并非无条件等同；
+> * **J6 speed $\ne$ J7 50Hz**：J6 的 speed 是电机速度参数，其控制循环为 10Hz 轮询；而 J7 的 50Hz 是指每 20ms 刷新一次 0x29 目标位置的控制频率。二者完全不同。
 
 | 操作目标 | 终端直接执行命令 | 硬件动作 | 运行前状态 | 结束状态 | 典型耗时 | 适用场景 |
 | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
@@ -113,9 +112,10 @@ python3 -c "import pus6_msgs, pus6_kinematics; print('ROS2_IMPORT_OK')"
 ├──────────────────────────────┼──────────────────────────────┼────────────────────────────────────────┤
 │ 控制模式 (0x25 寄存器)       │ mode = 0 (Positioning Mode)  │ mode = 1 (Servo Mode)                  │
 │ 目标下发周期与频率           │ 100ms 周期 (10.0Hz 轮询)     │ 20.0ms 周期 (50.0Hz 连续流)            │
-│ 目标写入方式                 │ 0x29 带 15 字节伴随回读      │ 0x29 原子化纯写批次下发 (Write-Only)   │
-│ 状态观测机制                 │ 0x29 伴随读取 (各轴 ~10Hz)   │ Round-Robin 0x30 轮询 (~8.33Hz/轴)     │
-│ 运行期模式回读               │ 每次读 0x25 状态作为门禁     │ 严格禁止运行期 0x25 回读               │
+│ 目标写入方式                 │ 0x29 带 20 字节状态回包      │ 0x29 原子化纯写批次下发 (Write-Only)   │
+│ 通信时序历史实测             │ 6 轴请求-响应均值 18.39ms    │ 6 轴纯写批次均值 3.38ms (<=6.83ms)     │
+│ 状态观测机制                 │ 0x29 伴随读取 (全扫描~18.18ms)│ Round-Robin 0x30 轮询 (~8.33Hz/轴)     │
+│ 运行期模式回读               │ 每次读 0x25 状态作为门禁     │ 运行期取消 0x25 读，避免错误门禁与干扰 │
 │ 运动表现                     │ 存在离散台阶与微停顿现象     │ 连续平滑无微停顿，视觉流畅             │
 └──────────────────────────────┴──────────────────────────────┴────────────────────────────────────────┘
 ```
@@ -129,7 +129,7 @@ python3 -c "import pus6_msgs, pus6_kinematics; print('ROS2_IMPORT_OK')"
 * **全行程综合 RMS 误差**：$7.53\,\text{步} \to 2.89\,\text{步}$（**降低 61.6%**）；
 * **峰值冲击电流**：$145\,\text{mA} \to 77\,\text{mA}$（**降低 46.9%**）；
 * **平均运行电流**：$34.2\,\text{mA} \to 29.9\,\text{mA}$；
-* **电流波动特征**：电流抖动标准差降低 $\sim 48\%$，加减速冲击被显著抑制；
+* **电流波动特征**：电流抖动标准差降低 $\sim 48\%$，有效抑制加减速电流波动；
 * **终端回位精度**：PARK 最终回位误差 $\le 1\,\text{步}$（各轴回位离散度 0 步）。
 
 ### 2.3 Time-Aware Vector Slew Recovery（时间自适应矢量斜率恢复）
@@ -170,7 +170,7 @@ python3 -m pus6_motor_driver.j7_real_six_axis_park_home_runner   --port /dev/ser
   2. Phase 2：PARK $\to$ HOME 五次多项式平滑过渡；
   3. Phase 3：HOME 保持 3.0s (`[1000]*6`)；
   4. Phase 4：HOME $\to$ PARK 五次多项式平滑过渡；
-  5. Phase 5：PARK 最终保持 3.0s，0x1A 干净停机。
+  5. Phase 5：PARK 最终保持 3.0s，`finally` 块触发 0x1A 干净停机。
 
 ### 步骤 3：关机与断电
 * 确认 6 轴已平稳处于 PARK 停放位（`raw [0,0,0,0,0,0]`），关闭 24V 动力总电源。
@@ -181,14 +181,12 @@ python3 -m pus6_motor_driver.j7_real_six_axis_park_home_runner   --port /dev/ser
 
 ### 4.1 应急停止流程 (Emergency Stop)
 若在实验过程中发现机械干涉、异常异响或需要中途紧急中止：
-1. **键盘中断**：直接在运行终端按下 `Ctrl + C`，驱动节点与 runner 会捕获信号并下发最佳努力的 `pause_all` / `0x1A` 指令；
+1. **键盘中断**：直接在运行终端按下 `Ctrl + C`。各 Runner 内部均使用 Python `try ... finally:` 保护块，在捕获中断或异常退出时会自动执行最佳努力（Best-Effort）的 `0x1A` 抱闸停机指令；
 2. **硬件断电**：按下 24V 动力电源总开关或拔掉电缸动力插头。
 
-### 4.2 实验日志位置与查看
-每次实机运行的完整高频遥测（含目标、实际位置、电流、力、时延与事件流）均自动保存在：
-```bash
-/home/lyapunov/bone_drill/bone_ws/log/
-```
+### 4.2 实验日志与输出查看
+* 各 Runner 运行时会将关键遥测与指标（周期耗时、跟踪误差、电流、Fault 与 ACK）实时打印在控制台标准输出；
+* 结构化基准评测报告（如 J7-C10 只读预检、A/B 对比结果）会按需保存于 `reports/` 目录下（如 `reports/j7_c10_read_only_preflight.json`）。
 
 ---
 
