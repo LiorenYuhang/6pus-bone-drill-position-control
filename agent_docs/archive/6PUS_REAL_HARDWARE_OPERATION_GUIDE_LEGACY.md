@@ -1,3 +1,10 @@
+> [!WARNING]
+> **文档状态：Historical / Legacy / Superseded（已归档）**  
+> 本文档已归档为历史资料，仅用于回溯 J6 定位模式、早期分阶段调试记录与安全回退方案，**不再作为日常实机操作依据**。  
+> 当前 6PUS 平台唯一权威日常实机操作指南请参阅：[`6PUS_SERVO_OPERATION_GUIDE.md`](file:///home/lyapunov/bone_drill/6PUS_SERVO_OPERATION_GUIDE.md)。
+
+---
+
 # 6PUS 并联机器人实机操作与命令速查指南 (Real Hardware Operation Guide)
 
 > **权威性声明**：本文档为 **6PUS 并联骨科手术机器人平台唯一权威实机操作指南**（根目录唯一权威版本）。  

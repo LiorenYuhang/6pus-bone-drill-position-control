@@ -99,7 +99,7 @@ The six-axis 50Hz Servo motion control baseline and hardware verification are fu
 ├── hardware/                       # Hardware datasheets, schematics, and mechanical models
 ├── up/                             # Standalone hardware utilities and test suites
 │
-├── 6PUS_REAL_HARDWARE_OPERATION_GUIDE.md    # Single authoritative hardware operation manual
+├── 6PUS_SERVO_OPERATION_GUIDE.md    # Single authoritative hardware operation manual
 └── 6PUS_ROS2_CODE_LEARNING_TUTORIAL.md      # Full 12-chapter technical learning tutorial
 ```
 
@@ -156,11 +156,11 @@ pytest /home/lyapunov/bone_drill/bone_ws/src -v
 * [J5 Final Test Acceptance Report](agent_docs/frozen/J5_FINAL_TEST_REPORT.md)
 * [Software Environment & Interface Specification](agent_docs/frozen/J5_SOFTWARE_ENVIRONMENT.md)
 * [Post-Assembly Commissioning Plan (J6)](agent_docs/stages/J6/6PUS_POST_ASSEMBLY_COMMISSIONING_PLAN.md)
-* [Real Hardware Operation Guide](6PUS_REAL_HARDWARE_OPERATION_GUIDE.md)
+* [Real Hardware Operation Guide](6PUS_SERVO_OPERATION_GUIDE.md)
 * [ROS 2 Code Learning & Architecture Tutorial](6PUS_ROS2_CODE_LEARNING_TUTORIAL.md)
 
 ---
 
 ## License & Safety Notice
 
-This software is developed for precision parallel robotic research. All physical operations on real hardware must strictly adhere to the safety procedures specified in the [Real Hardware Operation Guide](6PUS_REAL_HARDWARE_OPERATION_GUIDE.md).
+This software is developed for precision parallel robotic research. All physical operations on real hardware must strictly adhere to the safety procedures specified in the [Real Hardware Operation Guide](6PUS_SERVO_OPERATION_GUIDE.md).

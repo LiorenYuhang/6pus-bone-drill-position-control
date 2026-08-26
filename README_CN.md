@@ -101,7 +101,7 @@
 │
 ├── README.md                       # GitHub 英文展示首页
 ├── README_CN.md                    # GitHub 中文展示首页
-├── 6PUS_REAL_HARDWARE_OPERATION_GUIDE.md    # 唯一权威实机操作与命令速查指南
+├── 6PUS_SERVO_OPERATION_GUIDE.md    # 唯一权威实机操作与命令速查指南
 └── 6PUS_ROS2_CODE_LEARNING_TUTORIAL.md      # 12 章全栈技术教学与系统解析教程
 ```
 
@@ -134,7 +134,7 @@
 * [J5 阶段测试验收总报告 (J5 Final Test Report)](agent_docs/frozen/J5_FINAL_TEST_REPORT.md)
 * [软件环境与硬件接口规格书 (Software Environment)](agent_docs/frozen/J5_SOFTWARE_ENVIRONMENT.md)
 * [机械总装后 9 阶段现场调试规程 (Commissioning Plan)](agent_docs/stages/J6/6PUS_POST_ASSEMBLY_COMMISSIONING_PLAN.md)
-* [实机操作与命令速查指南 (Hardware Operation Guide)](6PUS_REAL_HARDWARE_OPERATION_GUIDE.md)
+* [实机操作与命令速查指南 (Hardware Operation Guide)](6PUS_SERVO_OPERATION_GUIDE.md)
 * [ROS 2 项目全栈教学教程 (ROS 2 Code Learning Tutorial)](6PUS_ROS2_CODE_LEARNING_TUTORIAL.md)
 
 ---

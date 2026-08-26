@@ -10,7 +10,7 @@
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                   A. Current Recommended Docs (当前核心入口)            │
 │  • README.md / README_CN.md (项目主页与最新状态)                        │
-│  • 6PUS_REAL_HARDWARE_OPERATION_GUIDE.md (唯一权威实机操作与命令指南)   │
+│  • 6PUS_SERVO_OPERATION_GUIDE.md (唯一权威日常实机操作指南)   │
 │  • 6PUS_ROS2_CODE_LEARNING_TUTORIAL.md (12 章全栈架构与开发教程)        │
 └─────────────────────────────────────────────────────────────────────────┘
                                      │
@@ -46,7 +46,7 @@
 | 文档路径 | 核心用途与内容 | 所属阶段 | 状态类型 | 推荐阅读顺序 |
 | :--- | :--- | :---: | :---: | :---: |
 | [`README_CN.md`](file:///home/lyapunov/bone_drill/README_CN.md) / [`README.md`](file:///home/lyapunov/bone_drill/README.md) | GitHub 中英文主页，系统概览、架构图、J7 冻结状态与构建测试指南 | J7 (当前) | **Current** | **1** |
-| [`6PUS_REAL_HARDWARE_OPERATION_GUIDE.md`](file:///home/lyapunov/bone_drill/6PUS_REAL_HARDWARE_OPERATION_GUIDE.md) | **唯一权威实机操作指南**：J7 50Hz 伺服推荐入口、J6 定位 fallback、安全门禁与故障排查 | J7 / J6 | **Current** | **2** |
+| [`6PUS_SERVO_OPERATION_GUIDE.md`](file:///home/lyapunov/bone_drill/6PUS_SERVO_OPERATION_GUIDE.md) | **唯一权威实机操作指南**：J7 50Hz 伺服推荐入口、J6 定位 fallback、安全门禁与故障排查 | J7 / J6 | **Current** | **2** |
 | [`6PUS_ROS2_CODE_LEARNING_TUTORIAL.md`](file:///home/lyapunov/bone_drill/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md) | **12 章技术教程**：双链路架构、J7 50Hz 传输、解析逆解、LM 数值正解、时间同步与 TDD 体系 | J7 / J5 | **Current** | **3** |
 | [`agent_docs/decisions/CURRENT_STAGE.md`](file:///home/lyapunov/bone_drill/agent_docs/decisions/CURRENT_STAGE.md) | 全局阶段演化状态跟踪卡，记录已冻结里程碑与下一步计划 | J7 (当前) | **Current** | **4** |
 | [`agent_docs/architecture/BONE_WS_ROS2_ARCHITECTURE_PLAN.md`](file:///home/lyapunov/bone_drill/agent_docs/architecture/BONE_WS_ROS2_ARCHITECTURE_PLAN.md) | ROS 2 双链路解耦架构顶层设计与节点划分规划 | J4 / J5 | **Current** | **5** |

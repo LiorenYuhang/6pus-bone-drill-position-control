@@ -30,7 +30,7 @@
 ## 2. 权威依据文档 (Authoritative References)
 
 1. **统一文档地图**: [`agent_docs/README.md`](file:///home/lyapunov/bone_drill/agent_docs/README.md)
-2. **唯一实机操作指南**: [`6PUS_REAL_HARDWARE_OPERATION_GUIDE.md`](file:///home/lyapunov/bone_drill/6PUS_REAL_HARDWARE_OPERATION_GUIDE.md)
+2. **唯一日常实机操作指南**: [`6PUS_SERVO_OPERATION_GUIDE.md`](file:///home/lyapunov/bone_drill/6PUS_SERVO_OPERATION_GUIDE.md)
 3. **ROS 2 架构与教学教程**: [`6PUS_ROS2_CODE_LEARNING_TUTORIAL.md`](file:///home/lyapunov/bone_drill/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md)
 4. **J7 决策与时序审计**: [`agent_docs/decisions/J7_C2_UART_TIMING_BUDGET_AUDIT.md`](file:///home/lyapunov/bone_drill/agent_docs/decisions/J7_C2_UART_TIMING_BUDGET_AUDIT.md)
 5. **J6 最终调试总结**: [`agent_docs/j6/J6_FINAL_SUMMARY.md`](file:///home/lyapunov/bone_drill/agent_docs/j6/J6_FINAL_SUMMARY.md)
