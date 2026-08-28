@@ -36,7 +36,7 @@ J7/J8 SERVO PARK (执行一键受控收拢，目标位 [0]*6)
    ↓
 STORAGE_PARK (处于停放收拢位，读数落入暂定 PARK 测量带 [-5, 5] 步)
    ↓
-0x1A STOP (抱闸停机确认)
+0x1A STOP (受控停止确认)
    ↓
 POWER OFF (关闭 24V 动力电源)
 ```

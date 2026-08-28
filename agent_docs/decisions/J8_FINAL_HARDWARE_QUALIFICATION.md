@@ -111,7 +111,7 @@ Demonstration trajectory executed via [`scripts/run_j8_final_video_demonstration
 | **Phase 4** | **Roll Rotation Showcase** | $\pm 8.0^\circ$ | **PASS** ($\Delta\text{Roll} = -0.092^\circ$) |
 | **Phase 5** | **Pitch Rotation Showcase** | $\pm 8.0^\circ$ | **PASS** ($\Delta\text{Pitch} = -0.087^\circ$) |
 | **Phase 6** | **Yaw Rotation Showcase** | $\pm 8.0^\circ$ | **PASS** ($\Delta\text{Yaw} = -0.404^\circ$) |
-| **Phase 7** | **Combined 6-DoF Continuous Motion** | $XYZ \pm 5.0\text{ mm}$, $RP \pm 3.0^\circ$, $Y \pm 5.0^\circ$ (20.0s @ 0.1Hz) | **PASS** |
+| **Phase 7** | **Combined 6-DoF Continuous Motion** | $XYZ \pm 5.0\text{ mm}$, $\text{Roll/Pitch} \pm 3.0^\circ$, $\text{Yaw} \pm 5.0^\circ$ (20.0s @ 0.1Hz) | **PASS** |
 | **Phase 8** | **Final HOME Return & Repeatability** | $z_0 = 132.612\text{ mm}$ (4.0s) | **PASS** ($dX{=}+0.115, dY{=}+0.237, dZ{=}+0.045\text{ mm}$) |
 
 ### Final Metrics:
