@@ -137,29 +137,29 @@ bone_ws/
 
 ---
 
-## 0.3 机构几何与运动学唯一参数真值源：`6pus_geometry.yaml` 与类型化配置
+## 0.3 机构几何与系统配置分层架构：三大参数源职责划分
 
-在工业级机器人系统中，**严禁在各个功能包或源码文件中散落硬编码机构几何参数与物理换算系数**。本项目确立了机构几何与运动学的单一真值源 (Single Source of Truth for Geometry & Kinematics)：
+在工业级机器人系统中，**严禁在各个功能包或源码文件中散落硬编码机构几何参数、运行周期与安全阈值**。系统构建了职责清晰的三大参数源分层架构：
 
-* **权威几何配置文件**：[`pus6_kinematics/config/6pus_geometry.yaml`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/config/6pus_geometry.yaml)
-* **类型化加载器**：[`pus6_kinematics/geometry_config.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/geometry_config.py) 中的 `load_geometry_config()`
-
-> [!NOTE]
-> `6pus_geometry.yaml` 严格专职于**机构几何尺寸、铰链空间安装角、标称高度、步数换算比例及标准零位/停放位定义**。系统的串口通信波特率、看门狗周期与运行时参数统一在 [`pus6_bringup/config/system_params.yaml`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_bringup/config/system_params.yaml) 配置；启动状态分类与测量门限由 [`pus6_motor_driver/safety.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/safety.py) 统筹管理。
+1. **机构几何与运动学单一真值源**：[`pus6_kinematics/config/6pus_geometry.yaml`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/config/6pus_geometry.yaml)（由 `geometry_config.py` 类型化加载，专职管理静/动平台半径、连杆长、安装角、标称高度及零位/停放位定义）；
+2. **系统级运行时与时序配置**：[`pus6_bringup/config/system_params.yaml`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_bringup/config/system_params.yaml)（专职管理 50Hz 控制周期、串口端口/波特率、Fixed-Lag 延迟 160ms 及 Jerk 滤波器参数）；
+3. **硬件安全与启动状态机规则**：[`pus6_motor_driver/safety.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/safety.py)（专职管理绝对硬件/软件限位、两级看门狗阈值、暂定测量带 $[-5, +5]$ 及 `VALID_PARK` 状态机分类）。
 
 ```text
-                       6pus_geometry.yaml (机构几何与运动学单一真值源)
-                                              │
-                                              ▼
-                             geometry_config.load_geometry_config()
-                                              │
-         ┌───────────────────┬────────────────┴───────────────────┬───────────────────┐
-         ▼                   ▼                                    ▼                   ▼
- pus6_kinematics        pus6_control                      pus6_motor_driver      J7/J8 Scripts
-(analytical_6pus.py) (joint_trajectory_controller.py)       (safety.py)        & Offline Tools
- • 静/动平台半径       • 步数转换比例 (40000 step/m)       • 绝对硬件限位 [0,2000] • 标称几何中位加载
- • 连杆长与安装角     • 工作零位 OPERATING_HOME           • 软件限位 [0,1800]     • 停放位与零位定义
- • 标称高度 z_nom     • 停放位 STORAGE_PARK               • 正常运动包络 [200,1800] • 步数/米转换系数
+                               系统参数与安全门禁三层权威配置架构
+                               
+  [ 6pus_geometry.yaml ]            [ system_params.yaml ]             [ safety.py (安全规则) ]
+   (机构几何与运动学单一真值源)          (系统运行与时序参数配置)            (硬件限位与状态分类器)
+            │                                 │                                 │
+            ▼                                 ▼                                 ▼
+   geometry_config.py                 ROS 2 Parameter Server                pus6_motor_driver
+  • 静/动平台半径 (c, d)             • 50Hz 控制/伺服下发频率           • 绝对硬件限位 [0, 2000]
+  • 6 根连杆长度 (e)                 • 串口端口与 921600 波特率         • 软件运动包络 [200, 1800]
+  • 铰链空间安装角度                 • Fixed-Lag 延迟 (tau=160ms)       • 两级看门狗 (Tier1+Tier2)
+  • 标称高度 (z_nom)                 • Jerk 滤波器带宽 (omega_n)        • 暂定测量带 [-5, +5]
+  • HOME / PARK 标称步数             • 笛卡尔空间软件运动包络           • VALID_PARK 启动分类契约
+            │                                 │                                 │
+            └────────────────────────► 生产节点加载运行 ◄───────────────────────┘
 ```
 
 ---
@@ -324,7 +324,7 @@ $$\dddot{q}(t) = \omega_n^3 \left( q_{\text{target}}(t) - q(t) \right) - 3\omega
 * **加加速度限幅**：$|\dddot{q}| \le 0.500\text{ m/s}^3 \ (20000\text{ step/s}^3)$
 
 > [!IMPORTANT]
-> **$C^2$ 连续性铁律**：当外部目标突变时，滤波器**绝不清零导数**（$\dot{q}$ 和 $\ddot{q}$ 保持连续积分），从而在数学上保证了输出位置的二阶可导 ($C^2$ 连续)，在运动学上消除了加速度阶跃突变与机械冲击。
+> **$C^2$ 连续性铁律**：当外部目标突变时，滤波器**绝不清零导数**（$\dot{q}$ 和 $\ddot{q}$ 保持连续积分），从而在数学上保证了输出位置的二阶可导 ($C^2$ 连续)，在运动学上消除了规划参考加速度的不连续阶跃，降低了机械冲击与振动激振风险。
 
 ---
 
@@ -396,7 +396,7 @@ $$\theta_{\text{geodesic}} = \arccos\left(\text{clip}\left(\frac{\text{Tr}(\math
 在 J7 阶段，通过实机对比工具 [`j7_ab_benchmark_runner.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/j7_ab_benchmark_runner.py)，在相同机械行程（PARK $\leftrightarrow$ HOME 1000 步 / 25.0mm 五次 S 曲线）下对比了 J6 定位模式与 J7 伺服模式的物理表现：
 
 * **目标刷新频率**：由 J6 的 10.0 Hz 离散阶跃提升至 J7 的 **50.0 Hz 连续伺服流**（提升 5.0 倍）；
-* **运动连续性与微停顿消除**：J6 定位模式下电机会在每个离散目标到达时触发内部梯形减速并产生微停顿；J7 伺服模式以 20ms 连续写入目标位置，电机内部直接跟踪平滑 S 曲线，**彻底消除了离散阶跃带来的机械抖动与微停顿**；
+* **运动连续性与微停顿消除**：J6 定位模式下电机会在每个离散目标到达时触发内部梯形减速并产生微停顿；J7 伺服模式以 20ms 连续写入目标位置，电机内部直接跟踪平滑 S 曲线，**在冻结验证轨迹中未再观察到 Positioning Mode 下明显的离散微停顿，连续运动平滑性显著改善**；
 * **电气与跟踪表现**：高频伺服下发显著降低了电机加减速过程中的峰值冲击电流与跟踪滞后，回位重复性保持在 $\le 1\text{ 步}$ ($0.025\text{ mm}$)。
 
 ---
