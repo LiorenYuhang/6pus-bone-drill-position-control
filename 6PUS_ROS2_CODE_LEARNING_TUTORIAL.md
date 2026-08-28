@@ -1,41 +1,66 @@
 # 6PUS 并联手术机器人 ROS 2 项目全栈源码教学与系统解析教程
 
 > **适用对象**：希望通过真实 6PUS 并联骨科手术机器人项目系统掌握 ROS 2 架构设计、多轴电机高频伺服通信驱动、并联机构解析逆解与数值正解、在线轨迹平滑与安全控制全栈技术的工程师与研究生。  
-> **当前冻结基线**：$\mathbf{J7\ SIX\text{-}AXIS\ 50Hz\ SERVO\ HARDWARE\ BASELINE\ FROZEN\ v1.0}$ (`v1.0-j7-servo-hardware-frozen`)。  
-> **测试回归语境说明**：ROS 2 工作空间核心功能包全量单元测试为 **304 项 PASS**（执行 `pytest /home/lyapunov/bone_drill/bone_ws/src -v`，耗时约 43.75s，覆盖 `pus6_kinematics`, `pus6_motor_driver`, `pus6_control`, `h30_imu`）；整个工程根目录历史用例全量收集数为 **468+ collected**。两者范围不同，严禁混用。  
-> **物理装配边界**：完整 6PUS 机构尚未总装，两个 H30 IMU 仍固定在同一块测试板。最终 IMU 外参 (J5-B2)、lever arm、实机机械 FK 验收 (J5-C2-HW)、平动融合与 ESKF 尚未开始。
+> **当前冻结基线**：$\mathbf{J8\ ACTIVE\ SERVO\ HARDWARE\ QUALIFIED\ v1.0}$ (`v1.0-j8-active-servo-hardware-qualified`)。  
+> **测试回归语境说明**：ROS 2 工作空间核心功能包全量单元与集成测试为 **349 项 100% PASS**（执行 `pytest src/h30_imu src/pus6_bringup src/pus6_control src/pus6_kinematics src/pus6_motor_driver`，耗时约 54s）。  
+> **物理装配与实机验证状态**：完整 6PUS 并联机器人已完成机械总装与现场电气调试，通过 J6 定位调试基线、J7 50Hz 伺服驱动基线，并在 J8 阶段完成连续笛卡尔伺服控制闭环与 9 阶段实机展示轨迹全量硬件准入考核。
 
 ---
 
 ## 目录
-1. [项目架构全景与双链路设计 (System Architecture & Dual-Pipeline Philosophy)](#1-项目架构全景与双链路设计-system-architecture--dual-pipeline-philosophy)
-2. [底层通信与 UART 协议层实现 (UART Protocol & Serial Reality)](#2-底层通信与-uart-协议层实现-uart-protocol--serial-reality)
-3. [六电机驱动层与 J7 50Hz Servo 伺服架构 (Motor Driver & J7 50Hz Servo Architecture)](#3-六电机驱动节点与高频并发解耦架构-motor-driver--concurrency-architecture)
-4. [6PUS 并联机构解析逆运动学 (Analytical Inverse Kinematics & Geometry Config)](#4-6pus-并联机构解析逆运动学-analytical-inverse-kinematics--geometry-config)
-5. [在线轨迹整形与连续控制算法 (Stateful Shaper & Continuous Control)](#5-在线轨迹整形与连续控制算法-stateful-shaper--continuous-control)
-6. [安全门禁、故障恢复与 HOME/PARK 状态机 (Safety Gates, Recovery & State Machine)](#6-安全门禁故障恢复与-homepark-状态机-safety-gates-recovery--state-machine)
-7. [J5 进阶专题：多源统一时间轴与固定延迟状态重建 (Unified Timeline & Fixed-Lag)](#7-j5-进阶专题多源统一时间轴与固定延迟状态重建-unified-timeline--fixed-lag)
-8. [J5 进阶专题：解析雅可比数值正运动学与实时解算节点 (Analytical Jacobian Numerical FK & Pus6FkNode)](#8-j5-进阶专题解析雅可比数值正运动学与实时解算节点-analytical-jacobian-numerical-fk--pus6fknode)
-9. [【全链路实战追踪】双数据流端到端生命周期透视 (End-to-End Tracing)](#9-全链路实战追踪双数据流端到端生命周期透视-end-to-end-tracing)
-10. [核心工程问题演进与实机踩坑复盘 (Engineering Lessons & Post-Mortem)](#10-核心工程问题演进与实机踩坑复盘-engineering-lessons--post-mortem)
-11. [测试驱动开发 (TDD) 与回归测试体系 (Testing Architecture)](#11-测试驱动开发-tdd-与回归测试体系-testing-architecture)
-12. [二次开发速查指南、实战练习与装配读点 (Developer Guide, Exercises & Next Steps)](#12-二次开发速查指南实战练习与装配读点-developer-guide-exercises--next-steps)
+
+- [Part 0: J8 最终系统全景与架构设计哲学 (J8 System Architecture & Dual-Pipeline Philosophy)](#part-0-j8-最终系统全景与架构设计哲学-j8-system-architecture--dual-pipeline-philosophy)
+  - [0.1 6PUS 机器人系统定位与控制/观测双链路解耦哲学](#01-6pus-机器人系统定位与控制观测双链路解耦哲学)
+  - [0.2 工作空间 (`bone_ws`) 6 大功能包全景与依赖关系](#02-工作空间-bone_ws-6-大功能包全景与依赖关系)
+  - [0.3 全局唯一参数真值源：`6pus_geometry.yaml` 与类型化配置](#03-全局唯一参数真值源-6pus_geometryyaml-与类型化配置)
+  - [0.4 ROS 2 核心概念与现代机器人全栈开发映射](#04-ros-2-核心概念与现代机器人全栈开发映射)
+- [Part I: 从 J1 到 J8 的实机工程演进教学 (Engineering Evolution: J1 → J8)](#part-i-从-j1-到-j8-的实机工程演进教学-engineering-evolution-j1--j8)
+  - [第 1 章 (J1): RS485 半双工通信底层与自定义二进制协议设计](#第-1-章-j1-rs485-半双工通信底层与自定义二进制协议设计)
+  - [第 2 章 (J2): 六轴同步通信、批次原子性与 ROS 2 电机驱动节点](#第-2-章-j2-六轴同步通信批次原子性与-ros-2-电机驱动节点)
+  - [第 3 章 (J3): 并联机构闭式解析逆运动学 (IK) 与绝对位置闭环](#第-3-章-j3-并联机构闭式解析逆运动学-ik-与绝对位置闭环)
+  - [第 4 章 (J4): 连续空间运动、三阶 Jerk 轨迹整形与 QoS/LVW 架构](#第-4-章-j4-连续空间运动三阶-jerk-轨迹整形与-qoslvw-架构)
+  - [第 5 章 (J5): 纳秒统一时间轴、Fixed-Lag 状态重构与 LM 数值正解 (FK)](#第-5-章-j5-纳秒统一时间轴fixed-lag-状态重构与-lm-数值正解-fk)
+  - [第 6 章 (J6): 现场总装调试、零位映射与 HOME/PARK 定位模式基线](#第-6-章-j6-现场总装调试零位映射与-homepark-定位模式基线)
+  - [第 7 章 (J7): 50Hz 伺服模式演进、五次 S 曲线与运动平滑度量化飞跃](#第-7-章-j7-50hz-伺服模式演进五次-s-曲线与运动平滑度量化飞跃)
+  - [第 8 章 (J8): Design-B 伴随反馈、两级看门狗、集约化启动契约与全自由度实机准入](#第-8-章-j8-design-b-伴随反馈两级看门狗集约化启动契约与全自由度实机准入)
+- [Part II: J8 当前生产源码全模块精读与参考 (Source Code Reference by Module)](#part-ii-j8-当前生产源码全模块精读与参考-source-code-reference-by-module)
+  - [2.1 `pus6_msgs`: 强类型数据契约与单调时钟协议](#21-pus6_msgs-强类型数据契约与单调时钟协议)
+  - [2.2 `pus6_kinematics`: 逆解、正解、几何加载器与状态同步器](#22-pus6_kinematics-逆解正解几何加载器与状态同步器)
+  - [2.3 `pus6_control`: 有状态轨迹整形器与控制器节点](#23-pus6_control-有状态轨迹整形器与控制器节点)
+  - [2.4 `pus6_motor_driver`: 驱动协议、传输层、安全分类器与电机驱动节点](#24-pus6_motor_driver-驱动协议传输层安全分类器与电机驱动节点)
+  - [2.5 `pus6_bringup`: 系统级 Launch 编排与参数配置体系](#25-pus6_bringup-系统级-launch-编排与参数配置体系)
+  - [2.6 `h30_imu`: 双 H30 惯导微秒硬件时间戳与李群姿态解算](#26-h30_imu-双-h30-惯导微秒硬件时间戳与李群姿态解算)
+- [Part III: 【全链路实战透视】追踪一帧笛卡尔控制指令的完整生命周期 (End-to-End Deep Trace)](#part-iii-全链路实战透视追踪一帧笛卡尔控制指令的完整生命周期-end-to-end-deep-trace)
+  - [3.1 下行控制链：Cartesian Target → IK → Shaper → Driver Preflight → UART 0x29](#31-下行控制链cartesian-target--ik--shaper--driver-preflight--uart-0x29)
+  - [3.2 物理执行与伴随反馈：RS485 总线交互与 0x29 StatusFeedback 提取](#32-物理执行与伴随反馈rs485-总线交互与-0x29-statusfeedback-提取)
+  - [3.3 上行观测链：TimedJointFeedback → FixedLag (tau=160ms) → LM FK → FkStateStamped](#33-上行观测链timedjointfeedback--fixedlag-tau160ms--lm-fk--fkstatestamped)
+- [Part IV: 实机调试、故障复盘与测试驱动开发 (Hardware Debugging, Post-Mortems & TDD)](#part-iv-实机调试故障复盘与测试驱动开发-hardware-debugging-post-mortems--tdd)
+  - [4.1 标志性工业级工程踩坑与根因深度复盘 (9 大 Post-Mortem 案例)](#41-标志性工业级工程踩坑与根因深度复盘-9-大-post-mortem-案例)
+  - [4.2 为什么必须独占 SingleThreadedExecutor：A~F 分层消融实测与复盘](#42-为什么必须独占-singlethreadedexecutoraf-分层消融实测与复盘)
+  - [4.3 测试驱动开发 (TDD) 体系与 349 项回归测试规范](#43-测试驱动开发-tdd-体系与-349-项回归测试规范)
+  - [4.4 软件代数自洽 vs 物理机械精度的认知红线](#44-软件代数自洽-vs-物理机械精度的认知红线)
+- [附录 (Appendix)](#附录-appendix)
+  - [附录 A: 全系统 ROS 2 节点、话题、服务与消息类型全景速查表](#附录-a-全系统-ros-2-节点话题服务与消息类型全景速查表)
+  - [附录 B: J1 ~ J8 核心特性与技术指标演进对比矩阵](#附录-b-j1--j8-核心特性与技术指标演进对比矩阵)
+  - [附录 C: 常用 ROS 2 / 驱动调试与硬件实机操作 CLI 指令速查](#附录-c-常用-ros-2--驱动调试与硬件实机操作-cli-指令速查)
 
 ---
 
-## 1. 项目架构全景与双链路设计 (System Architecture & Dual-Pipeline Philosophy)
+# Part 0: J8 最终系统全景与架构设计哲学 (J8 System Architecture & Dual-Pipeline Philosophy)
 
-### 1.1 为什么需要分层与双链路架构
-并联骨科手术机器人对控制系统的**硬实时性**、**确定性**、**安全性**与**状态可观测性**有着极其严苛的要求：
-1. **控制下行链路 (Control Pipeline)**：必须保证从 50Hz 笛卡尔空间参考轨迹到 25Hz 物理电机串口指令的流式下发具备极低的抖动、严格的 $C^2$ 加速度连续性以及绝对安全包络硬门禁；
-2. **状态观测链路 (Observation Pipeline)**：必须将 6 轴异步串行扫描到达的电机遥测重构对齐到统一纳秒时间轴上，并以 200Hz 独立解算平台当前末端位姿，提供给上层状态监控与未来多传感器融合。
+## 0.1 6PUS 机器人系统定位与控制/观测双链路解耦哲学
 
-如果将逆解计算、轨迹平滑、串口通信、状态同步和正解解算混在一个进程或同一个控制循环中，串口通信的长尾波动（P95 达 48ms）会直接摧毁规划器的定时周期，而正解迭代的不确定耗时也会污染控制下发的确定性。因此，本项目采用**控制链路与观测链路严格解耦、并行运行的双链路架构**。
+并联骨科手术机器人对控制系统的**确定性 (Determinism)**、**安全性 (Safety)** 与 **状态可观测性 (Observability)** 有着极其严苛的工业级要求：
 
-```
-                                  6PUS 系统双数据流全景架构
+1. **控制下行链路 (Control Pipeline)**：必须保证从 50Hz 笛卡尔空间参考轨迹到 50Hz 物理电机串口指令的流式下发具备极低的调度抖动、严格的 $C^2$ 加速度连续性以及绝对安全的运动学包络硬门禁；
+2. **状态观测链路 (Observation Pipeline)**：必须将 6 轴异步串行扫描到达的电机遥测重构对齐到统一纳秒时间轴上，并以 50Hz/200Hz 独立解算平台当前末端位姿，提供给上层状态监控与未来多传感器融合。
+
+如果将逆解计算、轨迹平滑、串口通信、状态同步和正解解算混在同一个进程或同一个控制循环中，串口通信的长尾波动（如 Linux 调度与硬件往返抖动）会直接破坏规划器的定时周期，而正解迭代的不确定耗时也会污染控制下发的确定性。因此，本项目采用**控制链路与观测链路严格解耦、并行运行的双链路架构**。
+
+```text
+                                  6PUS J8 系统双数据流全景架构
                                   
-  [ 上位规划流 / 笛卡尔目标 ]
+  [ 上位规划流 / 笛卡尔目标 (50Hz) ]
              │
              ▼  (/pus6/target_cartesian_pose)
   ┌────────────────────────┐
@@ -47,23 +72,24 @@
   │   pus6_control_node    │ ── 50Hz StatefulJerkLimitedShaper (三阶加加速度连续整形)
   └────────────────────────┘
              │
-             ▼  (/pus6/command_joint_steps 唯一权威控制入口, QoS: BestEffort, KeepLast(1))
+             ▼  (/pus6/command_joint_steps, QoS: BestEffort, KeepLast(1))
   ┌────────────────────────┐
-  │ J7 50Hz ServoTransport │ ── 50Hz 连续 0x29 纯写批次下发 (均值 3.38ms) + Slew 自愈 + 6级安全硬门禁
+  │ pus6_motor_driver_node │ ── 50Hz Design-B J7/J8 ServoTransport (0x29 批次下发 + 伴随反馈提取)
+  │ (两级看门狗 + 启动分类)│    + Vector Slew Recovery 自愈 + 6 级安全硬门禁
   └────────────────────────┘
              │
-             ▼  (RS485 / UART 半双工单总线 921600 8N1, 0x29 纯写原子批次)
-  ========================= [ 6PUS 物理机构 (ID1 ~ ID6 一体化电缸) ] =========================
+             ▼  (RS485 / UART 半双工单总线 921600 8N1, 6x 0x29 目标写入帧)
+  ========================= [ 6PUS 物理机构 (ID1 ~ ID6 一体化推杆电缸) ] =========================
              │
-             ▼  (Round-Robin 轮询调度器: 每 20ms 周期查询 1 轴 0x30 状态, 单轴约 8.33Hz)
+             ▼  (0x29 伴随返回 StatusFeedback 帧，6 轴完整性 100% 提取)
   ┌────────────────────────┐
-  │ J7 FeedbackScheduler   │ ── 组装 TimedJointFeedback 消息 (记录 CLOCK_MONOTONIC)
+  │ TimedJointFeedback Pub │ ── 组装 TimedJointFeedback 消息 (打上 Host CLOCK_MONOTONIC 接收时间戳)
   └────────────────────────┘
              │
              ▼  (/pus6/joint_feedback/timed)
   ┌────────────────────────┐
-  │      pus6_fk_node      │ ── FixedLagJointSynchronizer (零外推状态重建)
-  │ (独立 SingleThreaded)  │    + Analytical Jacobian LM 数值正解 (Warm-Start + SO(3) 门禁)
+  │      pus6_fk_node      │ ── FixedLagJointSynchronizer (严格零外推状态重建, tau = 160ms)
+  │ (独立 SingleThreaded)  │    + Analytical Jacobian LM 数值正解 (Warm-Start + SO(3) 测地线门禁)
   └────────────────────────┘
              │
              ├───────────────────────────────┐
@@ -72,17 +98,18 @@
 ```
 
 > [!IMPORTANT]
-> **控制链与 FK 观测链的并行解耦关系**：
-> * **控制链** 是单向向下驱动物理电机的指令流：`Cartesian Target → IK → Jerk Filter → Driver Preflight → UART Write`；
-> * **FK 观测链** 是单向向上重构平台姿态的遥测流：`UART Piggyback → Timed Feedback → Fixed-Lag → Numerical FK → FkStateStamped`；
-> * **FK 观测链绝不作为 J4 控制器的反馈输入，也不进入下行控制环路**。两者完全独立解耦，杜绝了正解计算波动对控制周期的干扰。
+> **控制链与 FK 观测链的并行解耦原则**：
+> * **控制链** 是单向向下驱动物理电机的指令流：`Cartesian Target → IK → Jerk Filter → Driver Preflight → UART 0x29 Write`；
+> * **FK 观测链** 是单向向上重构平台姿态的遥测流：`0x29 StatusFeedback → Timed Feedback → Fixed-Lag → Numerical FK → FkStateStamped`；
+> * **FK 观测链绝不作为 J4/J8 控制器的反馈输入，也不进入下行控制环路**。两者完全独立解耦，彻底杜绝了正解数值迭代波动对控制周期的干扰。
 
 ---
 
-### 1.2 ROS 2 工作空间 (`bone_ws`) 与 6 大功能包全景
+## 0.2 工作空间 (`bone_ws`) 6 大功能包全景与依赖关系
+
 工作空间位于 `/home/lyapunov/bone_drill/bone_ws`，由 6 个专职功能包协同构成：
 
-```
+```text
 bone_ws/
 ├── src/
 │   ├── pus6_msgs/          # 自定义强类型 ROS 2 消息接口包 (时间合同与正解状态)
@@ -90,10 +117,10 @@ bone_ws/
 │   ├── pus6_kinematics/    # 6PUS 权威几何配置、解析逆运动学与实时数值正运动学包
 │   ├── pus6_control/       # 连续轨迹三阶整形滤波、外环控制与状态机包
 │   ├── pus6_bringup/       # 统一 Launch 编排、参数配置与系统集成包
-│   └── h30_imu/            # 双 H30 IMU 驱动、软件时间同步与相对姿态李群估计包
+│   └── h30_imu/            # 双 H30 IMU 驱动、微秒时间戳与相对姿态李群估计包
 ├── build/                  # 编译构建中间文件
 ├── install/                # 节点可执行文件与环境引导脚本 (setup.bash)
-├── log/                    # 运行时生成的实验遥测 JSON 与调试日志
+├── log/                    # 运行时生成的实验遥测与调试日志
 └── scripts/                # 实机/仿真运行脚本与离线验收工具链
 ```
 
@@ -102,7 +129,7 @@ bone_ws/
 | 功能包名称 | 核心职责 | 输入 (Sub / Ingress) | 输出 (Pub / Egress) | 硬件依赖 |
 | :--- | :--- | :--- | :--- | :---: |
 | **`pus6_msgs`** | 统一数据合同：定义带纳秒单调时钟的高精度遥测与正解消息 | 无 (纯接口定义) | `TimedJointFeedback`, `TimedJointCommand`, `FkStateStamped` | 无 |
-| **`pus6_motor_driver`** | 独占物理串口通信，维护 Latest-Value-Wins 缓冲，执行安全门禁与故障自愈 | `/pus6/command_joint_steps` | `/pus6/joint_states`, `/pus6/six_axis_telemetry`, `/pus6/joint_feedback/timed` | 依赖 UART 硬件 |
+| **`pus6_motor_driver`** | 独占物理串口通信，维护 Latest-Value-Wins 缓冲，执行两级看门狗与安全分类 | `/pus6/command_joint_steps` | `/pus6/joint_states`, `/pus6/six_axis_telemetry`, `/pus6/joint_feedback/timed` | 依赖 UART 硬件 |
 | **`pus6_kinematics`** | 提供唯一几何真值源；运行解析逆解节点；运行独立单线程数值正解节点 | `/pus6/target_cartesian_pose`, `/pus6/joint_feedback/timed` | `/pus6/desired_joint_deltas`, `/pus6/fk/state`, `/pus6/fk/pose` | 无 (纯数学与 ROS) |
 | **`pus6_control`** | 50Hz 三阶状态滤波整形，保证速度/加速度/加加速度饱和限幅与 $C^2$ 连续 | `/pus6/desired_joint_deltas`, `/pus6/joint_states` | `/pus6/command_joint_steps`, `/pus6/control_diagnostics` | 无 (纯算法) |
 | **`pus6_bringup`** | 加载系统参数 YAML，协同编排启动各节点与 RViz 可视化 | Launch 启动参数 | 启动系统节点图 (Node Graph) | 编排层 |
@@ -110,13 +137,14 @@ bone_ws/
 
 ---
 
-### 1.3 权威参数唯一来源：`6pus_geometry.yaml` 与 `geometry_config.py`
+## 0.3 全局唯一参数真值源：`6pus_geometry.yaml` 与类型化配置
+
 在工业级机器人系统中，**严禁在各个功能包或源码文件中散落硬编码几何参数与换算系数**。本项目确立了全局唯一参数真值源 (Single Source of Truth)：
 
 * **权威配置文件**：[`pus6_kinematics/config/6pus_geometry.yaml`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/config/6pus_geometry.yaml)
 * **类型化加载器**：[`pus6_kinematics/geometry_config.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/geometry_config.py) 中的 `load_geometry_config()`
 
-```
+```text
                                6pus_geometry.yaml (权威唯一来源)
                                               │
                                               ▼
@@ -124,16 +152,16 @@ bone_ws/
                                               │
          ┌───────────────────┬────────────────┴───────────────────┬───────────────────┐
          ▼                   ▼                                    ▼                   ▼
- pus6_kinematics        pus6_control                      pus6_motor_driver      J3/J4 Standalone
+ pus6_kinematics        pus6_control                      pus6_motor_driver      J7/J8 Scripts
 (analytical_6pus.py) (joint_trajectory_controller.py)       (safety.py)        & Offline Tools
  • 静/动平台半径       • 步数转换比例 (40000 step/m)       • 绝对硬件限位 [0,2000] • 默认串口与波特率
  • 连杆长与安装角     • 工作零位 OPERATING_HOME           • 软件限位 [0,1800]     • 停放位与零位定义
- • 标称高度 z_nom     • 停放位 STORAGE_PARK               • 正常运动包络 [200,1800]
+ • 标称高度 z_nom     • 停放位 STORAGE_PARK               • 正常运动包络 [200,1800] • 启动测量带 [-5, 5]
 ```
 
 ---
 
-### 1.4 ROS 2 核心概念在本项目中的映射与应用
+## 0.4 ROS 2 核心概念与现代机器人全栈开发映射
 
 | ROS 2 核心概念 | 通俗定义 | 本项目中的具体实现与源码映射 |
 | :--- | :--- | :--- |
@@ -141,41 +169,27 @@ bone_ws/
 | **Node (节点)** | 独立执行的计算任务进程 | `Pus6MotorDriverNode`, `Pus6KinematicsNode`, `Pus6ControlNode`, `Pus6FkNode` |
 | **Topic (话题)** | 单向发布-订阅数据管道 | `/pus6/command_joint_steps` (下行控制), `/pus6/joint_feedback/timed` (上行观测), `/pus6/fk/state` (正解状态) |
 | **Message (消息)** | 强类型数据载体 | `TimedJointFeedback`, `TimedJointCommand`, `FkStateStamped`, `JointState`, `PoseStamped` |
-| **Service (服务)** | 双向同步/异步请求响应 | `/pus6/startup_home` (就位), `/pus6/controlled_park` (受控收拢), `/pus6/pause_all` (急停抱闸) |
-| **Timer (定时器)** | 周期性回调触发器 | 50Hz 控制主循环 (`pus6_control_node`), 25Hz UART 下发线程, 200Hz 固定延迟正解查询 (`fk_node`) |
+| **Service (服务)** | 双向同步/异步请求响应 | `/pus6/startup_home` (就位), `/pus6/controlled_park` (受控收拢), `/pus6/pause_all` (急停受控停止) |
+| **Timer (定时器)** | 周期性回调触发器 | 50Hz 控制主循环 (`pus6_control_node`), 50Hz 伺服下发线程 (`motor_driver_node`), 50Hz/200Hz 正解查询 (`fk_node`) |
 | **Callback Group** | 执行器内的回调隔离机制 | 驱动节点内划分 `sub_cb_group`, `worker_cb_group`, `poll_cb_group` 三大互斥组 |
 | **QoS (服务质量)** | 通信时效与队列控制策略 | 下行控制指令采用 **Latest-Value-Wins (KeepLast(1), BestEffort, Volatile)** 彻底杜绝历史堆积 |
 
 ---
 
-### 1.5 常见误解与避坑指南
-1. **误解：以为正运动学 (FK) 是 J4 控制器的反馈输入**  
-   * *事实*：在 6PUS 机器人的 J4 控制链中，控制器基于解析逆解输出目标关节整步，进行前向三阶滤波；FK 属于独立的观测链路，用于姿态评估与离线诊断，**不进入 J4 控制器的闭环输入**。
-2. **误解：在代码中直接修改 40000、1000 或半径等常数**  
-   * *事实*：所有几何模型、步数比例与限位全部由 `6pus_geometry.yaml` 统一管理，直接修改 `.py` 中的默认参数会破坏系统一致性。
+# Part I: 从 J1 到 J8 的实机工程演进教学 (Engineering Evolution: J1 → J8)
 
----
+## 第 1 章 (J1): RS485 半双工通信底层与自定义二进制协议设计
 
-### 1.6 推荐源码阅读顺序
-1. 阅读 [`pus6_msgs/msg/`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_msgs/msg) 了解系统的核心数据契约；
-2. 阅读 [`pus6_kinematics/config/6pus_geometry.yaml`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/config/6pus_geometry.yaml) 与 [`pus6_kinematics/pus6_kinematics/geometry_config.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/geometry_config.py) 掌握全局参数结构；
-3. 阅读 [`pus6_bringup/launch/pus6_system.launch.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_bringup/launch/pus6_system.launch.py) 理解整个系统节点图的启动编排。
+### 1.1 学习目标与物理背景
+掌握工业级半双工 RS485 总线下自定义二进制通信协议的设计与实现。理解 921600 bps 波特率下微秒级时序预算与累加和校验的数学实现。
 
----
+* **主要源码**：[`pus6_motor_driver/pus6_motor_driver/protocol.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/protocol.py)
+* **ROS 2 概念**：纯 Python 硬件驱动抽象，与上层 ROS 中间件解耦。
+* **控制/机器人学概念**：寄存器映射模型、半双工收发转换时延、累加和校验算法。
 
-## 2. 底层通信与 UART 协议层实现 (UART Protocol & Serial Reality)
+### 1.2 二进制通信帧格式详解
 
-### 2.1 为什么需要专用二进制协议与半双工单总线拓扑
-本项目 6 台一体化推杆电缸（ID1 ~ ID6）挂载在同一条 RS485/UART 半双工总线上，波特率为 **921600 bps (8N1)**。
-* **物理拓扑优势**：极大减少末端线束重量与体积，满足骨科手术狭小空间需求；
-* **物理挑战**：半双工总线在同一时刻只能有一个设备发送。主机必须以**逐轴串行问答**的方式与 6 台电缸通信。
-
----
-
-### 2.2 输入输出与二进制通信帧格式
-源码实现位于 [`pus6_motor_driver/protocol.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/protocol.py)。
-
-```
+```text
 +----------------+----------------+----------------+----------------+----------------+----------------+----------------+
 |  Byte 0 ~ 1    |     Byte 2     |     Byte 3     |     Byte 4     |  Byte 5 ~ 6    |  Byte 7 ~ N-2  |    Byte N-1    |
 |   帧头 (Header) | 数据长度 Length | 目标 ID (ID)   | 命令字 (CMD)   | 寄存器地址 Addr | 负载 (Payload) | 校验和 (CRC)   |
@@ -190,167 +204,57 @@ bone_ws/
    * 电机回传应答：`0xAA, 0x55` (`RSP_FRAME_HEADER`)
 2. **长度字段 (Length)**：值为 `3 + len(payload)`（包含 CMD 1字节 + Addr 2字节 + 数据体长度）。
 3. **累加和校验算法 (`calculate_checksum`)**：
-   $$\text{Checksum} = \left( \sum_{k=2}^{N-2} \text{Byte}[k] \right) \ \& \ \text{0xFF}$$
+   $$	ext{Checksum} = \left( \sum_{k=2}^{N-2} 	ext{Byte}[k] ight) \ \& \ 	ext{0xFF}$$
 
----
-
-### 2.3 关键控制与遥测寄存器表
+### 1.3 核心寄存器表与语义
 
 | 寄存器宏定义 | 地址 (16位小端) | 读/写 | 物理含义 | 数据格式与单位 |
 | :--- | :---: | :---: | :--- | :--- |
 | `ID_ADDR` | `0x0016` | R/W | 电机硬件总线 ID | `uint16`, 范围 1 ~ 6 |
 | `SAVE_PARAMS` | `0x001C` | W | 保存参数至 EEPROM | 写入 1 触发保存 |
-| **`SPEED_LIMIT`** | `0x0028` | R/W | **内部梯形限速寄存器** | `uint16`, 对应 step/s (默认 240) |
+| `SPEED_LIMIT` | `0x0028` | R/W | 内部梯形限速寄存器 | `uint16`, 对应 step/s (默认 240) |
 | **`TARGET_POS`** | `0x0029` | R/W | **目标位置写入寄存器** | `int16`, 对应整步 raw step (0~2000) |
 | **`ACTUAL_POS`** | `0x002A` | R | **实际位置反馈寄存器** | `int16`, 当前编码器整步值 |
 | `CURRENT_VAL` | `0x002B` | R | 实际工作电流 | `uint16`, 单位毫安 (mA) |
 | `ACTUAL_FORCE`| `0x002C` | R | 轴向力传感器读数 | `int16`, 单位克 (g) |
 | `TEMPERATURE` | `0x002E` | R | 电机驱动板温度 | `int8`, 单位摄氏度 (°C) |
-| `ERROR_CODE`  | `0x002F` | R | 硬件故障代码 | `uint8`, 0 表示正常，非0为过流/堵转/过温 |
-| **`PAUSE_BRAKE`**| `0x001A` | W | **抱闸/急停锁定** | 写入 1 立即抱闸制动 |
+| `ERROR_CODE`  | `0x002F` | R | 硬件故障代码 | `uint8`, 0 表示正常，非0为故障 |
+| `PAUSE_BRAKE` | `0x001A` | W | 受控停止锁定 | 写入 1 立即受控停机 |
 
 ---
 
-### 2.4 核心机制：Piggyback 伴随反馈与串行非原子现实
+## 第 2 章 (J2): 六轴同步通信、批次原子性与 ROS 2 电机驱动节点
 
-#### (1) Piggyback 伴随反馈机制
-上位机向电机下发 `0x32` 写入目标位置 `0x0029` 时，电机会**立即返回一个 20 字节的标准状态帧 (StatusFeedback)**。驱动层直接解析该伴随返回帧生成 `SixAxisStateSnapshot`，单轴问答耗时仅约 $3.5\sim 4.5\text{ ms}$，6 轴整批通信耗时约 $24\sim 30\text{ ms}$，无需额外发起 6 次独立的读寄存器请求。
+### 2.1 学习目标与物理现实
+掌握单总线半双工拓扑下的“串行非原子现实 (Serial Non-Atomic Reality)”。理解为什么 6 台电机依次问答会导致时间分散，以及如何在 ROS 2 驱动层通过 Batch-Atomicity 全局锁杜绝通信交错。
 
-#### (2) 半双工串行非原子现实 (Serial Non-Atomic Reality)
-由于单总线串行依次下发（ID1 $\to$ ID2 $\to \dots \to$ ID6），单次 6 轴写入**不是同时生效的硬件锁存事务**。当 Motor 6 收到指令并应答时，Motor 1 已经先运行了约 $18.18\text{ ms}$。同理，6 轴反馈数据也存在约 $18.18\text{ ms}$ 的时间相位差。这一物理现实必须由上层时间同步与正解算法显式处理。
+* **主要源码**：[`pus6_motor_driver/pus6_motor_driver/j7_real_uart_adapter.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/j7_real_uart_adapter.py), [`pus6_motor_driver/pus6_motor_driver/motor_driver_node.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/motor_driver_node.py)
+* **ROS 2 概念**：`rclpy.node.Node`, `sensor_msgs/msg/JointState`, 回调组并发隔离。
+* **控制/机器人学概念**：多轴串行扫描时间跨度 (Temporal Dispersion)、总线互斥锁机制。
 
-#### (3) UART 批次原子性保障 (Batch Atomicity Hotfix)
-在多线程或带轮询的架构中，必须严防后台遥测轮询 (Poll) 帧插入到 6 轴写入控制批次中间：
-* **加固方案**：在 [`pus6_motor_driver/six_motor_controller.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/six_motor_controller.py) 中引入 6 轴批次全局锁（`with self._bus_lock_ctx:`），并在 Active 控制模式下抑制独立 Poll 轮询；
+### 2.2 串行非原子现实与 Batch Atomicity 全局锁
+
+由于单总线串行依次下发（ID1 $	o$ ID2 $	o \dots 	o$ ID6），单次 6 轴写入**不是同时生效的硬件锁存事务**。当 Motor 6 收到指令并应答时，Motor 1 已经先运行了约 $18.18	ext{ ms}$。同理，6 轴反馈数据也存在约 $18.18	ext{ ms}$ 的时间相位差。
+
+在多线程或带后台轮询的架构中，必须严防后台遥测轮询 (Poll) 帧插入到 6 轴控制批次中间：
+* **加固方案**：在驱动传输层中引入 6 轴批次全局锁（`with self._bus_lock_ctx:`），并在 Active 控制模式下抑制独立 Poll 轮询；
 * **回归实证**：实机连续动态回归证明批次重叠数为 **0 / 392 (100.00% 批次原子性无交错)**。
 
 ---
 
-### 2.5 常见误解与避坑指南
-1. **误解：以为 Batch Atomicity 把串口物理通信变成了 6 轴硬件同时锁存**  
-   * *澄清*：Batch Atomicity 保证的是**主机软件侧一整个 6 轴写/读批次在总线上不被其他请求打断**，它无法改变 RS485 逐轴串行发送的物理耗时与相位差。
-2. **误解：以为 0x29 写入后需要再调用一次 0x2A 读实际位置**  
-   * *澄清*：0x29 写指令的 Piggyback 应答帧中已经包含了最新的 `actual_pos`、`current`、`force` 和 `error_code`，重复发送读指令会使通信周期翻倍恶化。
+## 第 3 章 (J3): 并联机构闭式解析逆运动学 (IK) 与绝对位置闭环
 
----
+### 3.1 学习目标与数学优势
+掌握 6-PUS 并联机构逆运动学的闭式几何推导。理解为什么并联机构逆解具有唯一闭式解析解，并掌握笛卡尔空间位姿到 6 轴整步的精确映射。
 
-### 2.6 推荐源码阅读顺序
-1. [`pus6_motor_driver/pus6_motor_driver/protocol.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/protocol.py)：掌握 `pack_write_register_cmd` 与 `parse_frame`；
-2. [`pus6_motor_driver/pus6_motor_driver/six_motor_controller.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/six_motor_controller.py)：掌握 `command_positions_with_metrics` 与 `_bus_lock_ctx` 批次互斥。
+* **主要源码**：[`pus6_kinematics/pus6_kinematics/analytical_6pus.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/analytical_6pus.py), [`pus6_kinematics/config/6pus_geometry.yaml`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/config/6pus_geometry.yaml)
+* **ROS 2 概念**：`geometry_msgs/msg/PoseStamped`, YAML 参数类型化解析。
+* **控制/机器人学概念**：定长连杆球铰约束、闭式二次方程解析求解、工作空间可达性检查、`OPERATING_HOME` 零位映射。
 
----
-
-
----
-
-### 2.7 J6 定位模式 (mode=0) $\to$ J7 伺服模式 (mode=1) 的演进与机理
-
-#### (1) J6 定位模式 (mode=0) 的卡顿机理分析
-在 J6 基线中，电机工作在定位模式（`mode=0`，10Hz 轮询）。每次下发 0x29 时等待 20 字节伴随状态回包 (StatusFeedback, 包含 12 字节状态数据)，整批耗时约 18.18~18.39ms。
-* **微停顿与冲击机理**：在 10Hz 离散目标下，电机内部梯形加减速曲线在每个离散目标点之间频繁经历加速、减速与微停顿，导致实机运动产生明显的阶跃卡顿，峰值电流高达 $145\,\text{mA}$。
-
-#### (2) J7 伺服模式 (mode=1) 50Hz 纯写批次下发
-在 J7 伺服模式下：
-* **目标刷新率提高 5 倍**：从 10Hz 提高到 **50Hz**（周期 20ms）；
-* **纯写批次下发 (Write-Only Batch)**：上位机以原子批次依次向 ID1 ~ ID6 发送 0x29 目标指令，不等待回包。在 921600 波特率下，6 轴纯写耗时**均值仅 $3.38\,\text{ms}$（最大 $\le 6.83\,\text{ms}$）**，在 20ms 控制周期内留有 $>13\,\text{ms}$ 的充裕时序裕量；
-* **残余响应与 Stale Response 处理**：纯写下发不代表电机物理上永不返回数据（下位机仍可能产生异步回包或残余响应）。驱动层必须具备非阻塞 drain 与残余缓冲清洗机制；
-* **消除运行期 0x25 模式回读**：严禁在运行期周期性读取 0x25 模式寄存器作为硬门禁（读 0x25 会严重破坏 50Hz 连续下发时序，引发超时）；0x25 仅在开机预检阶段校验一次。
-
-#### (3) 非阻塞轮询反馈调度器 (Round-Robin Feedback)
-由于单总线半双工带宽限制，上位机无法在每个 20ms 内查询全部六轴（6 轴完整问答耗时 $>24\,\text{ms}$，会超出 20ms 周期导致时序崩溃）。
-* **设计策略**：每 20ms 周期在纯写下发后，仅向 1 个轴发起 0x30 状态查询（ID1 $\to$ ID2 $\to \dots \to$ ID6 $\to$ ID1）；
-* **有效采样率**：单轴遥测状态更新周期为 $120\,\text{ms}$（单轴采样率 $\approx 8.33\,\text{Hz}$）；
-* **规范声明**：该数据为单轴约 8.33Hz 的异步轮询采样，**绝不能声称为六轴 50Hz 同步测量误差**。
-
-## 3. 六电机驱动层与 J7 50Hz Servo 伺服架构 (Motor Driver & Concurrency Architecture)
-
-### 3.1 为什么需要生产者-消费者解耦与单槽覆盖缓冲
-* **生产侧**：上层 ROS 2 连续轨迹规划流以 **50Hz nominal** 频率发布目标（周期 20ms）；
-* **消费侧**：物理 UART 串口受限于波特率与 6 轴往返延迟，物理执行频率约为 **25Hz nominal**（周期约 40ms）。
-
-如果使用标准的 FIFO 消息队列，50Hz 生产流入 25Hz 消费队列会导致指令迅速积压，产生数百毫秒的严重控制滞后（控制延时会导致手术机器人跟踪发散）。因此，驱动节点设计了 **Single-Slot Latest-Value-Wins (单槽最新值覆盖)** 容器。
-
----
-
-### 3.2 节点输入输出与接口定义
-源码位于 [`pus6_motor_driver/pus6_motor_driver/motor_driver_node.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/motor_driver_node.py)。
-
-```
-[ ROS 2 控制流 (50Hz) ] ──► /pus6/command_joint_steps (QoS: KeepLast(1), BestEffort)
-                                      │
-                                      ▼
-                        ┌───────────────────────────┐
-                        │ sub_cb_group (极速入队)    │
-                        └───────────────────────────┘
-                                      │ (_target_lock)
-                                      ▼
-                        ┌───────────────────────────┐
-                        │ Single-Slot Latest-Target │
-                        └───────────────────────────┘
-                                      │
-                                      ▼
-                        ┌───────────────────────────┐
-                        │ worker_cb_group @ 25Hz    │ ──► [ Slew Recovery & Preflight ]
-                        └───────────────────────────┘
-                                      │
-                                      ▼ (UART 0x29 × 6)
-                        ┌───────────────────────────┐
-                        │ 物理硬件电缸 ID1..ID6      │
-                        └───────────────────────────┘
-                                      │
-                                      ▼ (Piggyback 解码)
-          ┌───────────────────────────┼───────────────────────────┐
-          ▼                           ▼                           ▼
-/pus6/joint_states        /pus6/six_axis_telemetry    /pus6/joint_feedback/timed
-(sensor_msgs/JointState)   (SixAxisTelemetry)          (TimedJointFeedback)
-```
-
----
-
-### 3.3 核心类与并发解耦设计
-
-#### (1) Callback Group 隔离与多线程执行器
-驱动节点在 `MultiThreadedExecutor` 中运行，显式划分三大独立互斥回调组：
-1. `sub_cb_group = MutuallyExclusiveCallbackGroup()`：专用于订阅 `/pus6/command_joint_steps`，耗时 $< 0.05\text{ ms}$，绝不被串口阻塞；
-2. `worker_cb_group = MutuallyExclusiveCallbackGroup()`：专用于 25Hz 物理 UART 下发与反馈接收；
-3. `poll_cb_group = MutuallyExclusiveCallbackGroup()`：专用于系统空闲时的低频遥测轮询。
-
-#### (2) 单一权威命令入口 (Single Authoritative Ingress)
-系统仅开放 `/pus6/command_joint_steps` 作为物理下发的唯一权威入口，废除了旧版本位置浮点数与整数双入口导致的竞态隐患。
-
-#### (3) Single-Slot 缓冲与守恒恒等式
-在 `_target_lock` 保护下，容器永远只保存最新的一帧目标 `TargetEnvelope`。过时帧被安全覆盖，实测覆盖率约为 $50\%\sim 52\%$。系统严格遵循单槽守恒恒等式：
-$$N_{\text{initial\_residual}} + N_{\text{received}} \equiv N_{\text{consumed}} + N_{\text{overwrite}} + N_{\text{final\_residual}}$$
-
----
-
-### 3.4 常见误解与避坑指南
-1. **误解：看到覆盖率达 50% 以为发生了系统丢包错误**  
-   * *澄清*：50Hz 生产与 25Hz 消费下，~50% 覆写是 Latest-Value-Wins 的必然数学结果，它确保驱动层下发的一定是此时刻最新位姿，彻底消除了历史队列延迟。
-2. **误解：把驱动节点的多线程配置当成所有 ROS 2 节点的标准模板**  
-   * *澄清*：驱动节点由于仅有 25Hz 串口循环与极轻量的 ROS 回调，适合多线程；但对于高频 200Hz 的 FK 解算节点，多线程会导致严重的回调饥饿，必须使用独立单线程执行器。
-
----
-
-### 3.5 推荐源码阅读顺序
-1. [`pus6_motor_driver/pus6_motor_driver/motor_driver_node.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/motor_driver_node.py) 中的 `__init__` 与 `_handle_command_joint_steps`；
-2. 跟踪 `_uart_worker_cycle` 理解从缓冲提取、斜率恢复到物理下发与 Timed 遥测发布的全过程。
-
----
-
-## 4. 6PUS 并联机构解析逆运动学 (Analytical Inverse Kinematics & Geometry Config)
-
-### 4.1 为什么并联机构逆运动学是闭式解析解
-与传统串联机械臂（正解简单、逆解复杂多解）相反，**Stewart/6PUS 并联机构的逆运动学具有极其优异的闭式解析解 (Closed-Form Analytical Solution)**：
-* 给定动平台 6DoF 空间位姿，6 根连杆的空间几何约束互相解耦；
-* 每一条支链都可以独立列出二次几何方程，并直接求出唯一的解析实数解，计算耗时仅微秒级，非常适合 50Hz 实时高频控制。
-
-```
+```text
                      动平台 (Platform, Radius d = 27.5mm)
-                       /   |   |   |   |   \
-                      /    |   |   |   |    \  (6 根定长碳纤维连杆 e = 84.0mm)
-                     /     |   |   |   |     \
-                   S1      S2  S3  S4  S5     S6 (上端球铰 Spherical Joints, Bi)
+                       /   |   |   |   |                         /    |   |   |   |    \  (6 根定长碳纤维连杆 e = 84.0mm)
+                     /     |   |   |   |                        S1      S2  S3  S4  S5     S6 (上端球铰 Spherical Joints, Bi)
                     │       │   │   │   │      │
                    U1      U2  U3  U4  U5     U6 (下端万向铰 Universal Joints, Ai)
                     │       │   │   │   │      │
@@ -359,495 +263,227 @@ $$N_{\text{initial\_residual}} + N_{\text{received}} \equiv N_{\text{consumed}} 
                   ================================ 静基座 (Base, Radius c = 40.0mm)
 ```
 
----
+### 3.2 闭式逆解数学推导
 
-### 4.2 输入输出与数学模型推导
-源码位于 [`pus6_kinematics/pus6_kinematics/analytical_6pus.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/analytical_6pus.py)。
+1. **输入量**：动平台中心在基座坐标系下的位姿 $\mathbf{P} = [x, y, z]^	op$，姿态角 $[lpha, eta, \gamma]^	op$（Roll, Pitch, Yaw，ZYX 欧拉角约定）；
+2. **输出量**：6 轴滑块绝对高度向量 $\mathbf{q} = [q_1, q_2, q_3, q_4, q_5, q_6]^	op$。
 
-1. **输入量**：动平台中心在基座坐标系下的位姿 $\mathbf{P} = [x, y, z]^\top$，姿态角 $[\alpha, \beta, \gamma]^\top$（Roll, Pitch, Yaw，ZYX 欧拉角约定）；
-2. **输出量**：6 轴滑块绝对高度向量 $\mathbf{q} = [q_1, q_2, q_3, q_4, q_5, q_6]^\top$。
-
-#### 几何约束推导：
-动平台上第 $i$ 个球铰点在基座坐标系下的坐标为：
-$$\mathbf{B}_i = \mathbf{P} + \mathbf{R}_{\text{ZYX}}(\alpha, \beta, \gamma) \mathbf{b}_i$$
-基座滑块铰链坐标为 $\mathbf{A}_i = [a_{ix}, a_{iy}, q_i]^\top$。根据连杆定长约束 $\|\mathbf{B}_i - \mathbf{A}_i\|^2 = L_0^2$：
+动平台上第 $i$ 个球铰点在基座坐标系下的空间坐标为：
+$$\mathbf{B}_i = \mathbf{P} + \mathbf{R}_{	ext{ZYX}}(lpha, eta, \gamma) \mathbf{b}_i$$
+基座滑块铰链坐标为 $\mathbf{A}_i = [a_{ix}, a_{iy}, q_i]^	op$。根据连杆定长约束 $\|\mathbf{B}_i - \mathbf{A}_i\|^2 = L_0^2$：
 $$(B_{ix} - a_{ix})^2 + (B_{iy} - a_{iy})^2 + (B_{iz} - q_i)^2 = L_0^2$$
 
 取滑块位于动平台下方的物理工作分支，得到 **唯一闭式解析逆运动学解**：
 $$q_i = B_{iz} - \sqrt{L_0^2 - (B_{ix} - a_{ix})^2 - (B_{iy} - a_{iy})^2}$$
 
-```python
-# analytical_6pus.py 核心逆解实现
-dx = px - a_i[0]
-dy = py - a_i[1]
-radicand = self.strut_length**2 - dx**2 - dy**2
-if radicand < 0.0:
-    raise WorkspaceLimitError("Target pose causes strut over-extension (unreachable)")
-qi = pz - math.sqrt(radicand)
-```
+### 3.3 步数比例与工作零位转换
 
----
-
-### 4.3 坐标转换、工作零位与 YAML 步数映射
-
-所有几何参数与步数转换比例严格来自 [`6pus_geometry.yaml`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/config/6pus_geometry.yaml)：
-
-* **标称高度**：$z_{\text{nom}} \approx 0.1326123\text{ m}$ ($132.6123\text{ mm}$)；
-* **工作零位 (`OPERATING_HOME`)**：$q_{\text{raw}} = [1000, 1000, 1000, 1000, 1000, 1000]\text{ step}$，对应推杆中位伸出量 **$50.0\text{ mm}$**（行程范围 $25.0\sim 75.0\text{ mm}$ 的中心点），相对控制坐标为 $[0, 0, 0, 0, 0, 0]\text{ m}$；
-* **停放位 (`STORAGE_PARK`)**：$q_{\text{raw}} = [0, 0, 0, 0, 0, 0]\text{ step}$，推杆全缩回（最短位置，仅限受控关机停放）；
+* **标称高度**：$z_{	ext{nom}} pprox 0.1326123	ext{ m}$ ($132.6123	ext{ mm}$)；
+* **工作零位 (`OPERATING_HOME`)**：$q_{	ext{raw}} = [1000, 1000, 1000, 1000, 1000, 1000]	ext{ step}$，对应推杆中位伸出量 **$50.0	ext{ mm}$**（行程范围 $25.0\sim 75.0	ext{ mm}$ 的中心点），相对控制坐标为 $[0, 0, 0, 0, 0, 0]	ext{ m}$；
+* **停放位 (`STORAGE_PARK`)**：$q_{	ext{raw}} = [0, 0, 0, 0, 0, 0]	ext{ step}$，推杆全缩回（最短位置 $25.0	ext{ mm}$）；
 * **整步转换公式**：
-  $$q_{\text{raw}, i} = 1000 + \text{round}\left((q_i - q_{\text{nom}, i}) \times \text{steps\_per\_meter}\right) \quad (\text{其中 } \text{steps\_per\_meter} = 40000.0)$$
+  $$q_{	ext{raw}, i} = 1000 + 	ext{round}\left((q_i - q_{	ext{nom}, i}) 	imes 	ext{steps\_per\_meter}ight) \quad (	ext{其中 } 	ext{steps\_per\_meter} = 40000.0)$$
 
 ---
 
-### 4.4 常见误解与避坑指南
-1. **误解：以为工作零位推杆伸出量是 25.0mm**  
-   * *澄清*：推杆的绝对行程是 $25\text{ mm} \sim 75\text{ mm}$，工作零位（raw=1000）处于行程中点，对应实际伸出量为 **$50.0\text{ mm}$**。
-2. **误解：为了改机械参数直接编辑 `analytical_6pus.py`**  
-   * *澄清*：代码中 `Analytical6PusKinematics` 默认通过 `load_geometry_config()` 自动加载 YAML，必须统一修改 `pus6_kinematics/config/6pus_geometry.yaml`。
+## 第 4 章 (J4): 连续空间运动、三阶 Jerk 轨迹整形与 QoS/LVW 架构
 
----
+### 4.1 学习目标与控制平滑性
+理解空间多自由度连续控制中加加速度连续性对机构减振的决定性意义。掌握三阶 Jerk-Limited 状态滤波器的微分积分实现与 Single-Slot Latest-Value-Wins (LVW) 架构。
 
-### 4.5 推荐源码阅读顺序
-1. [`pus6_kinematics/pus6_kinematics/analytical_6pus.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/analytical_6pus.py)：重点看 `inverse_kinematics` 与几何参数初始化；
-2. [`pus6_kinematics/pus6_kinematics/kinematics_node.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/kinematics_node.py)：理解工作空间包络检查与 ROS 话题转发。
+* **主要源码**：[`pus6_control/pus6_control/joint_trajectory_controller.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_control/pus6_control/joint_trajectory_controller.py), [`pus6_control/pus6_control/control_node.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_control/pus6_control/control_node.py)
+* **ROS 2 概念**：QoS (BestEffort, KeepLast(1)), Single-Slot 缓冲, Timer 循环。
+* **控制/机器人学概念**：$C^2$ 加速度连续性、三阶实极点状态微分方程持续积分、速度/加速度/加加速度物理饱和限幅。
 
----
+### 4.2 三阶 Jerk-Limited 状态整形微分方程
 
-## 5. 在线轨迹整形与连续控制算法 (Stateful Shaper & Continuous Control)
+滤波器配置为三阶实极点 $s = -\omega_n$（带宽 $\omega_n = 20.0	ext{ rad/s}$）：
+$$H(s) = rac{\omega_n^3}{(s + \omega_n)^3} = rac{\omega_n^3}{s^3 + 3\omega_n s^2 + 3\omega_n^2 s + \omega_n^3}$$
 
-### 5.1 为什么需要在线三阶加加速度状态滤波 (Shaper)
-在空间多自由度连续控制中，上层发布的轨迹可能包含阶跃突变或高频扰动。如果直接将逆解结果下发给电机，会导致无限大的加速度跳变，引发机械剧烈振动甚至电机堵转。
-传统的 FIR 滤波器有相位延迟，且无法在动态目标突跳时保证状态连续。本项目设计了 **`StatefulJerkLimitedShaper`（三阶加加速度饱和状态整形滤波器）**。
+定义连续状态向量 $\mathbf{x} = [q, \dot{q}, \ddot{q}]^	op$。在每个控制周期 $dt$：
+$$\dddot{q}(t) = \omega_n^3 \left( q_{	ext{target}}(t) - q(t) ight) - 3\omega_n^2 \dot{q}(t) - 3\omega_n \ddot{q}(t)$$
 
----
-
-### 5.2 输入输出与控制接口
-源码位于 [`pus6_control/pus6_control/joint_trajectory_controller.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_control/pus6_control/joint_trajectory_controller.py)。
-
-* **输入**：`/pus6/desired_joint_deltas`（来自运动学节点的关节相对期望增量）；
-* **输出**：`/pus6/command_joint_steps`（叠加零位后的平滑绝对整步，50Hz 发布，QoS: BestEffort, KeepLast(1)）；
-* **外环扩展 Hook**：`OuterLoopControllerHook`（预留给未来传感器闭环补偿）。
-
----
-
-### 5.3 数学原理与状态微分方程
-
-#### (1) 三阶连续传递函数
-滤波器配置为三阶实极点 $s = -\omega_n$（带宽 $\omega_n = 20.0\text{ rad/s}$）：
-$$H(s) = \frac{\omega_n^3}{(s + \omega_n)^3} = \frac{\omega_n^3}{s^3 + 3\omega_n s^2 + 3\omega_n^2 s + \omega_n^3}$$
-
-#### (2) 状态微分方程与持久化维护
-定义连续状态向量 $\mathbf{x} = [q, \dot{q}, \ddot{q}]^\top$。在每个控制周期 $dt$：
-$$\dddot{q}(t) = \omega_n^3 \left( q_{\text{target}}(t) - q(t) \right) - 3\omega_n^2 \dot{q}(t) - 3\omega_n \ddot{q}(t)$$
-
-#### (3) 物理饱和限幅与 $C^2$ 连续性保证
 在积分推进过程中强制施加三级物理饱和：
-* **速度限幅**：$|\dot{q}| \le 0.005\text{ m/s} \ (200\text{ step/s})$
-* **加速度限幅**：$|\ddot{q}| \le 0.050\text{ m/s}^2 \ (2000\text{ step/s}^2)$
-* **加加速度限幅**：$|\dddot{q}| \le 0.500\text{ m/s}^3 \ (20000\text{ step/s}^3)$
+* **速度限幅**：$|\dot{q}| \le 0.005	ext{ m/s} \ (200	ext{ step/s})$
+* **加速度限幅**：$|\ddot{q}| \le 0.050	ext{ m/s}^2 \ (2000	ext{ step/s}^2)$
+* **加加速度限幅**：$|\dddot{q}| \le 0.500	ext{ m/s}^3 \ (20000	ext{ step/s}^3)$
 
 > [!IMPORTANT]
 > **$C^2$ 连续性铁律**：当外部目标突变时，滤波器**绝不清零导数**（$\dot{q}$ 和 $\ddot{q}$ 保持连续积分），从而在数学上保证了输出位置的二阶可导，受力完全平滑无冲击。
 
 ---
 
-### 5.4 五次多项式起止注入算法
-对于单段离散轨迹的平滑起止，使用归一化五次多项式 $s(\tau) = 10\tau^3 - 15\tau^4 + 6\tau^5 \ (\tau \in [0, 1])$，确保起止点速度与加速度均为 0。
+## 第 5 章 (J5): 纳秒统一时间轴、Fixed-Lag 状态重构与 LM 数值正解 (FK)
 
----
+### 5.1 学习目标与观测挑战
+理解为什么并联机构正解必须数值求解。掌握 Linux Host `CLOCK_MONOTONIC` 统一时间轴、Fixed-Lag 严格零外推状态重构以及基于解析雅可比的 Levenberg-Marquardt (LM) 数值正解算法。
 
-### 5.5 常见误解与避坑指南
-1. **误解：以为上层目标改变时应该调用 `reset_state()`**  
-   * *澄清*：`reset_state()` 会瞬间将速度和加速度归零，破坏连续性产生机械冲击；它仅限在系统开机初始化或急停恢复时调用一次。
-2. **误解：以为控制节点订阅了 FK 的位姿反馈来做闭环**  
-   * *澄清*：J4 控制节点是纯前向高精度整形架构，未将 FK 接入控制回路，保证了控制的高可靠性。
+* **主要源码**：[`pus6_msgs/msg/TimedJointFeedback.msg`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_msgs/msg/TimedJointFeedback.msg), [`pus6_kinematics/pus6_kinematics/state_synchronizer.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/state_synchronizer.py), [`pus6_kinematics/pus6_kinematics/fk_node.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/fk_node.py)
+* **ROS 2 概念**：自定义消息类型、单调时钟时间戳合同、`SingleThreadedExecutor` 独占调度。
+* **控制/机器人学概念**：$6	imes 6$ 解析雅可比矩阵构造、LM 自适应阻尼迭代、Warm-Start 暖启动、$	ext{SO}(3)$ 测地线距离跳变门禁。
 
----
+### 5.2 Fixed-Lag 严格零外推双向夹逼对齐算法
 
-### 5.6 推荐源码阅读顺序
-1. [`pus6_control/pus6_control/joint_trajectory_controller.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_control/pus6_control/joint_trajectory_controller.py)：精读 `StatefulJerkLimitedShaper.update` 积分逻辑；
-2. [`pus6_control/pus6_control/control_node.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_control/pus6_control/control_node.py)：理解 50Hz 定时器循环与服务挂载。
-
----
-
-## 6. 安全门禁、故障恢复与 HOME/PARK 状态机 (Safety Gates, Recovery & State Machine)
-
-### 6.1 为什么需要分层硬门禁与主动自愈机制
-手术机器人系统绝不允许出现由于丢包、网络延迟或软件异常引起的失控运动。
-驱动节点作为连接物理硬件的最后一道防线，必须具备**无需上层干预的强制硬门禁拦截**与**确定性的故障自愈状态机**。
-
-完整的安全流转语义为：
-$$\text{Latest Target} \longrightarrow \text{Vector Slew Recovery (必要时)} \longrightarrow \text{Safety Preflight Hard Gate } (|\Delta q_i| \le 20) \longrightarrow \text{UART Dispatch}$$
-
----
-
-### 6.2 驱动层多级安全硬门禁 (`_execute_safety_preflight`)
-源码位于 [`pus6_motor_driver/pus6_motor_driver/safety.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/safety.py)。
-每次向物理串口下发前，强制执行 5 级硬门禁检查：
-1. **连接与维度**：控制器已建立连接且目标向量维度严格为 6；
-2. **绝对硬件极限**：$0 \le q_i \le 2000\text{ step}$；
-3. **正常运动软件包络**：$200 \le q_i \le 1800\text{ step}$（两端各留 5mm 缓冲）；
-4. **单步增量硬门禁**：$|\Delta q_i| \le \mathbf{20\text{ steps}}$ ($0.5\text{ mm}$)，任何超过 20 步的物理跳变被直接无条件拒绝；
-5. **故障熔断**：上一周期反馈 `fault_codes` 存在非 0 或电流超过门限立即熔断。
-
----
-
-### 6.3 Time-Aware Vector Slew Recovery（时间自适应矢量斜率恢复）
-* **解决的问题**：当发生 UART 通信长尾或 ROS 调度停顿（如累积延时 $355\text{ ms}$）时，目标推进量会累积超过 20 步。如果直接拒绝，会导致前检死锁 (Latch-Out Deadlock)；
-* **核心自愈算法**：
-  1. 以最后成功下发的目标为**命令锚点 (Command Anchor)**；
-  2. 根据流逝时间动态计算安全裕量：$\text{Allowance} = \min(20, \max(5, \text{int}(v_{\max}\Delta t)))$；
-  3. 若最大轴差 $\max_i |\Delta q_i| > \text{Allowance}$，计算统一缩放因子 $\alpha = \text{Allowance} / \max_i |\Delta q_i|$；
-  4. **同比例缩放六轴矢量**：$q_{\text{disp}, i} = \text{round}(\text{Anchor}_i + \alpha (q_{\text{cand}, i} - \text{Anchor}_i))$；
-  5. 严格保持空间姿态几何比例，绝不单轴截断，在数个周期内平滑追上最新目标流。
-
----
-
-### 6.4 Delivery-Uncertain Resync（异常重锚与自愈状态机）
-* **解决的问题**：当发生 50ms 串口读超时时，电机实际可能已执行目标但上位机未收到应答，导致命令锚点与物理位置脱节；
-* **自愈流转**：
-  $$\text{0x29 Write Timeout} \longrightarrow \text{自动 pause\_all()} \longrightarrow \text{读取六轴状态快照} \longrightarrow \text{严格校验} \longrightarrow \text{物理重锚} \longrightarrow \text{Slew Recovery} \longrightarrow \text{NORMAL}$$
-* **条件恢复准则**：仅在读取到的快照**完整有效、非 stale、无故障且位置处于合法包络内**时，才允许重新锚定并恢复；否则触发 Safety Halt。
-
----
-
-### 6.5 HOME / PARK 与 `maintenance_mode` 安全状态机
-
-```
-                      +---------------------------------------+
-                      |   STORAGE_PARK (raw = [0, 0, 0, 0, 0, 0])
-                      |   机械停放位 / 关机收拢态 (推杆全缩回)
-                      +---------------------------------------+
-                                          ▲
-   maintenance_mode=true 显式授权受控收拢    │  J3 startup_homing 一键顶升
-                                          ▼
-                      +---------------------------------------+
-                      |  OPERATING_HOME (raw = [1000, 1000, 1000...])
-                      |  工作零位 / 控制基准原点 (中位伸出 50.0mm)
-                      +---------------------------------------+
-                                          ▲
-                                          │ J4 连续轨迹运动 (受限在 [200, 1800] 正常包络)
-                                          ▼
-                      +---------------------------------------+
-                      |     J4 动态连续空间工作区 (Normal Envelope)
-                      |     关节步数: [200, 1800] step
-                      +---------------------------------------+
-```
-
-* **`maintenance_mode` 保护机制**：
-  * 默认 `maintenance_mode = false`：驱动层硬门禁强制拦截在 `[200, 1800]`，此时直接下发 PARK raw `[0]*6` 会被安全拒绝，防止误操作导致机构收拢撞击；
-  * 显式 `maintenance_mode = true`：仅在通过专用维护服务 `/pus6/controlled_park` 且各项安全条件通过时，才允许受控进入 `[0, 2000]` 绝对停放区。
-
----
-
-### 6.5.1 standalone commissioning 与未来 ROS 2 控制管线
-
-`run_j3_startup_homing.py` 的 J6 HOME/PARK standalone 路径用于电机级 commissioning：验证 mode=0、目标寄存器 `0x29`、反馈读取、停止确认和安全门禁。它是可审计的点到点入口，不替代 ROS 2 的连续笛卡尔控制。
-
-两条路径共享 `pus6_motor_driver` 的电机通信与安全抽象；standalone runner 直接调用六电机控制器，ROS 2 则由 `pus6_control` 产生目标并交给 `pus6_motor_driver_node`。J6 已验证的 `OPERATING_HOME=[1000]*6`、`STORAGE_PARK=[0]*6` 和目标限位语义可作为未来 ROS 2 启动/维护服务的接口基线，但 standalone 的 10 Hz 调度结果不能宣称为 ROS 2 50 Hz 管线的实机性能。
-
-推荐先在 Mock/FakeBus 中复用同一驱动层和 write-audit，核对 HOME/PARK 状态机与 ROS 2 service/topic 入口；完整机构装配并获单独授权后，再进行分阶段实机验证。
-
-### 6.6 常见误解与避坑指南
-1. **误解：在正常控制流中随意拿实际反馈 $q_{\text{actual}}$ 去更新命令基准**  
-   * *澄清*：正常运动中严禁混淆命令基准与物理基准；物理重锚**仅且仅在** Delivery-Uncertain 异常处理路径中触发一次。
-2. **误解：以为 PARK 只是普通工作空间里的一个点**  
-   * *澄清*：PARK 属于维护停放区，处于正常运动包络 `[200, 1800]` 之外，必须通过授权维护状态机执行。
-
----
-
-### 6.7 推荐源码阅读顺序
-1. [`pus6_motor_driver/pus6_motor_driver/safety.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/safety.py)：掌握 6 级安全门禁实现；
-2. [`pus6_motor_driver/pus6_motor_driver/motor_driver_node.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/motor_driver_node.py) 的 `_apply_time_aware_slew_recovery` 与 `_execute_delivery_uncertain_resync`。
-
----
-
-## 7. J5 进阶专题：多源统一时间轴与固定延迟状态重建 (Unified Timeline & Fixed-Lag)
-
-### 7.1 为什么需要统一时间轴与 Fixed-Lag 同步
-
-#### (1) 为什么标准 `/pus6/joint_states` 无法支撑并联机构高精度正运动学
-在 ROS 中，标准的 `sensor_msgs/msg/JointState` 消息包含一个统一的 `header.stamp` 和一个长度为 6 的 `position` 数组。然而在物理现实中：
-* 6 台电缸挂载在同一条半双工 RS485 总线上，主机必须以逐轴串行的方式依次进行 0x29 问答；
-* 单轴通信耗时约 $3.5\sim 4.5\text{ ms}$，整组 6 轴扫描跨度为 $24\sim 30\text{ ms}$；
-* 实际物理反馈是**时间分散的标量序列** $q_1(t_1), q_2(t_2), \dots, q_6(t_6)$，其中 $t_6 - t_1 \approx 18.18\text{ ms}$，它们根本不是在同一个物理瞬间采样的！
-
-如果在动态运动中（例如动平台以 $5.0\text{ mm/s}$ 运动）直接把这 6 个非同步采样值打包当作同一瞬间的向量 $\mathbf{q}(t)$ 喂给正运动学解算器，各轴之间会产生高达 $0.12\text{ mm}$ 的**时间相位畸变 (Temporal Skew Distortion)**，导致正解残差急剧发散、位姿失真。
-
-#### (2) 为什么采用 Fixed-Lag（固定延迟双向夹逼对齐）
-为了消除串行扫描引起的相位畸变，系统引入了固定延迟同步器 `FixedLagJointSynchronizer`：
-* **核心思路**：容忍一个微小的已知延迟（标称 $\Delta t_{\text{lag}} = 50\text{ ms}$），在当前物理时刻 $t_{\text{now}}$ 查询过去时刻 $t_{\text{query}} = t_{\text{now}} - \Delta t_{\text{lag}}$ 的状态；
-* **物理优势**：由于查询时刻落在历史样本的“过去”，每个轴在 $t_{\text{query}}$ 前后均已沉淀了真实历史观测点（左支撑点与右支撑点），从而可以通过**高精度的双向夹逼线性插值**，精确重构出严格同时刻的关节空间向量 $\mathbf{q}_{\text{sync}}(t_{\text{query}})$。
-
----
-
-### 7.2 输入、处理与输出数据流
-
-```
-[ 底层 RS485 逐轴串行应答 ] ──► 记录 Host CLOCK_MONOTONIC 接收完成时刻 (per_axis_rx_done_monotonic_ns)
-                                             │
-                                             ▼
-                                /pus6/joint_feedback/timed (TimedJointFeedback)
-                                             │
-                                             ▼ (push_feedback 写入 6 轴滑动历史 deque)
-                           ┌───────────────────────────────────────────┐
-                           │ FixedLagJointSynchronizer (RLock 保护)    │
-                           └───────────────────────────────────────────┘
-                                             │
-                                             ▼ (200Hz 定时器以 t_query = t_now - 50ms 查询)
-                           ┌───────────────────────────────────────────┐
-                           │ 6 轴双向夹逼判定 (t_left <= t_query <= t_right)│
-                           └───────────────────────────────────────────┘
-                                             │
-                     ┌───────────────────────┴───────────────────────┐
-                     ▼ (任一轴未满足夹逼 / 缺帧)                       ▼ (6 轴全部成功夹逼)
-             [ 严格 0 外推拒绝发布 ]                          [ 线性内插生成 q_sync(t_query) ]
-           (WAIT_FUTURE_SAMPLE / WAIT_TOO_EARLY)             (SyncStatus.SYNCED 供正解解算)
-```
-
----
-
-### 7.3 核心源码与文件定位
-1. **消息契约**：[`pus6_msgs/msg/TimedJointFeedback.msg`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_msgs/msg/TimedJointFeedback.msg) 与 [`pus6_msgs/msg/TimedJointCommand.msg`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_msgs/msg/TimedJointCommand.msg)
-2. **状态同步器**：[`pus6_kinematics/pus6_kinematics/state_synchronizer.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/state_synchronizer.py)
-3. **实时消费节点**：[`pus6_kinematics/pus6_kinematics/fk_node.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/fk_node.py)
-
----
-
-### 7.4 统一时间合同与时间戳语义规范
-
-#### (1) ROS `Header.stamp` 与 Host `CLOCK_MONOTONIC` 的本质区别
-* **`header.stamp`**：标准 ROS 2 消息发布时间 (`node.get_clock().now()`)，受系统墙上时钟或 ROS 仿真时钟影响，可能发生 NTP 授时阶跃跳变，仅用于 ROS 通信路由与 rosbag 录包对齐；
-* **`query_monotonic_timestamp_ns` / `CLOCK_MONOTONIC`**：系统内部算法状态的**物理基准时间**，严格采用 Linux 单调时钟 `time.clock_gettime_ns(time.CLOCK_MONOTONIC)`，保证全局严格单调递增，不受系统调时影响，与双 H30 IMU 姿态解算全局同源。
-
-#### (2) `per_axis_rx_done_monotonic_ns` 的物理代理属性
-`TimedJointFeedback` 中 `per_axis_rx_done_monotonic_ns[6]` 记录的是**主机内核解析完成该电机 0x29 应答帧的单调时刻**：
-* **重要概念**：由于电机固件未开放微秒级硬件时间戳，它**不是**电机内部编码器采样的微观瞬间，而是上位机能够确知、可审计且严格单调的**观测事件完成时间代理 (Observation Completion Proxy)**。
-
-#### (3) `uart_cycle_sequence` 序列语义与配对边界
-* 在主动写控制周期下，`TimedJointCommand` 与 `TimedJointFeedback` 携带相同的 `uart_cycle_sequence`，实现下发与观测的 1-to-1 追踪；
-* 在零速静止、故障恢复或只读审计阶段，系统会产生合法的 `Feedback-only` 帧，确保遥测连续。
-
----
-
-### 7.5 `FixedLagJointSynchronizer` 内部机制与算法推导
-
-#### (1) 数据结构与 `threading.RLock()` 线程安全
-类内部维护 6 个双端队列（`collections.deque(maxlen=500)`），分别存储各轴的历史三元组：
-$$\mathcal{H}_i = \Big\{ \big(t_i^{(k)}, q_i^{(k)}, \text{raw\_step}_i^{(k)}\big) \Big\}_{k=1}^{N_i}$$
-* **为什么需要 `RLock`**：订阅回调线程（`push_feedback` 写入 deque）与高频 200Hz 查询定时器（`query_sync_configuration` 读取和二分查找）并发访问相同的 6 个 deque。所有读写方法外层必须包裹递归互斥锁 `with self._lock:`，杜绝迭代器失效与数据撕裂。
-
-#### (2) 双向夹逼 (Left/Right Bracketing) 与线性插值
-在查询时刻 $t_{\text{query}} = t_{\text{now}} - \text{fixed\_lag\_delay\_ns}$：
-1. **深度检查**：所有 6 个队列长度必须 $\ge 2$（至少有两个有效历史点）；
+为了消除串行扫描引起的相位畸变，系统引入固定延迟同步器 `FixedLagJointSynchronizer`（J8 推荐参数 $	au = 160	ext{ ms}$）：
+在查询时刻 $t_{	ext{query}} = t_{	ext{now}} - 	au$：
+1. **深度检查**：所有 6 个队列长度必须 $\ge 2$；
 2. **时间跨度检查 (Bracketing Check)**：
-   $$\forall i \in \{1..6\}, \quad t_{i, \text{oldest}} \le t_{\text{query}} \le t_{i, \text{newest}}$$
-3. **二分查找与线性插值**：对每个轴查找满足 $t_i^{(k-1)} \le t_{\text{query}} \le t_i^{(k)}$ 的相邻两帧，计算插值系数：
-   $$\alpha_i = \frac{t_{\text{query}} - t_i^{(k-1)}}{t_i^{(k)} - t_i^{(k-1)}} \in [0.0, 1.0]$$
-   $$\hat{q}_i(t_{\text{query}}) = q_i^{(k-1)} + \alpha_i \big(q_i^{(k)} - q_i^{(k-1)}\big)$$
+   $$orall i \in \{1..6\}, \quad t_{i, 	ext{oldest}} \le t_{	ext{query}} \le t_{i, 	ext{newest}}$$
+3. **二分查找与线性插值**：对每个轴查找满足 $t_i^{(k-1)} \le t_{	ext{query}} \le t_i^{(k)}$ 的相邻两帧，计算插值系数：
+   $$lpha_i = rac{t_{	ext{query}} - t_i^{(k-1)}}{t_i^{(k)} - t_i^{(k-1)}} \in [0.0, 1.0]$$
+   $$\hat{q}_i(t_{	ext{query}}) = q_i^{(k-1)} + lpha_i ig(q_i^{(k)} - q_i^{(k-1)}ig)$$
+4. **严格 0 外推**：任一轴未满足夹逼条件立即拒绝发布，绝不使用速度外推预测伪数据。
 
-#### (3) 严格 0 外推原则 (Zero Extrapolation)
-只要有任意一轴未满足夹逼条件，同步器立即拒绝输出，**绝不进行向后或向前的趋势外推**。
+### 5.3 6×6 解析雅可比矩阵与 LM 迭代
 
-#### (4) `SyncStatus` 状态机与 50ms Nominal Fixed-Lag 的本质
-* **`SyncStatus.EMPTY_BUFFER`**：队列样本不足 2 个；
-* **`SyncStatus.WAIT_TOO_EARLY`**：$t_{\text{query}} < t_{i, \text{oldest}}$（查询时刻已被滑动队列挤出）；
-* **`SyncStatus.WAIT_FUTURE_SAMPLE`**：$t_{\text{query}} > t_{i, \text{newest}}$（最新硬件帧尚未到达）；
-* **`SyncStatus.SYNCED`**：6 轴全部夹逼成功，成功返回插值后的 $\mathbf{q}_{\text{sync}}$；
-* **50ms 只是标称延迟参数，绝非“同步保证”**：若发生串口丢包或通信波动延时 $>50\text{ ms}$，夹逼必然失败并返回 `WAIT_FUTURE_SAMPLE`，这是安全防御的正确表现。
+定义支链单位方向矢量 $\mathbf{u}_i = rac{\mathbf{p}_i - \mathbf{s}_i}{\|\mathbf{p}_i - \mathbf{s}_i\|}$。残差偏导数构成雅可比矩阵 $\mathbf{J} \in \mathbb{R}^{6 	imes 6}$ 的第 $i$ 行：
+$$\mathbf{J}_i = \left[ \mathbf{u}_i^	op, \quad \mathbf{u}_i^	op \left(rac{\partial \mathbf{R}}{\partial lpha}\mathbf{b}_iight), \quad \mathbf{u}_i^	op \left(rac{\partial \mathbf{R}}{\partial eta}\mathbf{b}_iight), \quad \mathbf{u}_i^	op \left(rac{\partial \mathbf{R}}{\partial \gamma}\mathbf{b}_iight) ight]$$
 
----
-
-### 7.6 常见误解与避坑指南
-1. **误解：以为 `per_axis_rx_done` 是电机编码器硬件采样的真实物理瞬间**  
-   * *澄清*：电机固件未提供硬件时间戳，`per_axis_rx_done` 是主机侧接收完成时间的最高精度代理。
-2. **误解：以为配置了 50ms 延迟就能 100% 保证每一帧都能成功内插**  
-   * *澄清*：50ms 仅是标称延迟，若串口通信超时或出现抖动长尾，状态机会正确返回等待/丢弃状态。
-3. **误解：以为队列数据不足时可以用一阶速度外推预测位置**  
-   * *澄清*：在并联机构中，外推伪数据会导致正解严重失真甚至发散，系统严格实行 0 外推。
-
----
-
-### 7.7 推荐源码阅读顺序
-1. [`pus6_msgs/msg/TimedJointFeedback.msg`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_msgs/msg/TimedJointFeedback.msg)；
-2. [`pus6_kinematics/pus6_kinematics/state_synchronizer.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/state_synchronizer.py) 中的 `push_feedback` 与 `query_sync_configuration`。
-
----
-
-## 8. J5 进阶专题：解析雅可比数值正运动学与实时解算节点 (Analytical Jacobian Numerical FK & Pus6FkNode)
-
-### 8.1 为什么并联机构正运动学必须数值求解
-在并联机构运动学中，**正运动学 (Forward Kinematics, FK)** 要求根据 6 根推杆的已知伸出量 $\mathbf{q}$，解算动平台在空间中的 6DoF 位姿 $\mathbf{P}=[x,y,z]^\top$ 和姿态角 $[\alpha, \beta, \gamma]^\top$。
-* **数学本质**：Stewart 并联机构的正运动学涉及 6 个多元二次非线性几何约束方程联立，**在数学上不存在通用的显式解析闭式解**；
-* **工程解法**：必须采用**解析雅可比矩阵构造与自适应阻尼 Levenberg-Marquardt (LM) 数值迭代法**。
-
----
-
-### 8.2 输入、处理与输出数据流
-
-```
-[ FixedLag 状态同步器 ] ──► 输出时间对齐的关节向量 q_sync(t_query)
-                                      │
-                                      ▼
-                        ┌───────────────────────────┐
-                        │ Pus6FkNode (200Hz 定时器) │
-                        └───────────────────────────┘
-                                      │ (传入 q_sync 与 上一有效收敛位姿 x_last 做 Warm-Start)
-                                      ▼
-                        ┌───────────────────────────┐
-                        │ 6 支链几何残差方程 f_i(x)  │
-                        │ + 6x6 解析雅可比矩阵 J 构造│
-                        │ + Levenberg-Marquardt 迭代│
-                        └───────────────────────────┘
-                                      │
-                                      ▼ (LM 迭代收敛 ||f(x)|| < 1e-4 m)
-                        ┌───────────────────────────┐
-                        │ SO(3) 测地线角度跳变门禁  │ (theta <= 0.15 rad 且 ||Δp|| <= 15mm)
-                        └───────────────────────────┘
-                                      │
-                     ┌────────────────┴────────────────┐
-                     ▼ (通过门禁)                       ▼ (跳变拒绝 / 不收敛)
-      ┌─────────────────────────────┐         [ 拒绝发布当前位姿 ]
-      │ 更新 _last_successful_pose  │         [ 保持上一帧有效成功锚点 ]
-      └─────────────────────────────┘
-                     │
-         ┌───────────┴───────────┐
-         ▼                       ▼
-/pus6/fk/state            /pus6/fk/pose
-(FkStateStamped)          (geometry_msgs/PoseStamped)
-```
-
----
-
-### 8.3 核心源码与文件定位
-1. **数值正解数学核心**：[`pus6_kinematics/pus6_kinematics/analytical_6pus.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/analytical_6pus.py) 中的 `forward_kinematics_with_metrics`
-2. **实时解算节点**：[`pus6_kinematics/pus6_kinematics/fk_node.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/fk_node.py)
-3. **状态诊断消息**：[`pus6_msgs/msg/FkStateStamped.msg`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_msgs/msg/FkStateStamped.msg)
-
----
-
-### 8.4 数学原理与算法完整推导
-
-#### (1) 六条支链定长几何约束方程
-对于 6PUS 并联机构的第 $i$ 条支链：
-* **动平台球铰点实时空间坐标**：$\mathbf{p}_i = \mathbf{p} + \mathbf{R}_{\text{ZYX}}(\alpha, \beta, \gamma) \mathbf{b}_i$；
-* **基座滑块铰点实时坐标**：$\mathbf{s}_i(q_i) = \mathbf{a}_i + q_i \hat{\mathbf{z}} = [a_{ix}, a_{iy}, q_i]^\top$；
-* **连杆定长约束残差**：
-  $$f_i(\mathbf{x}) = \|\mathbf{p}_i - \mathbf{s}_i(q_i)\| - L_0 = 0 \quad (i = 1, \dots, 6)$$
-  其中待求解的状态向量为 6 维笛卡尔位姿：$\mathbf{x} = [x, y, z, \alpha, \beta, \gamma]^\top$。
-
-#### (2) ZYX 欧拉角约定与旋转矩阵
-旋转矩阵采用 ZYX 欧拉角约定（$\alpha=\text{Roll}, \beta=\text{Pitch}, \gamma=\text{Yaw}$）：
-$$\mathbf{R}_{\text{ZYX}}(\alpha, \beta, \gamma) = \mathbf{R}_z(\gamma) \mathbf{R}_y(\beta) \mathbf{R}_x(\alpha)$$
-
-#### (3) 6×6 解析雅可比矩阵 $\mathbf{J}$ 的构造
-定义支链单位方向矢量 $\mathbf{u}_i = \frac{\mathbf{p}_i - \mathbf{s}_i}{\|\mathbf{p}_i - \mathbf{s}_i\|}$。残差向量相对于状态量 $\mathbf{x}$ 的偏导数构成雅可比矩阵 $\mathbf{J} \in \mathbb{R}^{6 \times 6}$ 的第 $i$ 行：
-$$\mathbf{J}_i = \left[ \mathbf{u}_i^\top, \quad \mathbf{u}_i^\top \left(\frac{\partial \mathbf{R}}{\partial \alpha}\mathbf{b}_i\right), \quad \mathbf{u}_i^\top \left(\frac{\partial \mathbf{R}}{\partial \beta}\mathbf{b}_i\right), \quad \mathbf{u}_i^\top \left(\frac{\partial \mathbf{R}}{\partial \gamma}\mathbf{b}_i\right) \right]$$
-其中旋转矩阵相对于欧拉角的解析偏导数通过显式矩阵乘法直接计算：
-$$\frac{\partial \mathbf{R}}{\partial \alpha} = \mathbf{R}_z(\gamma)\mathbf{R}_y(\beta)\frac{\partial \mathbf{R}_x(\alpha)}{\partial \alpha}, \quad \frac{\partial \mathbf{R}}{\partial \beta} = \mathbf{R}_z(\gamma)\frac{\partial \mathbf{R}_y(\beta)}{\partial \beta}\mathbf{R}_x(\alpha), \quad \frac{\partial \mathbf{R}}{\partial \gamma} = \frac{\partial \mathbf{R}_z(\gamma)}{\partial \gamma}\mathbf{R}_y(\beta)\mathbf{R}_x(\alpha)$$
-> [!TIP]
-> **为什么必须使用解析雅可比**：解析雅可比避免了有限差分法的数值截断误差与多次求值开销，使单次雅可比构造仅耗时微秒级。
-
-#### (4) Levenberg-Marquardt 自适应阻尼迭代
 LM 迭代公式为：
-$$\Delta \mathbf{x} = - \big(\mathbf{J}^\top \mathbf{J} + \lambda \mathbf{I}\big)^{-1} \mathbf{J}^\top \mathbf{f}(\mathbf{x})$$
-* 当一步迭代后几何残差下降时，减小阻尼 $\lambda = \max(\lambda / 3, 10^{-7})$，算法表现为极速的高斯-牛顿二次收敛；
-* 当残差上升时，增大阻尼 $\lambda = \min(\lambda \times 2, 10^{3})$，算法退化为稳健的最速下降步。
+$$\Delta \mathbf{x} = - ig(\mathbf{J}^	op \mathbf{J} + \lambda \mathbf{I}ig)^{-1} \mathbf{J}^	op \mathbf{f}(\mathbf{x})$$
 
-#### (5) Warm-Start 暖启动与工作分支连续性认知
-在并联机构理论中，并联平台在全代数空间可能存在多个装配分支。在本项目实际工程中，动平台始终运行在 `OPERATING_HOME` 附近的物理工作分支内：
-* 算法以**上一控制周期成功收敛的位姿**作为初始猜测（Warm-Start）；
-* 求解器在当前物理分支的局部凸吸引域内迭代，平均仅需 $3\sim 4$ 步即可收敛到 $<10^{-10}\text{ m}$ 几何残差；
-* **重要认知**：Warm-Start 属于局部连续性追踪策略，前提是系统初始位姿位于真实物理分支附近；**它不代表在任意未知初始状态下的全局唯一解证明**。
-
-#### (6) $\text{SO}(3)$ 测地线角度跳变门禁
-为了防止异常输入导致求解器跃迁到非物理的代数装配分支，节点绝不使用简单的欧拉角差值（欧拉角存在万向节死锁和 $\pm\pi$ 卷绕突变问题），而是计算当前旋转矩阵 $\mathbf{R}_{\text{curr}}$ 与上一有效收敛矩阵 $\mathbf{R}_{\text{last}}$ 之间的李群测地线距离：
-$$\theta_{\text{geodesic}} = \arccos\left(\text{clip}\left(\frac{\text{Tr}(\mathbf{R}_{\text{last}}^\top \mathbf{R}_{\text{curr}}) - 1}{2}, -1.0, 1.0\right)\right)$$
-* 若 $\theta_{\text{geodesic}} > 0.15\text{ rad}\ (\approx 8.59^\circ)$ 或平移跳变 $\|\Delta \mathbf{p}\| > 15.0\text{ mm}$，判定为分支跳变并拒绝发布；
-* 此时**不更新** `_last_successful_pose` 锚点，有效保护物理工作分支。
-
-#### (7) 数值一致性 (IK↔FK Round-Trip) 与真实机械精度的物理认知边界
-* **测试指标**：在安全包络内 1000 个随机样本下，平移数值残差均值 $5.83\times 10^{-9}\text{ mm}$，$\text{SO}(3)$ 姿态残差均值 $1.21\times 10^{-7\circ}$；
-* **物理认知强调**：**数值一致性仅证明正逆解在纯数学代数与代码实现上无 bug，绝不代表真实物理机器人的机械加工与装配定位精度！**
+解算收敛后，通过李群 $	ext{SO}(3)$ 测地线距离门禁校验：
+$$	heta_{	ext{geodesic}} = rccos\left(	ext{clip}\left(rac{	ext{Tr}(\mathbf{R}_{	ext{last}}^	op \mathbf{R}_{	ext{curr}}) - 1}{2}, -1.0, 1.0ight)ight) \le 0.15	ext{ rad} \ (pprox 8.59^\circ)$$
 
 ---
 
-### 8.5 实时节点 `Pus6FkNode` 与 `FkStateStamped` 字段解析
+## 第 6 章 (J6): 现场总装调试、零位映射与 HOME/PARK 定位模式基线
 
-#### (1) `FkStateStamped.msg` 核心字段语义
-* `query_monotonic_timestamp_ns`：算法固定延迟查询物理时刻（`CLOCK_MONOTONIC`）；
-* `synced_positions_meters[6]`：6 轴插值对齐后的同步关节高度；
-* `pose` (`geometry_msgs/Pose`)：解算得到的动平台位置与四元数姿态；
-* `euler_zyx_rad[3]`：ZYX 欧拉角（Roll, Pitch, Yaw）；
-* `converged` (bool)：LM 迭代是否成功收敛；
-* `iterations` (int32)：LM 实际迭代步数；
-* `residual_norm_meters` (float64)：最终 6 支链定长几何约束残差范数；
-* `branch_continuity_passed` (bool)：$\text{SO}(3)$ 测地线跳变门禁是否通过；
-* `compute_time_us` (float64)：单次正解解算耗时（微秒）。
+### 6.1 学习目标与工程背景
+掌握 6PUS 并联机构机械总装后的现场调试流程。理解定位模式 (`mode=0`，10Hz 轮询) 下的推杆中位映射、启动预检及连续 10 循环可靠性验证，明确 J6 定位模式作为系统可靠 Fallback 基线的工程定位。
 
-#### (2) 200Hz FK Query 的物理含义澄清
-* **200Hz** 是上位机 Fixed-Lag 队列的**查询与插值解算频率**；
-* 它**不等于**底层电机产生了 200Hz 的新物理观测（底层串口通信依然为 25Hz）。
+* **主要源码**：[`scripts/run_j7_servo_home_park.py`](file:///home/lyapunov/bone_drill/bone_ws/scripts/run_j7_servo_home_park.py), `agent_docs/j6/`
+* **ROS 2 概念**：底层调试脚本与高层 ROS 2 节点的架构隔离。
+* **控制/机器人学概念**：机械总装行程标定 ($25.0\sim 75.0	ext{ mm}$)、电机梯形速度规划、定位模式作为系统安全托底基线。
+
+### 6.2 现场调试验收与 10 循环基线
+在 J6 阶段，平台完成了：
+1. 6 根推杆物理编号 (ID1~ID6) 与静/动平台球铰几何方位的现场一对一映射核对；
+2. 绝对中位标定：推杆总行程 50mm，全缩回为 25.0mm (PARK, raw=0)，行程中点伸出 50.0mm (HOME, raw=1000)；
+3. 定位模式连续 10 循环 PARK $\leftrightarrow$ HOME 往复测试（100% PASS，0 故障），确立了系统最底层的可靠性基线。
 
 ---
 
-### 8.6 执行器架构硬约束：为什么必须独占 `SingleThreadedExecutor` (A~F 分层消融复盘)
+## 第 7 章 (J7): 50Hz 伺服模式演进、五次 S 曲线与运动平滑度量化飞跃
 
-#### (1) 独立单线程执行器硬约束
-在 [`pus6_kinematics/fk_node.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/fk_node.py) 的 `main()` 函数中，明确创建并独占**独立的 `SingleThreadedExecutor`**：
-```python
-rclpy.init(args=args)
-node = Pus6FkNode()
-executor = SingleThreadedExecutor()
-executor.add_node(node)
-executor.spin()
+### 7.1 学习目标与卡顿根因
+深入理解从定位模式 (`mode=0`) 演进到伺服模式 (`mode=1`) 的物理动因。掌握 50Hz 纯写批次下发时序预算与五次多项式 S 曲线平滑过渡。
+
+* **主要源码**：[`pus6_motor_driver/pus6_motor_driver/j7_six_axis_servo_transport.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/j7_six_axis_servo_transport.py), [`scripts/run_j7_servo_home_park.py`](file:///home/lyapunov/bone_drill/bone_ws/scripts/run_j7_servo_home_park.py)
+* **ROS 2 概念**：高频控制定时器与时钟抖动预算。
+* **控制/机器人学概念**：五次多项式插值、消除电机梯形加减速微停顿、A/B 实测定量对比。
+
+### 7.2 J6 定位模式 vs J7 伺服模式定量 A/B 实测对比
+
+在相同行程（PARK $\leftrightarrow$ HOME 1000 步 / 25.0mm）下进行实测对比：
+
+```text
+┌──────────────────────────────────────┬──────────────────┬──────────────────┬─────────────────────┐
+│ 评测指标                             │ J6 定位模式 (10Hz)│ J7 伺服模式 (50Hz)│ 性能飞跃 / 改善幅度 │
+├──────────────────────────────────────┼──────────────────┼──────────────────┼─────────────────────┤
+│ 目标刷新频率 (Target Dispatch Rate)  │ 10.0 Hz          │ 50.0 Hz          │ 提升 5.0 倍         │
+│ 全行程最大离散跟踪误差 (Max Err)     │ 19 步            │ 11 步            │ 降低 42.1%          │
+│ 综合 RMS 跟踪误差 (RMS Error)        │ 7.53 步          │ 2.89 步          │ 降低 61.6%          │
+│ 峰值冲击电流 (Peak Current)          │ 145 mA           │ 77 mA            │ 降低 46.9%          │
+│ 平均工作电流 (Mean Current)          │ 34.2 mA          │ 29.9 mA          │ 降低 12.6%          │
+│ 电流标准差 / 电气波动 (Std Dev)      │ 32.8 mA          │ 17.1 mA          │ 降低 47.9%          │
+│ 速度阶跃 / 微停顿事件 (Stutter)      │ 频繁可见 (阶跃)  │ 彻底消除 (平滑)  │ 摄像头观测平滑度飞跃 │
+│ 最终回位重复性误差 (Return Error)    │ <= 1 步 (0.025mm)│ <= 1 步 (0.025mm)│ 保持亚毫米级高精度   │
+└──────────────────────────────────────┴──────────────────┴──────────────────┴─────────────────────┘
 ```
 
-#### (2) A~F 分层消融实验复盘与性能对比
+---
 
-消融实验 [`bone_ws/scripts/run_j5_c2_rt_sw_c_ablation.py`](file:///home/lyapunov/bone_drill/bone_ws/scripts/run_j5_c2_rt_sw_c_ablation.py) 将负载从 A 层（空 200Hz 定时器）逐层加到 F 层（完整节点 + 异常注入）。在独立单线程执行器下实测表现极其优异：
+## 第 8 章 (J8): Design-B 伴随反馈、两级看门狗、集约化启动契约与全自由度实机准入
 
-| 层级 | 测试内容 | callbacks/10s | 实际均值 Hz | period P50 / P95 / P99 (ms) | callback 耗时 P50 / P95 / P99 (ms) |
-| :--- | :--- | :---: | :---: | :---: | :---: |
-| **A** | 空 200 Hz 定时器 | 2000 | 199.98 | 5.001 / 5.184 / 5.369 | 0.001 / 0.002 / 0.003 |
-| **B** | + 30 Hz 模拟反馈发布 | 2001 | 200.06 | 5.001 / 5.199 / 5.428 | 0.001 / 0.002 / 0.003 |
-| **C** | + Fixed-Lag 同步，不做 FK | 2001 | 200.07 | 5.001 / 5.304 / 5.635 | 0.045 / 0.091 / 0.115 |
-| **D** | + 数值 FK，不发布 ROS 话题 | 2000 | 199.97 | 4.999 / 5.321 / 5.707 | 0.920 / 1.461 / 1.837 |
-| **E** | 完整 Pus6FkNode 节点 | 2000 | 199.98 | 4.999 / 5.270 / 5.674 | 1.079 / 1.663 / 2.014 |
-| **F** | 完整节点 + 异常故障注入 | 2000 | 199.97 | 4.999 / 5.162 / 5.338 | 1.133 / 1.802 / 2.574 |
+### 8.1 学习目标与终极闭环
+掌握 J8 连续笛卡尔 50Hz 伺服运动控制与伴随反馈闭环的完整实现。理解 Design-B 伴随反馈架构、两级看门狗机制、集中式启动状态分类器及 9 阶段实机展示轨迹。
 
-#### (3) 多线程回调饥饿现象与架构结论
-* **多线程对照表现**：在 `MultiThreadedExecutor(4)` 下，A/B 层尚可维持 200Hz，但在 C-E 复合负载下实际触发频率断崖式暴跌至 **25 ~ 38 Hz**，周期 P95 恶化至 145 ~ 234ms，最大停顿高达 650 ~ 980ms；
-* **架构复盘**：在 Python `rclpy` 多线程执行器中，高频 200Hz 定时器与高频发布/订阅在并发 Ready 队列调度下发生了严重的回调饥饿 (Callback Starvation)。而在独立的 `SingleThreadedExecutor` 下，订阅、固定延迟查询、FK 计算和发布在同一条可预测的调度链上执行，最终稳定达到 **2007 callbacks/10s (200.09Hz, P95 5.14ms)**。
-* **工程准则**：`Pus6FkNode` 必须独占独立的 `SingleThreadedExecutor`，严禁将其塞入通用的多线程执行器中。
+* **主要源码**：[`pus6_motor_driver/pus6_motor_driver/safety.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/safety.py), [`pus6_motor_driver/pus6_motor_driver/motor_driver_node.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/motor_driver_node.py), [`scripts/run_j8_final_video_demonstration.py`](file:///home/lyapunov/bone_drill/bone_ws/scripts/run_j8_final_video_demonstration.py)
+* **ROS 2 概念**：生产级安全状态机、两级看门狗解耦、实时硬件在环准入。
+* **控制/机器人学概念**：Design-B 0x29 伴随反馈、两级看门狗、`VALID_PARK` 启动契约、9 阶段全自由度实机准入。
+
+### 8.2 Design-B 伴随反馈架构
+* **ACTIVE 模式主反馈**：在 ACTIVE 运行模式下，直接提取 50Hz 0x29 目标写入伴随返回的 `StatusFeedback` 作为主反馈源；
+* **关键控制路径净化**：常规阻塞式 0x30 轮询完全移出 50Hz 关键控制路径，消除了单总线上的交互抖动；
+* **协议基线**：[`protocol.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/protocol.py) 与 `v1.0-j7-servo-hardware-frozen` 保持 100% 零 diff。
+
+### 8.3 两级安全看门狗体系
+为了彻底解耦 UART 通信丢包与标准 Linux 操作系统的调度抖动，系统构建了两级看门狗：
+1. **Tier 1 (周期级 6/6 反馈完整性看门狗)**：
+   - 每个执行的 0x29 周期必须收到全部 6 轴响应；
+   - 若任意轴连续 $N = 4$ 个执行周期未收到反馈，立即触发通信故障并执行受控停机。
+2. **Tier 2 (调度器截止期安全上限)**：
+   - 监测执行周期之间的实际墙上时钟间隔；
+   - 阈值设为 **$263.324	ext{ ms}$**，作为操作系统假死或极端调度的非实时安全兜底上限（容忍 Python GC 与执行器正常抖动）。
+
+### 8.4 集约化 PARK / HOME 启动分类契约
+位于 [`pus6_motor_driver/safety.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/safety.py) 的 `classify_startup_state()`：
+* **暂定 PARK 测量带**：$[-5, +5]	ext{ steps}$ ($[-0.125, +0.125]	ext{ mm}$)；
+* **`VALID_PARK` 判定**：全 6 轴健康 (`fault == 0`)、3 样本稳定（漂移 $\le 2$ 步）且读数落入 $[-5, +5]$ 测量带：
+  - 遥测保留原始未篡改读数（如 `[-4, -5, -2, -3, -4, 0]`）；
+  - 规划种子严格设为 **`[0, 0, 0, 0, 0, 0]`**，保证第 0 周期指令严格 $\ge 0$；
+* **严格拒绝异常状态**：任意混合或超限负向状态判定为 `MIXED_UNCLASSIFIED`，直接拒绝运动规划，严禁通用脚本级无差别截断。
+
+### 8.5 J8 最终 9 阶段实机展示轨迹与准入考核指标
+
+| 阶段 | 展示动作 | 幅值 / 目标 | 实测沉降残差 / 结果 | 状态 |
+| :--- | :--- | :--- | :--- | :--- |
+| **Phase 0** | **Cartesian HOME 沉降保持** | $z_0 = 132.612	ext{ mm}$ (3.0s) | $X{=}+0.033, Y{=}-0.019, Z{=}+132.565	ext{ mm}$ | **PASS** |
+| **Phase 1** | **X 方向水平平移展示** | $\pm 8.0	ext{ mm}$ | 残差 $\Delta X = -0.138	ext{ mm}$ | **PASS** |
+| **Phase 2** | **Y 方向水平平移展示** | $\pm 8.0	ext{ mm}$ | 残差 $\Delta Y = -0.258	ext{ mm}$ | **PASS** |
+| **Phase 3** | **Z 方向竖直升降展示** | $\pm 8.0	ext{ mm}$ | 残差 $\Delta Z = -0.044	ext{ mm}$ | **PASS** |
+| **Phase 4** | **Roll 空间翻滚旋转展示** | $\pm 8.0^\circ$ | 残差 $\Delta	ext{Roll} = -0.092^\circ$ | **PASS** |
+| **Phase 5** | **Pitch 空间俯仰旋转展示** | $\pm 8.0^\circ$ | 残差 $\Delta	ext{Pitch} = -0.087^\circ$ | **PASS** |
+| **Phase 6** | **Yaw 空间偏航旋转展示** | $\pm 8.0^\circ$ | 残差 $\Delta	ext{Yaw} = -0.404^\circ$ | **PASS** |
+| **Phase 7** | **复合 6 自由度连续空间运动** | $XYZ \pm 5.0	ext{ mm}$, $	ext{Roll/Pitch} \pm 3.0^\circ$, $	ext{Yaw} \pm 5.0^\circ$ (20.0s @ 0.1Hz) | 空间连续平滑跟踪，零失步零堵转 | **PASS** |
+| **Phase 8** | **最终 HOME 回位与重复性核验** | $z_0 = 132.612	ext{ mm}$ (4.0s) | 迟滞 $dX{=}+0.115, dY{=}+0.237, dZ{=}+0.045	ext{ mm}$ | **PASS** |
+
+#### 最终实机硬件指标：
+* **总运行时长**：$137.128	ext{ s}$（执行 $6,898$ 个 50Hz 伺服周期）；
+* **持续实测刷新率**：**$50.30	ext{ Hz}$**（配置目标 50.0 Hz）；
+* **6/6 反馈完整率**：**$41,388 / 41,388$ ($100.0\%$)**；
+* **通信/硬件异常计数**：0 缺帧、0 调度超时、0 UART 超时、0 电机故障、0 STOP 停机。
 
 ---
 
-### 8.7 常见误解与避坑指南
-1. **误解：将算法称为“解析 FK”**  
-   * *澄清*：Stewart 机构正解不存在解析通解，系统采用的是**基于解析雅可比的数值 LM 迭代求解**，严禁混淆概念。
-2. **误解：以为 200Hz FK 发布意味着电缸能够以 200Hz 响应控制**  
-   * *澄清*：200Hz 是上位机插值观测解算的频率，物理电机的通信与控制带宽依然为 25Hz。
-3. **误解：以为 IK↔FK 的 $10^{-9}\text{ mm}$ 误差证明了真实机械精度**  
-   * *澄清*：该误差仅证明正逆解数学模型的代码自洽性，真实机械精度必须等总装后经由光学跟踪仪实测。
+# Part II: J8 当前生产源码全模块精读与参考 (Source Code Reference by Module)
+
+## 2.1 `pus6_msgs`: 强类型数据契约与单调时钟协议
+* [`TimedJointFeedback.msg`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_msgs/msg/TimedJointFeedback.msg)：定义 6 轴关节高度、整步、工作电流、故障码以及 `per_axis_rx_done_monotonic_ns[6]` 硬件观测时间戳；
+* [`TimedJointCommand.msg`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_msgs/msg/TimedJointCommand.msg)：定义带序列号与单调发送时刻的关节下发控制指令；
+* [`FkStateStamped.msg`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_msgs/msg/FkStateStamped.msg)：包含算法查询时刻、同步关节高度、LM 迭代次数、定长残差范数与 $	ext{SO}(3)$ 门禁标志。
+
+## 2.2 `pus6_kinematics`: 逆解、正解、几何加载器与状态同步器
+* [`geometry_config.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/geometry_config.py)：负责类型化加载 `6pus_geometry.yaml` 单一真值源；
+* [`analytical_6pus.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/analytical_6pus.py)：包含闭式解析逆解 `inverse_kinematics` 与解析雅可比 LM 数值正解 `forward_kinematics_with_metrics`；
+* [`state_synchronizer.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/state_synchronizer.py)：实现 `FixedLagJointSynchronizer`，在 `threading.RLock` 保护下执行严格零外推双向夹逼对齐；
+* [`kinematics_node.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/kinematics_node.py)：50Hz 逆解计算节点；
+* [`fk_node.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/fk_node.py)：独占 `SingleThreadedExecutor` 的 50Hz/200Hz 实时数值正解观测节点。
+
+## 2.3 `pus6_control`: 有状态轨迹整形器与控制器节点
+* [`joint_trajectory_controller.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_control/pus6_control/joint_trajectory_controller.py)：实现 `StatefulJerkLimitedShaper`，进行三阶状态持续积分与 $C^2$ 限幅；
+* [`control_node.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_control/pus6_control/control_node.py)：50Hz 控制主循环节点，发布 `/pus6/command_joint_steps`。
+
+## 2.4 `pus6_motor_driver`: 驱动协议、传输层、安全分类器与电机驱动节点
+* [`protocol.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/protocol.py)：二进制封包、解包与累加和校验实现；
+* [`safety.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/safety.py)：实现 `classify_startup_state()`、暂定测量带与规划种子解析；
+* [`j7_six_axis_servo_transport.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/j7_six_axis_servo_transport.py)：六轴 0x29 批次下发与伴随反馈提取传输层；
+* [`motor_driver_node.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/pus6_motor_driver/motor_driver_node.py)：驱动主节点，维护 LVW 缓冲、执行 Slew Recovery 与 Preflight 门禁。
+
+## 2.5 `pus6_bringup`: 系统级 Launch 编排与参数配置体系
+* [`pus6_system.launch.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_bringup/launch/pus6_system.launch.py)：统一编排启动逆解、控制、驱动与正解节点；
+* [`system_params.yaml`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_bringup/config/system_params.yaml)：系统级控制与时序参数配置文件。
+
+## 2.6 `h30_imu`: 双 H30 惯导微秒硬件时间戳与李群姿态解算
+* 包含 C++ 节点驱动，读取双路 Yesense H30 硬件微秒时间戳 (0x51/0x52)，消除软件时钟频偏并进行 $	ext{SO}(3)$ 相对姿态积分。
 
 ---
 
-### 8.8 推荐源码阅读顺序
-1. [`pus6_msgs/msg/FkStateStamped.msg`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_msgs/msg/FkStateStamped.msg)；
-2. [`pus6_kinematics/pus6_kinematics/analytical_6pus.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/analytical_6pus.py) 中的 `forward_kinematics_with_metrics`；
-3. [`pus6_kinematics/pus6_kinematics/fk_node.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/pus6_kinematics/fk_node.py) 中的 `_fk_query_loop` 与 `main()`；
-4. [`bone_ws/scripts/run_j5_c2_rt_sw_c_ablation.py`](file:///home/lyapunov/bone_drill/bone_ws/scripts/run_j5_c2_rt_sw_c_ablation.py) 了解 A~F 分层消融测试。
+# Part III: 【全链路实战透视】追踪一帧笛卡尔控制指令的完整生命周期 (End-to-End Deep Trace)
 
----
-
-## 9. 【全链路实战追踪】双数据流端到端生命周期透视 (End-to-End Tracing)
-
-> **场景**：执行 J4-F1E 全 6 自由度空间连续动态轨迹实验（$18.0\text{ s}$，含 10 周期静态预热 + 1.0s 五次注入 + 15.0s 满幅空间运动 + 1.0s 退出 + 1.0s HOME 沉降）。
-
-```
-                                  双数据流端到端交互全时序图
+```text
+                                  J8 50Hz 闭环双数据流端到端交互时序
                                   
  [ 上位轨迹规划器 ]                   [ pus6_kinematics_node ]               [ pus6_control_node ]
         │                                       │                                      │
@@ -861,16 +497,16 @@ executor.spin()
         │                                       │                                      │                        ▼
  [ pus6_fk_node (单线程) ]              [ pus6_motor_driver_node ]                  [ 物理电缸 ID1..ID6 ]
         │                                       │ ◄─────────────────────────────────────────────────────────────┘
-        │                                       │ 4. Single-Slot 缓冲 + Slew 恢复 + Preflight 前检
-        │                                       │ 5. 25Hz 0x29 串行写入 (带 _bus_lock_ctx 批次锁)
+        │                                       │ 4. Single-Slot 缓冲 + Slew 恢复 + Preflight 门禁
+        │                                       │ 5. 50Hz 0x29 批次下发 (带 _bus_lock_ctx 批次锁)
         │                                       ├─────────────────────────────────────►│
-        │                                       │ 6. 15 字节 Piggyback 伴随状态返回     │
+        │                                       │ 6. 0x29 StatusFeedback 伴随状态返回  │
         │                                       │◄─────────────────────────────────────┤
         │                                       │ 7. 记录 CLOCK_MONOTONIC 接收完成时刻  │
         │ 8. TimedJointFeedback 遥测流          │
         │◄──────────────────────────────────────┤
-        │ 9. 压入 FixedLag 历史队列             │
-        │ 10. 200Hz 定时器以 t_query 查询       │
+        │ 9. 压入 FixedLag 历史队列 (tau=160ms) │
+        │ 10. 50Hz/200Hz 定时器以 t_query 查询  │
         │ 11. 双向夹逼线性内插生成 q_sync       │
         │ 12. 解析雅可比 LM 数值正解迭代        │
         │ 13. SO(3) 测地线跳变门禁校验          │
@@ -878,229 +514,172 @@ executor.spin()
         ▼                                       ▼
 ```
 
-### 9.1 连续空间运动控制下行生命周期 (Control Pipeline)
-1. **Step 1：笛卡尔位姿注入**  
-   规划器以 50Hz 向 `/pus6/target_cartesian_pose` 发布参考位姿 $\mathbf{P}(t) = [x, y, z, \text{roll}, \text{pitch}, \text{yaw}]^\top$。
-2. **Step 2：纯几何闭式解析逆解**  
-   `pus6_kinematics_node` 收到目标后，首先校验工作空间包络（平移 $\le 15\text{ mm}$，高度差 $\le 20\text{ mm}$，转角 $\le 0.1\text{ rad}$）；通过后调用 `Analytical6PusKinematics.inverse_kinematics()` 计算 6 轴绝对高度 $q_i$，并扣除标称高度得到相对差分量，发布到 `/pus6/desired_joint_deltas`。
-3. **Step 3：三阶加加速度连续滤波整形**  
-   `pus6_control_node` 接收相对差分量，通过 `StatefulJerkLimitedShaper` 进行 $C^2$ 连续微分积分推进，施加速度、加速度与 Jerk 三级饱和限幅，叠加 `OPERATING_HOME`（raw=1000）转换为目标整步，以 QoS `KeepLast(1), BestEffort` 发布到 `/pus6/command_joint_steps`。
-4. **Step 4：驱动层极速入队与安全自愈**  
-   `pus6_motor_driver_node` 的 `sub_cb_group` 极速接收指令并存入 `_target_lock` 保护的 Single-Slot 单槽容器；25Hz 的 `worker_cb_group` 唤醒提取最新帧（覆盖过时中间帧）；若遭遇通信停顿延时，自动触发 Time-Aware Vector Slew Recovery 按时间裕量等比例缩放矢量；通过 5 级 Preflight 硬门禁检查。
-5. **Step 5：UART 批次下发与 Piggyback 伴随反馈**  
-   在 6 轴全局批次锁 `_bus_lock_ctx` 保护下，向 ID1 ~ ID6 依次下发 0x32 写入 0x29 寄存器；各电缸在执行动作的同时立即回传 15 字节伴随状态帧。
-6. **Step 6：运动收敛与状态发布**  
-   驱动层解包回传帧生成 `SixAxisStateSnapshot`，发布 `/pus6/joint_states` 与 `/pus6/six_axis_telemetry`。轨迹执行完成后在 `OPERATING_HOME` 邻域完成沉降。
+### 3.1 下行控制链 (Control Pipeline)
+1. **笛卡尔目标发布**：规划器以 50Hz 发布 `/pus6/target_cartesian_pose`；
+2. **几何闭式逆解**：`pus6_kinematics_node` 校验空间包络后，调用 `Analytical6PusKinematics.inverse_kinematics()` 生成 6 轴相对高度差分量 `/pus6/desired_joint_deltas`；
+3. **三阶 Jerk 轨迹整形**：`pus6_control_node` 通过 `StatefulJerkLimitedShaper` 积分平滑，叠加 `OPERATING_HOME` (1000 步) 输出 `/pus6/command_joint_steps`；
+4. **驱动门禁与自愈**：`pus6_motor_driver_node` 存入 Single-Slot 容器，必要时触发矢量斜率缩放自愈，通过 6 级安全门禁。
+
+### 3.2 物理执行与伴随反馈 (Physical Execution)
+5. **50Hz 批次写入**：在全局锁保护下，向 ID1 ~ ID6 连续下发 0x29 目标指令；
+6. **伴随反馈提取**：电缸在执行动作的同时返回 0x29 伴随状态帧，驱动层记录 Host `CLOCK_MONOTONIC` 接收单调时间戳。
+
+### 3.3 上行观测链 (Observation Pipeline)
+7. **Timed 遥测封装**：驱动层组装 `TimedJointFeedback` 发布到 `/pus6/joint_feedback/timed`；
+8. **Fixed-Lag 状态重构**：`Pus6FkNode` 在 $	au = 160	ext{ ms}$ 下执行严格零外推双向夹逼内插，重构出严格同步的关节向量 $\mathbf{q}_{	ext{sync}}$；
+9. **解析雅可比 LM 正解与门禁**：以暖启动迭代求解 6DoF 位姿，通过 $	ext{SO}(3)$ 测地线距离门禁后发布 `/pus6/fk/state` 与 `/pus6/fk/pose`。
 
 ---
 
-### 9.2 实时位姿状态观测上行生命周期 (Observation Pipeline)
-1. **Step 1：单调接收时刻记录**  
-   在 25Hz UART 物理通信循环中，驱动层在收到各电机应答帧的瞬间，立即调用 `time.clock_gettime_ns(time.CLOCK_MONOTONIC)` 记录内核接收完成时刻 `per_axis_rx_done_monotonic_ns[6]`。
-2. **Step 2：Timed 遥测消息封装**  
-   驱动层组装 `TimedJointFeedback` 消息，打上相同的 `uart_cycle_sequence`，发布到 `/pus6/joint_feedback/timed`。
-3. **Step 3：滑动历史有界入队**  
-   `Pus6FkNode` 订阅该话题，在 `threading.RLock()` 保护下将各轴接收时刻、实际位置及整步压入 `FixedLagJointSynchronizer` 内部的 6 个滑动双端队列 (`deque(maxlen=500)`)。
-4. **Step 4：固定延迟双向夹逼对齐**  
-   `Pus6FkNode` 内部独立单线程执行器的 200Hz 定时器触发，计算算法查询时刻 $t_{\text{query}} = t_{\text{now}} - 50\text{ ms}$；对 6 轴历史进行二分查找；若 6 轴全部满足 $t_{\text{left}} \le t_{\text{query}} \le t_{\text{right}}$，执行线性插值重构出同步关节向量 $\mathbf{q}_{\text{sync}}$；任一轴未满足则严格返回等待，零外推。
-5. **Step 5：解析雅可比 LM 数值正解**  
-   节点将 $\mathbf{q}_{\text{sync}}$ 传入 `Analytical6PusKinematics.forward_kinematics_with_metrics()`，以 `_last_successful_pose` 暖启动，解析构造 $6 \times 6$ 雅可比矩阵 $\mathbf{J}$，自适应调整阻尼 $\lambda$ 迭代求解动平台 6DoF 位姿。
-6. **Step 6：李群门禁校验与状态发布**  
-   解算收敛后，计算旋转矩阵李群 $\text{SO}(3)$ 测地线角距离与平移跳变；通过门禁（$\theta_{\text{geodesic}} \le 0.15\text{ rad}, \|\Delta \mathbf{p}\| \le 15\text{ mm}$）后更新成功锚点，发布 `/pus6/fk/state` (`FkStateStamped`) 与 `/pus6/fk/pose` (`PoseStamped`)。
+# Part IV: 实机调试、故障复盘与测试驱动开发 (Hardware Debugging, Post-Mortems & TDD)
 
-> [!IMPORTANT]
-> **架构核心铁律**：FK 观测链产生的高频位姿仅用于外部监控与未来多传感器融合评估，**绝不进入 J4 控制器，绝不向下行控制链反馈任何修正量**。控制链与观测链严格保持单向解耦。
-
----
-
-## 10. 核心工程问题演进与实机踩坑复盘 (Engineering Lessons & Post-Mortem)
-
-在 6PUS 项目从驱动、逆解、控制到正解与时间同步的演进过程中，我们定位并解决了 7 项标志性的重大工程问题。每一个问题均严格按照标准工业级复盘归纳：
+## 4.1 标志性工业级工程踩坑与根因深度复盘 (9 大 Post-Mortem 案例)
 
 ### 1. 双命令入口竞态与覆写翻倍 Bug (J4-F1B-1)
-* **[现象/问题]**：50Hz 规划流注入 25Hz 驱动层，理论覆写次数约为 250 次，但实测日志记录了 746 次覆写（翻倍）。
-* **[证据/测试]**：细粒度日志统计显示，生产队列计数以双倍速率增加。
-* **[根因边界]**：`control_node` 同时发布了浮点数 `command_joint_positions` 和整步 `command_joint_steps` 两个话题，驱动层两路回调并发抢锁写入同一个单槽缓冲区 `_latest_target`。
-* **[修复方案]**：彻底收口为单一权威控制入口，驱动节点仅订阅 `/pus6/command_joint_steps`，废除浮点数控制话题。
-* **[工程经验]**：多线程消费者节点必须保证**单一权威写入源**，严禁并存语义重复的多路控制订阅。
-
----
+* **[现象]**：50Hz 规划流注入驱动层，理论覆写约 250 次，实测记录达 746 次（翻倍）。
+* **[根因]**：控制节点同时发布浮点数与整步两个话题，两路回调并发抢锁写入同一个单槽缓冲。
+* **[修复]**：收口为单一权威入口，仅保留 `/pus6/command_joint_steps`。
 
 ### 2. 总线竞争假设排除与物理通信长尾定位 (J4-F1B-2)
-* **[现象/问题]**：动态运动时 UART 批次耗时 P95 恶化至 48.7ms，有效控制频率下降至 22.8Hz。
-* **[证据/测试]**：进行微秒级仪器化埋点测试（Instrumentation），实测 `uart_lock_wait_ms = 0`，写流活跃期间后台轮询被活跃保护有效拦截为 0 次。
-* **[根因边界]**：彻底排除了后台轮询与主写线程争抢总线锁的假设。延迟长尾主要来自 6 台电缸逐轴 0x29 物理通信请求-响应的硬件往返耗时（Hardware Wall-Time 波动）。
-* **[修复方案]**：保持 25Hz 标称控制周期，保留写流活跃保护门禁，容忍物理硬件耗时波动。
-* **[工程经验]**：遇到性能长尾切忌主观猜测多线程锁瓶颈，必须依赖高精度仪器化埋点数据界定软硬件边界。
-
----
+* **[现象]**：动态运动时 UART 批次耗时 P95 恶化至 48.7ms。
+* **[根因]**：埋点测试证实 `uart_lock_wait_ms = 0`，排除了软件锁竞争假设，根因为半双工硬件物理往返耗时波动。
+* **[修复]**：保持 50Hz 伺服模式，保留写流活跃保护门禁，容忍物理硬件耗时。
 
 ### 3. 安全前检死锁 (Latch-Out Deadlock) (J4-F1D)
-* **[现象/问题]**：瞬态串口超时累积了 355ms 延时，目标流推进了 25 步（超过单步 20 步硬门禁），导致后续所有波峰帧持续被拒绝，系统陷入完全停滞的死锁状态。
-* **[证据/测试]**：日志显示 `preflight_failed_count` 持续激增，电机停在非零位无法恢复。
-* **[根因边界]**：前检被拒绝后命令锚点被冻结，而上层目标流继续推进，两者的差值永远大于 20 步门禁。
-* **[修复方案]**：实施 **Time-Aware Vector Slew Recovery**，以最后成功下发的命令为基准，根据流逝时间动态计算安全裕量，并将 6 轴矢量同比例缩放追赶。
-* **[工程经验]**：安全门禁不能采用简单的二值硬拦截，必须配合**时间自适应与空间几何比例保持的自愈算法**。
-
----
+* **[现象]**：瞬态串口延时使目标推进超过 20 步门禁，后续波峰帧持续被拒绝，系统陷入停滞。
+* **[根因]**：前检拒绝后命令锚点冻结，上层目标继续推进导致差值持续超限。
+* **[修复]**：实施 **Time-Aware Vector Slew Recovery**，按时间裕量同比例缩放 6 轴矢量追赶。
 
 ### 4. Delivery-Uncertain 悬空状态机与物理重锚 (J4-F1E)
-* **[现象/问题]**：发生 50ms 串口读超时时，电缸可能已经执行了写入指令但上位机未收到应答，导致命令基准与物理位置脱节。
-* **[证据/测试]**：通信瞬断后，若盲目沿用旧命令锚点，多轴之间会累积未知的空间偏斜。
-* **[修复方案]**：建立 **Delivery-Uncertain 状态机**：超时后自动触发 `pause_all()` $\to$ 读取 6 轴真实状态快照 $\to$ 严格校验非 stale/无故障/合法包络 $\to$ 物理重锚基准 $\to$ 矢量斜率恢复。
-* **[工程经验]**：半双工总线必须显式处理“已发出未确认”的悬空状态，并在严格安全校验下允许物理重锚。
-
----
+* **[现象]**：串口读超时后命令基准与物理位置脱节。
+* **[修复]**：建立 Delivery-Uncertain 状态机：超时触发受控停止 $	o$ 读取 6 轴快照 $	o$ 校验合法性 $	o$ 物理重锚 $	o$ Slew 恢复。
 
 ### 5. UART 批次交错治理与 Batch Atomicity 落地 (J5-C1)
-* **[现象/问题]**：在多线程或带轮询的架构中，Worker 线程的 0x29 写指令与驱动节点的读指令可能在总线上相互穿插，导致 6 轴扫描时间跨度严重拉长。
-* **[证据/测试]**：跨度分析中偶现非同一批次的读响应插入，导致一组 6 轴反馈跨越了两个控制周期。
-* **[修复方案]**：在 `six_motor_controller.py` 中引入 6 轴批次全局互斥锁（`with self._bus_lock_ctx:`），并在 Active 控制模式下彻底抑制独立 Poll 轮询。
-* **[工程经验]**：半双工总线上的多轴批次通信必须在主机端实现**批次级全局互斥**，回归实证达到 392/392 零重叠。
-
----
+* **[现象]**：多线程下 Worker 写入与后台读取相互穿插，扫描跨度拉长。
+* **[修复]**：引入 6 轴批次全局互斥锁（`_bus_lock_ctx`），活跃控制期间彻底抑制独立 Poll 轮询（392/392 零重叠）。
 
 ### 6. Eager Import 导致的 `pus6_msgs` 依赖断裂问题
-* **[现象/问题]**：在未 source 工作空间环境的新终端中运行独立 J3 脚本时，报 `ModuleNotFoundError: No module named 'pus6_msgs'`。
-* **[证据/测试]**：J3 脚本明明只依赖纯数学逆解，却因导入 `pus6_kinematics` 而失败。
-* **[根因边界]**：`pus6_kinematics/__init__.py` 早期采用了 eager import 顶层导入了 `Pus6FkNode`，而该节点引用了 ROS 2 生成的消息包 `pus6_msgs`。
-* **[修复方案]**：将 `__init__.py` 改为**惰性导入 (Lazy Import)**，仅在显式请求 `Pus6FkNode` 时加载；并在 J3 独立脚本中加入 `sys.path` 自治引导。
-* **[工程经验]**：核心算法包与底层运维工具应当与高层 ROS 生成消息解耦，避免过早依赖绑定。
-
----
+* **[现象]**：未 source 环境时独立纯数学脚本报 `ModuleNotFoundError`。
+* **[修复]**：算法包 `__init__.py` 采用惰性导入 (Lazy Import)，解除对上层 ROS 生成消息的过早依赖。
 
 ### 7. `rclpy` 多线程执行器回调饥饿与单线程执行器收敛 (J5-C2-RT-SW)
-* **[现象/问题]**：200Hz 定时器在 `MultiThreadedExecutor(4)` 下实际仅触发约 45Hz，周期 P95/P99 出现百毫秒级甚至近秒的严重调度长尾。
-* **[证据/测试]**：A~F 分层消融实验清晰证明：单次 FK 计算仅需 1.07ms，锁与发布耗时微秒级；但多线程下 C~E 层均发生严重调度停顿。
-* **[根因边界]**：Python `rclpy` 的多线程执行器在高频定时器与多路发布/订阅并发就绪时，其 Ready 队列调度机制导致高频定时器长时间得不到调度机会（Callback Starvation）。
-* **[修复方案]**：`Pus6FkNode.main()` 明确独占**独立的 `SingleThreadedExecutor`**，将所有回调串行化在确定性调度链上，频率稳定恢复至 200.09Hz (P95 5.14ms)。
-* **[工程经验]**：200Hz 以上高频 ROS 2 Python 节点切忌盲目使用多线程执行器，独立单线程执行器往往具有更高、更可预测的实时确定性。
+* **[现象]**：200Hz 定时器在多线程执行器下触发频率暴跌至 25~38Hz，停顿达数百毫秒。
+* **[根因]**：Ready 队列调度机制导致高频定时器发生回调饥饿 (Callback Starvation)。
+* **[修复]**：`Pus6FkNode` 独占独立的 `SingleThreadedExecutor`，调度稳定恢复至 200.09Hz (P95 5.14ms)。
+
+### 8. J8-E9 两级看门狗演进：消除 feedback_age 调度误停机
+* **[现象]**：在 Design B 50Hz 闭环中，偶尔触发旧版 `feedback_age_exceeded_ID1` 导致驱动误停机。
+* **[根因]**：旧版单轴绝对时间超期看门狗未解耦 Linux 调度抖动。
+* **[修复]**：重构为两级看门狗：Tier 1 (连续 4 周期缺帧通信保护) + Tier 2 (263.324ms 调度截止期上限)。
+
+### 9. J8-F1 启动负步数与集约化状态分类器演进
+* **[现象]**：冷启动时编码器微小负向读数（如 `-4` 步）触发安全门禁拦截。
+* **[根因]**：将传感器零漂测量值错误等同于非法负向控制指令。
+* **[修复]**：在 `safety.py` 引入 $[-5, +5]$ 测量带与 `VALID_PARK` 状态分类器，保留真实遥测，锚定规划种子 `[0]*6`，指令空间严格 $\ge 0$。
 
 ---
 
+## 4.2 为什么必须独占 SingleThreadedExecutor：A~F 分层消融实测与复盘
+
+消融实验 [`bone_ws/scripts/run_j5_c2_rt_sw_c_ablation.py`](file:///home/lyapunov/bone_drill/bone_ws/scripts/run_j5_c2_rt_sw_c_ablation.py) 实测数据：
+
+| 层级 | 测试内容 | callbacks/10s | 实际均值 Hz | period P50 / P95 / P99 (ms) | callback 耗时 P50 / P95 / P99 (ms) |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| **A** | 空 200 Hz 定时器 | 2000 | 199.98 | 5.001 / 5.184 / 5.369 | 0.001 / 0.002 / 0.003 |
+| **B** | + 30 Hz 模拟反馈发布 | 2001 | 200.06 | 5.001 / 5.199 / 5.428 | 0.001 / 0.002 / 0.003 |
+| **C** | + Fixed-Lag 同步，不做 FK | 2001 | 200.07 | 5.001 / 5.304 / 5.635 | 0.045 / 0.091 / 0.115 |
+| **D** | + 数值 FK，不发布 ROS 话题 | 2000 | 199.97 | 4.999 / 5.321 / 5.707 | 0.920 / 1.461 / 1.837 |
+| **E** | 完整 Pus6FkNode 节点 | 2000 | 199.98 | 4.999 / 5.270 / 5.674 | 1.079 / 1.663 / 2.014 |
+| **F** | 完整节点 + 异常故障注入 | 2000 | 199.97 | 4.999 / 5.162 / 5.338 | 1.133 / 1.802 / 2.574 |
 
 ---
 
-### 8. J7 50Hz Servo 时序预算与单总线带宽收敛 (J7-C2)
-* **[现象/问题]**：试图在 50Hz 周期内进行 6 轴 0x29 伴随问答时，总通信耗时达 约 18.18~18.39ms，超出 20ms 周期限制导致控制频率腰斩。
-* **[根因边界]**：单总线半双工物理往返延时无法压缩。
-* **[修复方案]**：将 0x29 改为纯写批次（耗时降至 3.38ms），搭配每周期 1 轴的 Round-Robin 0x30 轮询（耗时约 3.5ms），总耗时严格控制在 7ms 以内。
-* **[工程经验]**：高频多轴控制必须分离控制下发与状态观测的时序预算。
+## 4.3 测试驱动开发 (TDD) 体系与 349 项回归测试规范
 
----
-
-### 9. 运行期 0x25 模式回读隐患消除 (J7-C4)
-* **[现象/问题]**：运行期若频繁插入 0x25 读请求，会增加额外的 UART/RX residual 交互并引入错误 mode 门禁风险。
-* **[修复方案]**：启动时通过写 0x25=1 的 ACK 确认进入模式，运行期彻底取消 0x25 读请求。
-* **[工程经验]**：高频实时循环中严禁混入非必要的低频状态回读。
-
-## 11. 测试驱动开发 (TDD) 与回归测试体系 (Testing Architecture)
-
-### 11.1 分层测试体系与验证目标
-
-```
+```text
                                   6PUS 分层测试验证体系
                                   
   ┌─────────────────────────┐
   │ Real-Time Benchmarks    │ ── A~F 分层消融性能测试 (验证 200Hz 周期 P95/P99 与执行器调度)
   └─────────────────────────┘
   ┌─────────────────────────┐
-  │ Read-Only Audits        │ ── J2-A 实机只读审计 (验证 0 硬件写入、0 故障、真实 UART 遥测)
+  │ Read-Only Audits        │ ── J8-C 实机只读审计 (验证 0 硬件写入、0 故障、真实 UART 遥测)
   └─────────────────────────┘
   ┌─────────────────────────┐
-  │ Replay / Synthetic Test │ ── run_j5_c2_hw_acceptance.py (离线回放数据流，验证 FK 收敛与门禁)
+  │ Replay / Synthetic Test │ ── 离线回放数据流，验证 FK 收敛与 SO(3) 门禁
   └─────────────────────────┘
   ┌─────────────────────────┐
-  │ Mock Integration Tests  │ ── FakeBus 多电机仿真 (验证 5 级门禁、Slew 自愈、maintenance 模式)
+  │ Mock Integration Tests  │ ── FakeBus 多电机仿真 (验证 6 级门禁、两级看门狗、VALID_PARK)
   └─────────────────────────┘
   ┌─────────────────────────┐
   │ Unit Tests (数学/协议)   │ ── pytest 纯代数测试 (验证 CRC、解析逆解、解析雅可比 LM、YAML 配置)
   └─────────────────────────┘
 ```
 
-1. **单元测试 (Unit Tests)**：验证纯数学公式与协议编解码。包括 CRC 校验、闭式解析逆解准确性、解析雅可比 LM 正解收敛性、三阶滤波器 $C^2$ 连续性以及 `6pus_geometry.yaml` 的数据类型与键值合法性。
-2. **模拟集成测试 (Mock Integration Tests)**：通过 `FakeBus` 仿真 6 轴电机硬件交互，验证驱动层 5 级硬门禁、Latest-Value-Wins 覆盖守恒、Slew Recovery 动态缩放、Delivery-Uncertain 自愈状态机以及 `maintenance_mode` 授权隔离。
-3. **离线回放与合成验收 (Replay / Synthetic Tests)**：通过专用验收工具 [`bone_ws/scripts/run_j5_c2_hw_acceptance.py`](file:///home/lyapunov/bone_drill/bone_ws/scripts/run_j5_c2_hw_acceptance.py)，消费纯合成或历史录制的 `TimedJointFeedback` 数据流，在不打开串口、不产生硬件运动的前提下，自动化验证 Fixed-Lag 零外推插值率、LM 数值正解收敛率、$\text{SO}(3)$ 测地线跳变拦截率并输出 JSON/CSV 报告。
-4. **实机只读审计 (Read-Only Audits)**：运行 J2-A 验证脚本，物理连接串口进行长周期只读监听，严格断言 `total hardware writes = 0` 且 `fault_codes = 0`，确保通信链路零侵入。
-5. **实时基准测试 (Real-Time Benchmarks)**：运行 A~F 消融基准脚本，测量 200Hz 定时器在真实操作系统下的周期抖动分布、P50/P95/P99 延迟及回调耗时。
-
----
-
-### 11.2 测试数量与语境严格规范说明
-
 > [!IMPORTANT]
-> **测试数量与收集范围语境规范**：在提及测试通过数量时，必须明确具体的测试命令与收集范围，严禁混用或制造虚假断言：
-> * **ROS 2 工作空间核心功能包全量测试**：执行 `pytest /home/lyapunov/bone_drill/bone_ws/src -v` $\to$ **304 项 PASS**（耗时约 43.75s，覆盖逆解、正解、LM、FixedLag、驱动协议、多电机控制器、安全前检与控制整形全部当前功能包）；
-> * **根目录全仓库历史用例收集**：执行 `pytest /home/lyapunov/bone_drill --collect-only` $\to$ **468 collected**（包含 `bone_ws/src` 162 项 + `up/motor/uart_multi` 306 项历史独立硬件台架用例）。
+> **测试数量与收集范围规范**：
+> 执行 `pytest src/h30_imu src/pus6_bringup src/pus6_control src/pus6_kinematics src/pus6_motor_driver` $	o$ **349 项 100% PASS**（覆盖 5 大功能包全部单元与集成测试）。
 
 ---
 
-### 11.3 软件数值测试 vs 机械精度的红线认知
-* **严格认知界限**：所有软件单元测试与仿真回放测试（包括 IK↔FK 1000 样本平移均值残差 $5.83\times 10^{-9}\text{ mm}$、姿态均值残差 $1.21\times 10^{-7\circ}$）**仅证明正逆解在纯数学模型与代码实现上的自洽无 bug**；
-* **严禁过度宣称**：上述数值指标**绝不代表真实物理机器人的加工制造精度、球铰装配间隙或末端定位精度**。真实机械精度必须等待机构总装完成后经由高精度光学跟踪仪实测标定。
+## 4.4 软件代数自洽 vs 物理机械精度的认知红线
+
+* **严格认知界限**：所有软件单元测试与仿真回放测试（包括 IK↔FK 1000 样本平移均值残差 $5.83	imes 10^{-9}	ext{ mm}$、姿态均值残差 $1.21	imes 10^{-7\circ}$）**仅证明正逆解在纯数学模型与代码实现上的自洽无 bug**；
+* **严禁过度宣称**：上述数值指标**绝不代表真实物理机器人的加工制造精度、球铰装配间隙或末端定位精度**。真实机械精度必须经由外部高精度光学跟踪仪实测标定。
 
 ---
 
-## 12. 二次开发速查指南、实战练习与装配读点 (Developer Guide, Exercises & Next Steps)
+# 附录 (Appendix)
 
-### 12.1 权威修改导航表 (Single Source of Truth)
+## 附录 A: 全系统 ROS 2 节点、话题、服务与消息类型全景速查表
 
-在系统二次开发或参数调优时，必须严格通过权威配置文件进行修改，严禁直接修改底层代码中的硬编码默认值：
-
-| 开发需求 / 改动场景 | 唯一权威修改文件路径 | 关键配置字段 / 修改对象 |
-| :--- | :--- | :--- |
-| **调整 6PUS 机构几何尺寸** (静/动平台半径、连杆长、安装角) | [`pus6_kinematics/config/6pus_geometry.yaml`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/config/6pus_geometry.yaml) | `geometry.base_radius_m`, `strut_length_m`, `lambda_rad` 等 |
-| **修改行程限位与安全包络** (绝对范围、软件限位、正常运动包络) | [`pus6_kinematics/config/6pus_geometry.yaml`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/config/6pus_geometry.yaml) | `actuator.normal_motion_limits_steps` ([200, 1800]), `absolute_raw_limits_steps` |
-| **修改步数比例与零位定义** | [`pus6_kinematics/config/6pus_geometry.yaml`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/config/6pus_geometry.yaml) | `steps_per_meter` (40000.0), `operating_home_raw_steps` ([1000]*6) |
-| **修改连续控制速度/加速度上限** | [`pus6_bringup/config/system_params.yaml`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_bringup/config/system_params.yaml) | `max_speed_m_per_sec`, `max_accel_m_per_sec2`, `max_jerk_m_per_sec3` |
-| **添加外部闭环算法 Hook** | [`pus6_control/joint_trajectory_controller.py`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_control/pus6_control/joint_trajectory_controller.py) | 继承并重写 `OuterLoopControllerHook.compute_correction` 方法 |
-| **修改串口设备路径与波特率** | [`pus6_motor_driver/config/motors.yaml`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_motor_driver/config/motors.yaml) | `port` (`/dev/serial/by-id/...`), `baudrate` (921600) |
-
----
-
-### 12.2 跨阶段状态索引与冻结边界
-
-| 阶段代号 | 当前状态 | 阶段边界与冻结结论 |
-| :--- | :---: | :--- |
-| **J1 ~ J4** | **PASS / FROZEN** | 单总线 921600 驱动协议、解析逆解、三阶 Jerk 轨迹整形与安全自愈状态机已冻结 |
-| **J5** | **PASS / FROZEN** | 纳秒统一时间轴 (Host `CLOCK_MONOTONIC`)、Fixed-Lag 零外推状态重构、解析雅可比 LM 正解与双 H30 微秒同步已冻结 |
-| **J6** | **PASS / FROZEN** | 总装调试与定位模式 (mode=0, 10Hz, speed=50) HOME/PARK 基线已冻结，作为可靠 fallback |
-| **J7 (当前)** | **PASS / FROZEN** | **六轴 50Hz Servo 伺服运动控制硬件基线已冻结**（50Hz 目标流、纯写批次 3.38ms、Round-Robin 反馈、PARK $\leftrightarrow$ HOME 全行程 PASS） |
-| **未来规划** | **PLANNED** | 动平台与基座 Dual-IMU / FK 误差状态卡尔曼滤波 (ESKF) 融合与主动振动抑制控制 |
+| 节点名称 (Node) | 话题/服务名称 (Topic/Service) | 方向 | 消息/服务类型 | 默认 QoS / 频率 | 核心语义 |
+| :--- | :--- | :---: | :--- | :--- | :--- |
+| `pus6_kinematics_node` | `/pus6/target_cartesian_pose` | Sub | `geometry_msgs/PoseStamped` | Reliable, KeepLast(10) | 上位 50Hz 笛卡尔目标位姿输入 |
+| `pus6_kinematics_node` | `/pus6/desired_joint_deltas` | Pub | `std_msgs/Float64MultiArray` | BestEffort, 50Hz | 6 轴相对高度差分量 (m) |
+| `pus6_control_node` | `/pus6/command_joint_steps` | Pub | `std_msgs/Int32MultiArray` | BestEffort, KeepLast(1), 50Hz | **唯一权威下行控制入口** (绝对整步) |
+| `pus6_motor_driver_node`| `/pus6/joint_feedback/timed` | Pub | `pus6_msgs/TimedJointFeedback`| BestEffort, 50Hz | 带单调接收时间戳的 6 轴遥测流 |
+| `pus6_motor_driver_node`| `/pus6/joint_states` | Pub | `sensor_msgs/JointState` | BestEffort, 50Hz | 标准 ROS 2 关节状态输出 |
+| `pus6_fk_node` | `/pus6/fk/state` | Pub | `pus6_msgs/FkStateStamped` | BestEffort, 50Hz/200Hz | 完整正解状态诊断与残差消息 |
+| `pus6_fk_node` | `/pus6/fk/pose` | Pub | `geometry_msgs/PoseStamped` | BestEffort, 50Hz/200Hz | 动平台实时位姿估计输出 |
 
 ---
 
-### 12.3 基于本项目的 ROS 2 进阶实战练习
-1. **练习 1：编写独立笛卡尔空间正弦发布节点 (Python)**：编写一个独立的 ROS 2 节点，以 50Hz 发布 Z 轴正弦位姿 $z(t) = z_{\text{nom}} + 0.003 \sin(2\pi \cdot 0.2 t)$ 到 `/pus6/target_cartesian_pose`，通过 RViz 观察运动学与控制节点的响应；
-2. **练习 2：实现双 IMU 外环姿态误差补偿 Hook**：在 `joint_trajectory_controller.py` 中继承 `OuterLoopControllerHook`，根据动平台与基座 IMU 的相对姿态误差，计算关节空间的补偿增量 $\Delta q$；
-3. **练习 3：编写 Pytest 单元测试覆盖通信长尾与斜率自愈**：模拟注入 350ms 的串口通信中断，断言 `Pus6MotorDriverNode` 能够通过 Time-Aware Vector Slew Recovery 动态缩放矢量并平滑追上目标；
-4. **练习 4：添加 RViz 实时位姿对比插件**：编写 RViz 插件或独立绘图脚本，同时订阅规划目标 `/pus6/target_cartesian_pose` 与正解观测 `/pus6/fk/pose`，实时渲染末端跟踪曲线与残差。
+## 附录 B: J1 ~ J8 核心特性与技术指标演进对比矩阵
+
+| 阶段 | 控制模式 | 目标频率 | 状态反馈机制 | 安全看门狗机制 | 启动与停放契约 | 核心验收结论 |
+| :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| **J1** | 底层寄存器 | 点对点 | 单轴 0x30 查询 | 无 | 原始整步读写 | RS485 921600 自定义协议调通 |
+| **J2** | 多轴只读 | 10 Hz | 6 轴 0x30 串行扫描 | 批次全局锁 | 零写入只读审计 | 0 写入只读审计 PASS |
+| **J3** | 独立逆解 | 点对点 | 0x29 伴随反馈 | 绝对硬件限位 [0,2000] | PARK=[0]*6, HOME=[1000]*6 | 台架独立往返就位精度 <= 2 步 |
+| **J4** | 连续笛卡尔 | 25 Hz | Piggyback 伴随状态 | Slew Recovery + 5 级门禁 | maintenance_mode 隔离 | 三阶 Jerk 整形与自愈状态机冻结 |
+| **J5** | 时间轴/正解 | 200 Hz | 纳秒 TimedJointFeedback | SO(3) 测地线门禁 | 统一单调时间轴 | Fixed-Lag 零外推与 LM 正解冻结 |
+| **J6** | 定位模式 (mode=0)| 10 Hz | 0x30 轮询状态 | 梯形限速保护 | 现场总装零位标定 | 连续 10 循环 HOME/PARK PASS |
+| **J7** | 伺服模式 (mode=1)| 50 Hz | 纯写 + 1 轴/周期 0x30 | 运行期取消 0x25 读 | 五次 S 曲线平滑过渡 | RMS 误差降低 61.6%，电流降 46.9% |
+| **J8** | **50Hz 笛卡尔伺服**| **50.3 Hz** | **Design-B 0x29 伴随主反馈**| **两级看门狗 (Tier1+2)** | **VALID_PARK + 规划种子 [0]*6**| **9 阶段展示全自由度实机准入 PASS** |
 
 ---
 
-### 12.4 物理装配边界与装配后 J5-C2-HW 衔接指南
+## 附录 C: 常用 ROS 2 / 驱动调试与硬件实机操作 CLI 指令速查
 
-#### (1) 当前学习与开发停止点 (Stopping Baseline)
-* 当前系统已完成所有装配前的纯软件架构与离线算法闭环（J4 控制与 J5-C2-RT-SW 实时正解观测均已通过并冻结）；
-* **红线要求**：在 6PUS 机构本体完成总装前，**严禁执行任何真实 HOME、PARK 或 J4 动态运动，严禁提前启动 B4 平动融合、ESKF 滤波或 Dual-IMU/FK 融合控制**。
+```bash
+# 1. 环境初始化
+source /opt/ros/jazzy/setup.bash
+source /home/lyapunov/bone_drill/bone_ws/install/setup.bash
+cd /home/lyapunov/bone_drill
 
-#### (2) 机构总装完成后的标准进阶路径 (Post-Assembly Roadmap)
-当机构总装完成且两个 IMU 完成最终空间固定后，按以下严格顺序开展后续工作：
-```
-1. 机构总装完成
-   │
-   ▼
-2. 机械几何尺寸、杆长、安装角与推杆中位实测核对 ──► 更新 6pus_geometry.yaml 并重新回归测试
-   │
-   ▼
-3. 现场核对零位映射与 HOME (raw=1000) / PARK (raw=0) 安全状态
-   │
-   ▼
-4. 完成 J5-B2 最终双 IMU 空间安装外参与 lever arm 标定 (确定坐标系与旋转约定)
-   │
-   ▼
-5. 启动 J5-C2-HW 实际机构验收 ──► 采集真实 q_actual 验证 TimedJointFeedback → Fixed-Lag → FK → 实际 T_BP
-   │
-   ▼
-6. 经光学跟踪仪核验物理 FK 精度达标后 ──► 才正式开展平动模型、Dual-IMU/FK 融合与 ESKF 姿态滤波开发
+# 2. 全工作空间 349 项回归测试
+pytest src/h30_imu src/pus6_bringup src/pus6_control src/pus6_kinematics src/pus6_motor_driver
+
+# 3. 硬件开机前 READ_ONLY 只读审计与启动状态分类检查
+python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j8_c_hardware_readonly_audit.py
+
+# 4. 生产级伺服一键开机 HOME 就位 (24V 开启后)
+python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j7_servo_home_park.py   --action home --speed 100 --rate 50 --real-hardware --confirm-motion
+
+# 5. 执行完整的 J8 9 阶段实机视频演示展示轨迹
+python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j8_final_video_demonstration.py
+
+# 6. 实验完成：生产级伺服受控 PARK 收拢 (关机前)
+python3 /home/lyapunov/bone_drill/bone_ws/scripts/run_j7_servo_home_park.py   --action park --speed 100 --rate 50 --real-hardware --confirm-motion
 ```
