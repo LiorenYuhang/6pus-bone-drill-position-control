@@ -184,3 +184,105 @@ def test_unit_conversions():
     assert steps_to_meters(1) == 0.000025
     assert meters_to_steps(0.000025) == 1
     assert meters_to_steps(0.045) == 1800
+
+
+def test_classify_startup_state_valid_park():
+    from pus6_motor_driver.safety import StartupClassification, classify_startup_state
+
+    # Real hardware power-on resting vector
+    res = classify_startup_state([-3, -5, -2, -2, -4, 0])
+    assert res.classification == StartupClassification.VALID_PARK
+    assert res.is_park is True
+    assert res.is_valid is True
+    assert res.measured_positions == (-3, -5, -2, -2, -4, 0)
+    assert res.planning_seed == (0, 0, 0, 0, 0, 0)
+
+    # Pure zero park
+    res0 = classify_startup_state([0, 0, 0, 0, 0, 0])
+    assert res0.classification == StartupClassification.VALID_PARK
+    assert res0.planning_seed == (0, 0, 0, 0, 0, 0)
+
+    # Extremes of provisional PARK band [-5, +5]
+    res_band = classify_startup_state([-5, 5, -5, 5, 0, -2])
+    assert res_band.classification == StartupClassification.VALID_PARK
+    assert res_band.planning_seed == (0, 0, 0, 0, 0, 0)
+
+
+def test_classify_startup_state_valid_home():
+    from pus6_motor_driver.safety import StartupClassification, classify_startup_state
+
+    res = classify_startup_state([1000, 1000, 1000, 1000, 1000, 1000])
+    assert res.classification == StartupClassification.VALID_HOME
+    assert res.is_home is True
+    assert res.is_valid is True
+    assert res.planning_seed == (1000, 1000, 1000, 1000, 1000, 1000)
+
+    # Home with slight settling deviation in [995, 1005]
+    res_dev = classify_startup_state([996, 1004, 1000, 998, 1002, 995])
+    assert res_dev.classification == StartupClassification.VALID_HOME
+    assert res_dev.planning_seed == (1000, 1000, 1000, 1000, 1000, 1000)
+
+
+def test_classify_startup_state_valid_in_envelope():
+    from pus6_motor_driver.safety import StartupClassification, classify_startup_state
+
+    arbitrary = [250, 400, 120, 890, 600, 750]
+    res = classify_startup_state(arbitrary)
+    assert res.classification == StartupClassification.VALID_IN_ENVELOPE
+    assert res.is_valid is True
+    assert res.planning_seed == tuple(arbitrary)
+
+
+def test_classify_startup_state_invalid_out_of_range():
+    from pus6_motor_driver.safety import StartupClassification, classify_startup_state
+
+    # Below -5
+    res_low = classify_startup_state([-6, 0, 0, 0, 0, 0])
+    assert res_low.classification == StartupClassification.INVALID_OUT_OF_RANGE
+    assert res_low.is_valid is False
+
+    # Above 2005
+    res_high = classify_startup_state([0, 0, 0, 0, 0, 2006])
+    assert res_high.classification == StartupClassification.INVALID_OUT_OF_RANGE
+    assert res_high.is_valid is False
+
+
+def test_classify_startup_state_mixed_unclassified_rejected():
+    from pus6_motor_driver.safety import StartupClassification, classify_startup_state
+
+    # Mixed state: negative axis combined with mid-stroke axes (not all at PARK)
+    res_mixed = classify_startup_state([-3, 500, 500, 500, 500, 500])
+    assert res_mixed.classification == StartupClassification.MIXED_UNCLASSIFIED
+    assert res_mixed.is_valid is False
+    assert res_mixed.planning_seed == ()
+
+    # Mixed state: negative axis combined with park & out-of-park axes
+    res_mixed2 = classify_startup_state([-4, -4, 0, 50, 0, 0])
+    assert res_mixed2.classification == StartupClassification.MIXED_UNCLASSIFIED
+    assert res_mixed2.is_valid is False
+
+
+def test_classify_startup_state_stability_check():
+    from pus6_motor_driver.safety import StartupClassification, classify_startup_state
+
+    # Stable history samples
+    hist_stable = [
+        [-3, -5, -2, -2, -4, 0],
+        [-3, -4, -2, -2, -4, 0],
+        [-3, -5, -2, -2, -4, 0],
+    ]
+    res_stable = classify_startup_state(hist_stable[-1], history_samples=hist_stable)
+    assert res_stable.classification == StartupClassification.VALID_PARK
+    assert res_stable.is_valid is True
+
+    # Unstable history (drift on ID2 is 6 > 2 steps)
+    hist_unstable = [
+        [-3, -5, -2, -2, -4, 0],
+        [-3, -2, -2, -2, -4, 0],
+        [-3, 1, -2, -2, -4, 0],
+    ]
+    res_unstable = classify_startup_state(hist_unstable[-1], history_samples=hist_unstable)
+    assert res_unstable.classification == StartupClassification.MIXED_UNCLASSIFIED
+    assert res_unstable.is_valid is False
+    assert "unstable" in res_unstable.description
+

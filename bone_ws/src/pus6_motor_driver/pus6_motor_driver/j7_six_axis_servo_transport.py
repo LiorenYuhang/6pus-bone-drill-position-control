@@ -10,12 +10,13 @@ modules.
 from __future__ import annotations
 
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable, Deque, Protocol
 import threading
 import time
 
 try:
+    from .j7_real_uart_adapter import RxDrainAudit
     from .j7_servo_transport import (
         RxResidualRecord,
         RxSafetyError,
@@ -28,10 +29,12 @@ try:
         CMD_WR_REGISTER,
         Frame,
         FrameStreamParser,
+        ProtocolError,
         RSP_FRAME_HEADER,
         pack_read_register_cmd,
         pack_write_register_cmd,
         unpack_read_register_response,
+        unpack_status_response,
         unpack_write_response,
     )
     from .safety import (
@@ -42,6 +45,7 @@ try:
         validate_target_vector,
     )
 except ImportError:  # pragma: no cover - direct module execution fallback.
+    from j7_real_uart_adapter import RxDrainAudit  # type: ignore
     from j7_servo_transport import (  # type: ignore
         RxResidualRecord,
         RxSafetyError,
@@ -54,10 +58,13 @@ except ImportError:  # pragma: no cover - direct module execution fallback.
         CMD_WR_REGISTER,
         Frame,
         FrameStreamParser,
+        ProtocolError,
         RSP_FRAME_HEADER,
+        StatusFeedback,
         pack_read_register_cmd,
         pack_write_register_cmd,
         unpack_read_register_response,
+        unpack_status_response,
         unpack_write_response,
     )
     from safety import (  # type: ignore
@@ -78,6 +85,7 @@ class SixAxisServoBus(Protocol):
         *,
         expected_id: int | None = None,
         expected_command: int | None = None,
+        expected_register: int | None = None,
         retries: int = 0,
     ) -> bytes: ...
 
@@ -112,6 +120,7 @@ class SixAxisCycleAudit:
     tx_skew_ns: int
     batch_complete_ns: int
     deadline_miss: bool
+    feedbacks: dict[int, StatusFeedback] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -123,6 +132,8 @@ class SixAxisServoTransportAudit:
     delivery_uncertain: bool
     stopped: bool
     stop_reason: str | None
+    rx_motion_write_response_count: int = 0
+    rx_stale_response_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -147,7 +158,8 @@ class J7SixAxisServoTransport:
         rx_policy: ServoRxPolicy = ServoRxPolicy.DEFER_TO_FEEDBACK,
         max_residual_frames: int = 192,
         max_residual_bytes: int = 24_576,
-        min_frame_interval_s: float = 0.001,
+        min_frame_interval_s: float = 0.0008,
+        rx_drain_budget_s: float = 0.0040,
         clock_ns: Callable[[], int] | None = None,
         sleep_fn: Callable[[float], None] | None = None,
         pause_callback: Callable[[str], None] | None = None,
@@ -166,6 +178,7 @@ class J7SixAxisServoTransport:
         self.max_residual_frames = max_residual_frames
         self.max_residual_bytes = max_residual_bytes
         self.min_frame_interval_ns = int(min_frame_interval_s * 1e9)
+        self.rx_drain_budget_s = rx_drain_budget_s
         self._clock_ns = clock_ns or time.monotonic_ns
         self._sleep_fn = sleep_fn or time.sleep
         self._pause_callback = pause_callback
@@ -185,6 +198,9 @@ class J7SixAxisServoTransport:
         self._malformed_count = 0
         self._response_wait_count = 0
         self._motion_retry_count = 0
+        self._motion_write_response_count = 0
+        self._stale_response_count = 0
+        self._pending_rx_drain_audit: RxDrainAudit | None = None
 
     @property
     def configured(self) -> tuple[ServoConfig, ...] | None:
@@ -335,10 +351,22 @@ class J7SixAxisServoTransport:
                 self.stop("motion_write_failure")
                 raise
 
+            # Ingest and unmarshal 0x29 StatusFeedback responses directly from the bus
+            feedbacks: dict[int, StatusFeedback] = {}
+            drain_fn = getattr(self.bus, "drain_motion_feedbacks", None)
+            if drain_fn is not None:
+                deadline_ns = self._clock_ns() + int(self.rx_drain_budget_s * 1e9)
+                while True:
+                    new_fbs = drain_fn()
+                    feedbacks.update(new_fbs)
+                    if len(feedbacks) >= len(MOTOR_IDS) or self._clock_ns() >= deadline_ns:
+                        break
+                    time.sleep(0)
+
             batch_complete_ns = self._clock_ns()
             cycle_end_ns = batch_complete_ns
             tx_starts = [record.tx_start_ns for record in records]
-            tx_skew_ns = max(tx_starts) - min(tx_starts)
+            tx_skew_ns = max(tx_starts) - min(tx_starts) if tx_starts else 0
             audit = SixAxisCycleAudit(
                 cycle_id=cycle_id,
                 target_timestamp_ns=timestamp_ns,
@@ -350,19 +378,25 @@ class J7SixAxisServoTransport:
                 tx_skew_ns=tx_skew_ns,
                 batch_complete_ns=batch_complete_ns,
                 deadline_miss=(batch_complete_ns - cycle_start_ns) > self.period_ns,
+                feedbacks=feedbacks,
             )
             self._cycles.append(audit)
             self._last_cycle_start_ns = cycle_start_ns
             return audit
 
     def _wait_for_frame_interval_locked(self) -> None:
-        if self._last_tx_end_ns is None or self.min_frame_interval_ns == 0:
+        if self._last_tx_end_ns is None:
             return
         remaining_ns = self.min_frame_interval_ns - (
             self._clock_ns() - self._last_tx_end_ns
         )
         if remaining_ns > 0:
-            self._sleep_fn(remaining_ns / 1e9)
+            if remaining_ns < 1_500_000 and self._clock_ns is time.monotonic_ns:
+                target_ns = self._clock_ns() + remaining_ns
+                while self._clock_ns() < target_ns:
+                    time.sleep(0)
+            else:
+                self._sleep_fn(remaining_ns / 1e9)
 
     def _read_available_locked(self) -> bytes:
         reader = getattr(self.bus, "read_available", None)
@@ -376,6 +410,18 @@ class J7SixAxisServoTransport:
         return bytes(data)
 
     def _ingest_rx_locked(self) -> int:
+        drain = getattr(self.bus, "drain_rx", None)
+        if callable(drain):
+            try:
+                audit = drain()
+            except Exception as exc:
+                self._malformed_count += 1
+                raise RxSafetyError(str(exc)) from exc
+            self._pending_rx_drain_audit = audit
+            self._motion_write_response_count += audit.motion_write_responses
+            self._stale_response_count += audit.stale_responses
+            return audit.drained_frames
+
         data = self._read_available_locked()
         if not data:
             return 0
@@ -414,10 +460,31 @@ class J7SixAxisServoTransport:
         before = len(self._residual)
         discarded = 0
         discarded_bytes = 0
+        motion_write_responses = 0
+        stale_responses = 0
+        drain_start_ns = 0
+        drain_end_ns = 0
+        unified_audit = self._pending_rx_drain_audit
+        self._pending_rx_drain_audit = None
+        if unified_audit is not None:
+            discarded = unified_audit.drained_frames
+            discarded_bytes = unified_audit.drained_bytes
+            motion_write_responses = unified_audit.motion_write_responses
+            stale_responses = unified_audit.stale_responses
+            drain_start_ns = unified_audit.timestamp_start_ns
+            drain_end_ns = unified_audit.timestamp_end_ns
         if policy == ServoRxPolicy.DISCARD_BEFORE_TX:
-            discarded = before
-            discarded_bytes = self.residual_bytes
-            self._residual.clear()
+            if self._residual:
+                for item in tuple(self._residual):
+                    if self._is_motion_write_status(item.frame):
+                        self._motion_write_response_count += 1
+                        motion_write_responses += 1
+                    else:
+                        self._stale_response_count += 1
+                        stale_responses += 1
+                discarded += before
+                discarded_bytes += self.residual_bytes
+                self._residual.clear()
         record = RxResidualRecord(
             timestamp_ns=self._clock_ns(),
             policy=policy,
@@ -426,9 +493,29 @@ class J7SixAxisServoTransport:
             discarded_bytes=discarded_bytes,
             malformed_frames=self._malformed_count,
             residual_frames_after=len(self._residual),
+            motion_write_responses=motion_write_responses,
+            stale_responses=stale_responses,
+            drain_start_ns=drain_start_ns,
+            drain_end_ns=drain_end_ns,
         )
         self._rx_records.append(record)
         return record
+
+    @staticmethod
+    def _is_motion_write_status(frame: Frame) -> bool:
+        if (
+            frame.motor_id not in MOTOR_IDS
+            or frame.command != CMD_WR_REGISTER
+            or frame.register_addr != TARGET_POSITION_ADDR
+        ):
+            return False
+        try:
+            unpack_status_response(frame.raw)
+        except ProtocolError as exc:
+            raise RxSafetyError(
+                f"invalid motion-write StatusFeedback for ID{frame.motor_id}: {exc}"
+            ) from exc
+        return True
 
     def drain_residual(self, *, policy: ServoRxPolicy | None = None) -> RxResidualRecord:
         """Ingest and classify pending RX without issuing a motion frame."""
@@ -458,6 +545,8 @@ class J7SixAxisServoTransport:
                 delivery_uncertain=self._delivery_uncertain,
                 stopped=self._stopped,
                 stop_reason=self._stop_reason,
+                rx_motion_write_response_count=self._motion_write_response_count,
+                rx_stale_response_count=self._stale_response_count,
             )
 
     def _ensure_running_locked(self) -> None:

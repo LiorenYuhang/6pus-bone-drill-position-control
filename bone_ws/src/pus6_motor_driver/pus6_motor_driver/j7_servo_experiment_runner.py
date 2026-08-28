@@ -304,12 +304,17 @@ class J7ServoExperimentRunner:
             return
         for sample in audit.samples:
             if sample.timeout:
-                self.stop("feedback_timeout")
+                reason = self.feedback.audit_snapshot().stop_reason
+                if reason is None:
+                    self._record("feedback_timeout")
+                    continue
+                self.stop(reason)
                 raise ServoRunnerError(
                     f"ID{sample.motor_id} feedback timeout stopped Servo run"
                 )
             if sample.fault not in (0,):
-                self.stop("feedback_fault")
+                reason = self.feedback.audit_snapshot().stop_reason or "feedback_fault"
+                self.stop(reason)
                 raise ServoRunnerError(
                     f"ID{sample.motor_id} status fault={sample.fault} stopped Servo run"
                 )

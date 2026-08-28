@@ -233,9 +233,9 @@ def test_j7_c7_runtime_status_fault_stops_servo_once() -> None:
     runtime_requests = bus.request_log[runtime_request_start:]
     assert runner.state == RunnerState.STOP
     assert runner.audit_snapshot().stop_count == 1
-    assert runner.audit_snapshot().stop_reason == "feedback_fault"
+    assert runner.audit_snapshot().stop_reason == "motor_fault_ID1"
     assert runner.transport.stopped
-    assert pauses == ["feedback_fault"]
+    assert pauses == ["motor_fault_ID1"]
     assert [command for _, command, _ in runtime_requests] == [0x30]
     assert bus.hardware_write_count == 0
 
@@ -255,8 +255,8 @@ def test_j7_c7_start_stream_status_fault_stops_servo_once() -> None:
 
     assert runner.state == RunnerState.STOP
     assert runner.audit_snapshot().stop_count == 1
-    assert runner.audit_snapshot().stop_reason == "feedback_fault"
-    assert pauses == ["feedback_fault"]
+    assert runner.audit_snapshot().stop_reason == "motor_fault_ID1"
+    assert pauses == ["motor_fault_ID1"]
     assert bus.hardware_write_count == 0
 
 

@@ -13,6 +13,8 @@ from sensor_msgs.msg import JointState
 from std_msgs.msg import Float64MultiArray, Int32MultiArray
 from std_srvs.srv import Trigger
 from pus6_motor_driver.motor_driver_node import Pus6MotorDriverNode
+from pus6_motor_driver.fake_bus import MockServoBus
+from pus6_motor_driver.protocol import parse_frame
 from pus6_motor_driver.safety import HardwareMode
 from pus6_motor_driver.six_motor_controller import SixMotorController
 from test_six_motor_controller import FakeBus
@@ -131,3 +133,82 @@ def test_motor_driver_node_position_only_read_mode(rclpy_init):
 
     node.destroy_node()
     assert node.controller.write_count == 0
+
+
+def _j8_motion_frame_count(bus):
+    return sum(1 for frame in bus.written_frames if parse_frame(frame).register_addr == 0x29)
+
+def test_j8_stopped_worker_fails_fast_without_traceback_flood(rclpy_init):
+    bus = MockServoBus(initial_positions=[1000] * 6)
+    node = Pus6MotorDriverNode(hardware_mode="mock", write_rate_hz=50.0, use_j7_servo=True, bus=bus)
+    node.j7_writer.stop("test_stop")
+    count_after_stop = _j8_motion_frame_count(bus)
+    node._uart_worker_cycle()
+    node._uart_worker_cycle()
+    assert node.driver_fault_latched is True
+    assert node.driver_fault_reason == "test_stop"
+    assert node._j7_fault_log_emitted is True
+    assert _j8_motion_frame_count(bus) == count_after_stop
+    node.destroy_node()
+
+
+def test_j8_isolated_feedback_timeout_recovers_without_driver_latch(rclpy_init):
+    bus = MockServoBus(initial_positions=[1000] * 6)
+    node = Pus6MotorDriverNode(hardware_mode="mock", write_rate_hz=50.0, use_j7_servo=True, bus=bus)
+    bus.timeout_on_axis = 1
+    node._handle_command_joint_steps(Int32MultiArray(data=[1000] * 6))
+    node._uart_worker_cycle()
+    assert node.driver_fault_latched is False
+    assert node.telemetry_health_ok is True
+    bus.timeout_on_axis = None
+    for _ in range(6):
+        node._uart_worker_cycle()
+    assert node.driver_fault_latched is False
+    assert node.j7_writer.stopped is False
+    node.destroy_node()
+
+def test_j8_persistent_feedback_timeout_latches_and_stops_worker(rclpy_init):
+    bus = MockServoBus(initial_positions=[1000] * 6)
+    node = Pus6MotorDriverNode(hardware_mode="mock", write_rate_hz=50.0, use_j7_servo=True, bus=bus)
+    bus.timeout_on_axis = 1
+    node._handle_command_joint_steps(Int32MultiArray(data=[1000] * 6))
+    node._uart_worker_cycle()
+    for _ in range(10):
+        node._uart_worker_cycle()
+    node._uart_worker_cycle()
+    assert node.driver_fault_latched is True
+    assert node.driver_fault_reason == "persistent_feedback_loss_ID1"
+    count_after_stop = _j8_motion_frame_count(bus)
+    node._uart_worker_cycle()
+    assert _j8_motion_frame_count(bus) == count_after_stop
+    node.destroy_node()
+
+def test_j8_hard_feedback_fault_latches_immediately(rclpy_init):
+    bus = MockServoBus(initial_positions=[1000] * 6)
+    node = Pus6MotorDriverNode(hardware_mode="mock", write_rate_hz=50.0, use_j7_servo=True, bus=bus)
+    bus.faults[1] = 7
+    node._handle_command_joint_steps(Int32MultiArray(data=[1000] * 6))
+    node._uart_worker_cycle()
+    assert node.driver_fault_latched is True
+    assert node.driver_fault_reason == "motor_fault_ID1"
+    count_after_stop = _j8_motion_frame_count(bus)
+    node._uart_worker_cycle()
+    assert _j8_motion_frame_count(bus) == count_after_stop
+    node.destroy_node()
+
+
+def test_j8_demo_aborts_on_unsafe_driver_health():
+    import ast
+    demo_path = PKG_ROOT.parent.parent / "scripts" / "run_j8_final_video_demonstration.py"
+    tree = ast.parse(demo_path.read_text())
+    selected = [node for node in tree.body if isinstance(node, (ast.ClassDef, ast.FunctionDef)) and node.name in {"DemoSafetyAbort", "demo_health_failure_reason", "ensure_demo_health"}]
+    namespace = {}
+    exec(compile(ast.Module(body=selected, type_ignores=[]), str(demo_path), "exec"), namespace)
+
+    class UnsafeDriver:
+        driver_fault_latched = True
+        driver_fault_reason = "persistent_feedback_loss_ID1"
+        telemetry_health_ok = False
+
+    with pytest.raises(namespace["DemoSafetyAbort"], match="persistent_feedback_loss_ID1"):
+        namespace["ensure_demo_health"](UnsafeDriver())

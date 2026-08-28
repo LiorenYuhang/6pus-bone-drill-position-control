@@ -33,3 +33,12 @@ pus6_control_node:
     max_jerk_m_per_sec3: 0.500     # 20000 step/s^3 = 500.0 mm/s^3
     omega_n: 20.0                  # 3rd-order filter bandwidth (rad/s)
     maintenance_mode: false
+
+pus6_fk_node:
+  ros__parameters:
+    query_rate_hz: 200.0
+    fixed_lag_delay_ms: 160.0      # Configurable Fixed-Lag delay (candidate 160ms for J7 round-robin)
+    max_residual_m: 0.0001
+    max_pos_jump_m: 0.015
+    max_ang_jump_rad: 0.15
+

@@ -76,11 +76,19 @@ class Pus6FkNode(Node):
         self.kinematics = Analytical6PusKinematics()
         self.synchronizer = FixedLagJointSynchronizer(max_history_size=500)
 
-        self.max_residual_m = max_residual_m
-        self.max_pos_jump_m = max_pos_jump_m
-        self.max_ang_jump_rad = max_ang_jump_rad
-        self.query_rate_hz = query_rate_hz
-        self.fixed_lag_delay_ns = int(fixed_lag_delay_ms * 1e6)
+        self.declare_parameter("fixed_lag_delay_ms", float(fixed_lag_delay_ms))
+        self.declare_parameter("query_rate_hz", float(query_rate_hz))
+        self.declare_parameter("max_residual_m", float(max_residual_m))
+        self.declare_parameter("max_pos_jump_m", float(max_pos_jump_m))
+        self.declare_parameter("max_ang_jump_rad", float(max_ang_jump_rad))
+
+        p_delay = self.get_parameter("fixed_lag_delay_ms").get_parameter_value().double_value
+        p_query_rate = self.get_parameter("query_rate_hz").get_parameter_value().double_value
+        self.max_residual_m = self.get_parameter("max_residual_m").get_parameter_value().double_value
+        self.max_pos_jump_m = self.get_parameter("max_pos_jump_m").get_parameter_value().double_value
+        self.max_ang_jump_rad = self.get_parameter("max_ang_jump_rad").get_parameter_value().double_value
+        self.query_rate_hz = p_query_rate
+        self.fixed_lag_delay_ns = int(p_delay * 1e6)
         self.perform_fk = bool(perform_fk)
         self.publish_fk = bool(publish_fk)
         self.log_diagnostics = bool(log_diagnostics)

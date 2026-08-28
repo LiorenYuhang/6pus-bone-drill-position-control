@@ -1,7 +1,7 @@
 """Safety invariants, bounds checking, and validation rules for 6PUS motor driver."""
 
-from __future__ import annotations
-
+from dataclasses import dataclass
+from enum import Enum
 from typing import Mapping, Sequence
 import sys
 from pathlib import Path
@@ -65,6 +65,137 @@ STORAGE_PARK_RAW_STEPS: tuple[int, ...] = _GEOMETRY_CONFIG.storage_park_raw_step
 OPERATING_HOME_RAW_STEPS: tuple[int, ...] = _GEOMETRY_CONFIG.operating_home_raw_steps
 STORAGE_PARK_RAW_STEP: int = STORAGE_PARK_RAW_STEPS[0]
 OPERATING_HOME_RAW_STEP: int = OPERATING_HOME_RAW_STEPS[0]
+
+# Startup State Acceptance Bands (Provisional +/- 5 step tolerance)
+PARK_MEASUREMENT_BAND_LOWER: int = STORAGE_PARK_RAW_STEP - FEEDBACK_POSITION_TOLERANCE_STEPS  # -5
+PARK_MEASUREMENT_BAND_UPPER: int = STORAGE_PARK_RAW_STEP + FEEDBACK_POSITION_TOLERANCE_STEPS  # +5
+HOME_MEASUREMENT_BAND_LOWER: int = OPERATING_HOME_RAW_STEP - FEEDBACK_POSITION_TOLERANCE_STEPS  # 995
+HOME_MEASUREMENT_BAND_UPPER: int = OPERATING_HOME_RAW_STEP + FEEDBACK_POSITION_TOLERANCE_STEPS  # 1005
+
+
+class StartupClassification(str, Enum):
+    """Authoritative physical startup classification for 6PUS platform."""
+    VALID_PARK = "valid_park"              # All 6 axes within provisional PARK measurement band [-5, 5] steps
+    VALID_HOME = "valid_home"              # All 6 axes within HOME measurement band [995, 1005] steps
+    VALID_IN_ENVELOPE = "valid_in_envelope" # All 6 axes within valid commanded envelope [0, 2000] steps
+    INVALID_OUT_OF_RANGE = "invalid_out_of_range" # One or more axes outside feedback limits [-5, 2005] steps
+    MIXED_UNCLASSIFIED = "mixed_unclassified" # Inconsistent/mixed positions that cannot be safely classified
+
+
+@dataclass(frozen=True)
+class StartupStateAssessment:
+    classification: StartupClassification
+    measured_positions: tuple[int, ...]
+    planning_seed: tuple[int, ...]
+    is_park: bool
+    is_home: bool
+    is_valid: bool
+    description: str
+
+
+def classify_startup_state(
+    measured_positions: Sequence[int],
+    *,
+    history_samples: Sequence[Sequence[int]] | None = None,
+    stability_tolerance_steps: int = STATIC_POSITION_TOLERANCE_STEPS,
+) -> StartupStateAssessment:
+    """Classify 6-axis measured startup state and derive authoritative planning seed.
+
+    Contract:
+    1. If any measurement is outside [FEEDBACK_LOWER_LIMIT, FEEDBACK_UPPER_LIMIT] ([-5, 2005]):
+       -> INVALID_OUT_OF_RANGE (is_valid=False, cannot plan)
+    2. If history_samples is provided and position drift on any axis > stability_tolerance_steps:
+       -> MIXED_UNCLASSIFIED (is_valid=False, readings unstable)
+    3. If ALL 6 axes are within the provisional PARK measurement band [-5, +5]:
+       -> VALID_PARK (is_valid=True, planning_seed is set to exactly [0, 0, 0, 0, 0, 0])
+       Raw telemetry is preserved; motion planning starts from [0]*6 so all commanded targets remain >= 0.
+    4. If ALL 6 axes are within the HOME measurement band [995, 1005]:
+       -> VALID_HOME (is_valid=True, planning_seed is set to [1000, 1000, 1000, 1000, 1000, 1000])
+    5. If ALL 6 axes are strictly within the command envelope [0, 2000]:
+       -> VALID_IN_ENVELOPE (is_valid=True, planning_seed is set to measured_positions)
+    6. Otherwise (e.g. mixed state with negative measurements on some axes without all being at PARK):
+       -> MIXED_UNCLASSIFIED (is_valid=False, cannot plan; generic clamping is strictly forbidden)
+    """
+    if len(measured_positions) != NUM_MOTORS:
+        raise ValueError(f"Expected {NUM_MOTORS} measured positions, got {len(measured_positions)}")
+
+    raw_tuple = tuple(int(p) for p in measured_positions)
+
+    # 1. Feedback bounds check
+    for mid, pos in zip(MOTOR_IDS, raw_tuple):
+        if not (FEEDBACK_LOWER_LIMIT <= pos <= FEEDBACK_UPPER_LIMIT):
+            return StartupStateAssessment(
+                classification=StartupClassification.INVALID_OUT_OF_RANGE,
+                measured_positions=raw_tuple,
+                planning_seed=(),
+                is_park=False,
+                is_home=False,
+                is_valid=False,
+                description=f"Motor ID{mid} measured position {pos} outside valid feedback limits [{FEEDBACK_LOWER_LIMIT}, {FEEDBACK_UPPER_LIMIT}]",
+            )
+
+    # 2. Stability check across history samples if provided
+    if history_samples and len(history_samples) > 1:
+        for idx, mid in enumerate(MOTOR_IDS):
+            axis_vals = [s[idx] for s in history_samples]
+            drift = max(axis_vals) - min(axis_vals)
+            if drift > stability_tolerance_steps:
+                return StartupStateAssessment(
+                    classification=StartupClassification.MIXED_UNCLASSIFIED,
+                    measured_positions=raw_tuple,
+                    planning_seed=(),
+                    is_park=False,
+                    is_home=False,
+                    is_valid=False,
+                    description=f"Motor ID{mid} position unstable across preflight samples (drift {drift} > {stability_tolerance_steps} steps)",
+                )
+
+    # 3. Classify VALID_PARK: all 6 axes within [-5, +5] steps
+    if all(PARK_MEASUREMENT_BAND_LOWER <= p <= PARK_MEASUREMENT_BAND_UPPER for p in raw_tuple):
+        return StartupStateAssessment(
+            classification=StartupClassification.VALID_PARK,
+            measured_positions=raw_tuple,
+            planning_seed=STORAGE_PARK_RAW_STEPS,
+            is_park=True,
+            is_home=False,
+            is_valid=True,
+            description=f"All 6 axes within provisional PARK measurement band [{PARK_MEASUREMENT_BAND_LOWER}, {PARK_MEASUREMENT_BAND_UPPER}] steps",
+        )
+
+    # 4. Classify VALID_HOME: all 6 axes within [995, 1005] steps
+    if all(HOME_MEASUREMENT_BAND_LOWER <= p <= HOME_MEASUREMENT_BAND_UPPER for p in raw_tuple):
+        return StartupStateAssessment(
+            classification=StartupClassification.VALID_HOME,
+            measured_positions=raw_tuple,
+            planning_seed=OPERATING_HOME_RAW_STEPS,
+            is_park=False,
+            is_home=True,
+            is_valid=True,
+            description=f"All 6 axes within HOME measurement band [{HOME_MEASUREMENT_BAND_LOWER}, {HOME_MEASUREMENT_BAND_UPPER}] steps",
+        )
+
+    # 5. Classify VALID_IN_ENVELOPE: all 6 axes strictly within [0, 2000] steps
+    if all(ABSOLUTE_RAW_LOWER_LIMIT <= p <= ABSOLUTE_RAW_UPPER_LIMIT for p in raw_tuple):
+        return StartupStateAssessment(
+            classification=StartupClassification.VALID_IN_ENVELOPE,
+            measured_positions=raw_tuple,
+            planning_seed=raw_tuple,
+            is_park=False,
+            is_home=False,
+            is_valid=True,
+            description=f"All 6 axes within commanded envelope [{ABSOLUTE_RAW_LOWER_LIMIT}, {ABSOLUTE_RAW_UPPER_LIMIT}] steps",
+        )
+
+    # 6. Mixed / unclassified state (e.g. some axes in [-5, -1] while others are > 5)
+    return StartupStateAssessment(
+        classification=StartupClassification.MIXED_UNCLASSIFIED,
+        measured_positions=raw_tuple,
+        planning_seed=(),
+        is_park=False,
+        is_home=False,
+        is_valid=False,
+        description=f"Mixed/unclassified startup state {list(raw_tuple)}: non-uniform negative offsets cannot be safely seeded",
+    )
 
 # SI / Step Unit Conversion Constants (40 step/mm = 40,000 step/m)
 STEPS_PER_METER: float = _GEOMETRY_CONFIG.steps_per_meter

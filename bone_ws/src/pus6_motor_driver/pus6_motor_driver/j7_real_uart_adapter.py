@@ -21,10 +21,12 @@ try:
         FrameStreamParser,
         ProtocolError,
         RSP_FRAME_HEADER,
+        StatusFeedback,
         pack_write_register_cmd,
+        unpack_status_response,
         validate_response,
     )
-    from .safety import MOTOR_IDS, PAUSE_ADDR
+    from .safety import MOTOR_IDS, PAUSE_ADDR, TARGET_POSITION_ADDR
 except ImportError:  # pragma: no cover - direct module execution fallback.
     from protocol import (  # type: ignore
         CMD_WR_REGISTER,
@@ -32,10 +34,12 @@ except ImportError:  # pragma: no cover - direct module execution fallback.
         FrameStreamParser,
         ProtocolError,
         RSP_FRAME_HEADER,
+        StatusFeedback,
         pack_write_register_cmd,
+        unpack_status_response,
         validate_response,
     )
-    from safety import MOTOR_IDS, PAUSE_ADDR  # type: ignore
+    from safety import MOTOR_IDS, PAUSE_ADDR, TARGET_POSITION_ADDR  # type: ignore
 
 
 class J7SerialLike(Protocol):
@@ -61,9 +65,21 @@ class RxOwnerAudit:
     residual_frames: int
     residual_bytes: int
     stale_response_count: int
+    motion_write_response_count: int
     feedback_response_count: int
     malformed_count: int
     overflow_count: int
+
+
+@dataclass(frozen=True)
+class RxDrainAudit:
+    timestamp_start_ns: int
+    timestamp_end_ns: int
+    drained_frames: int
+    drained_bytes: int
+    motion_write_responses: int
+    stale_responses: int
+    residual_frames_after: int
 
 
 class J7RxOwner:
@@ -78,6 +94,7 @@ class J7RxOwner:
         self._frames: Deque[Frame] = deque()
         self._residual_bytes = 0
         self._stale_response_count = 0
+        self._motion_write_response_count = 0
         self._feedback_response_count = 0
         self._malformed_count = 0
         self._overflow_count = 0
@@ -102,6 +119,12 @@ class J7RxOwner:
             self._parser.clear()
             raise J7AdapterRxError(f"malformed RX frame: {exc}") from exc
         for frame in frames:
+            if (
+                frame.motor_id in MOTOR_IDS
+                and frame.command == CMD_WR_REGISTER
+                and frame.register_addr == TARGET_POSITION_ADDR
+            ):
+                self._is_motion_write_status(frame)
             self._frames.append(frame)
             self._residual_bytes += len(frame.raw)
         if len(self._frames) > self.max_frames or self._residual_bytes > self.max_bytes:
@@ -112,6 +135,22 @@ class J7RxOwner:
             )
         return tuple(frames)
 
+    @staticmethod
+    def _is_motion_write_status(frame: Frame) -> bool:
+        if (
+            frame.motor_id not in MOTOR_IDS
+            or frame.command != CMD_WR_REGISTER
+            or frame.register_addr != TARGET_POSITION_ADDR
+        ):
+            return False
+        try:
+            unpack_status_response(frame.raw)
+        except ProtocolError as exc:
+            raise J7AdapterRxError(
+                f"invalid motion-write StatusFeedback for ID{frame.motor_id}: {exc}"
+            ) from exc
+        return True
+
     def take_matching(
         self,
         *,
@@ -119,10 +158,13 @@ class J7RxOwner:
         expected_command: int,
         expected_register: int | None = None,
     ) -> Frame | None:
-        """Return one matching frame; classify every non-match as stale."""
+        """Return one matching frame and classify all other complete frames."""
         while self._frames:
             frame = self._frames.popleft()
             self._residual_bytes -= len(frame.raw)
+            if self._is_motion_write_status(frame):
+                self._motion_write_response_count += 1
+                continue
             if (
                 frame.motor_id == expected_id
                 and frame.command == expected_command
@@ -133,12 +175,37 @@ class J7RxOwner:
             self._stale_response_count += 1
         return None
 
+    def take_motion_write_feedbacks(self) -> dict[int, StatusFeedback]:
+        """Extract all valid 0x29 StatusFeedback frames from the RX queue.
+
+        Returns a dictionary mapping motor_id -> StatusFeedback for all received
+        motion-write responses. Any other frames are classified as stale.
+        """
+        feedbacks: dict[int, StatusFeedback] = {}
+        while self._frames:
+            frame = self._frames.popleft()
+            self._residual_bytes -= len(frame.raw)
+            if self._is_motion_write_status(frame):
+                self._motion_write_response_count += 1
+                status = unpack_status_response(frame.raw)
+                if frame.motor_id not in feedbacks:
+                    feedbacks[frame.motor_id] = status
+                else:
+                    self._stale_response_count += 1
+            else:
+                self._stale_response_count += 1
+        return feedbacks
+
     def drain(self) -> tuple[Frame, ...]:
-        """Remove all pending frames as residual/stale without matching."""
+        """Remove pending frames and classify motion responses separately."""
         frames = tuple(self._frames)
-        self._stale_response_count += len(frames)
         self._frames.clear()
         self._residual_bytes = 0
+        for frame in frames:
+            if self._is_motion_write_status(frame):
+                self._motion_write_response_count += 1
+            else:
+                self._stale_response_count += 1
         return frames
 
     def take_for_consumer(self) -> tuple[Frame, ...]:
@@ -152,6 +219,7 @@ class J7RxOwner:
             residual_frames=len(self._frames),
             residual_bytes=self._residual_bytes,
             stale_response_count=self._stale_response_count,
+            motion_write_response_count=self._motion_write_response_count,
             feedback_response_count=self._feedback_response_count,
             malformed_count=self._malformed_count,
             overflow_count=self._overflow_count,
@@ -204,6 +272,7 @@ class J7UartAdapter:
         self._sleep_fn = sleep_fn or time.sleep
         self._last_tx_end_ns: int | None = None
         self._request_audit: list[J7RequestAudit] = []
+        self._last_drain_audit: RxDrainAudit | None = None
 
     def _available(self) -> int:
         value = getattr(self.serial, "in_waiting", 0)
@@ -215,7 +284,7 @@ class J7UartAdapter:
     def _read_chunk(self) -> bytes:
         size = self._available()
         if size <= 0:
-            size = 1
+            return b""
         data = self.serial.read(size)
         if data is None:
             return b""
@@ -237,7 +306,12 @@ class J7UartAdapter:
             return
         remaining_ns = self._last_tx_end_ns + int(self.min_frame_interval_s * 1e9) - self._clock_ns()
         if remaining_ns > 0:
-            self._sleep_fn(remaining_ns / 1e9)
+            if remaining_ns < 1_500_000 and self._clock_ns is time.monotonic_ns:
+                target_ns = self._clock_ns() + remaining_ns
+                while self._clock_ns() < target_ns:
+                    time.sleep(0)
+            else:
+                self._sleep_fn(remaining_ns / 1e9)
 
     def write(self, frame: bytes) -> int | None:
         """Write one frame without reading or waiting for a response."""
@@ -263,6 +337,36 @@ class J7UartAdapter:
             self._ingest_available_locked()
             frames = self.rx_owner.take_for_consumer()
             return b"".join(frame.raw for frame in frames)
+
+    def drain_rx(self) -> RxDrainAudit:
+        """Ingest and classify all currently available RX frames exactly once."""
+        with self.uart_lock:
+            start_ns = self._clock_ns()
+            before = self.rx_owner.audit_snapshot()
+            self._ingest_available_locked()
+            frames = self.rx_owner.drain()
+            after = self.rx_owner.audit_snapshot()
+            end_ns = self._clock_ns()
+            audit = RxDrainAudit(
+                timestamp_start_ns=start_ns,
+                timestamp_end_ns=end_ns,
+                drained_frames=len(frames),
+                drained_bytes=sum(len(frame.raw) for frame in frames),
+                motion_write_responses=(
+                    after.motion_write_response_count
+                    - before.motion_write_response_count
+                ),
+                stale_responses=after.stale_response_count - before.stale_response_count,
+                residual_frames_after=after.residual_frames,
+            )
+            self._last_drain_audit = audit
+            return audit
+
+    def drain_motion_feedbacks(self) -> dict[int, StatusFeedback]:
+        """Ingest all available RX bytes and return all unpacked 0x29 StatusFeedback objects."""
+        with self.uart_lock:
+            self._ingest_available_locked()
+            return self.rx_owner.take_motion_write_feedbacks()
 
     def _request_once_locked(
         self,
@@ -310,7 +414,7 @@ class J7UartAdapter:
                     retry_count=0,
                 )
                 return raw, audit
-            self._sleep_fn(0.0001)
+            self._sleep_fn(self.min_frame_interval_s)
         audit = J7RequestAudit(
             motor_id=parsed_id,
             command=parsed_command,
@@ -330,6 +434,7 @@ class J7UartAdapter:
         *,
         expected_id: int | None = None,
         expected_command: int | None = None,
+        expected_register: int | None = None,
         retries: int = 0,
     ) -> bytes:
         """Request one validated response; C5/C6 use ``retries=0``."""
@@ -343,7 +448,7 @@ class J7UartAdapter:
                         frame,
                         expected_id=expected_id,
                         expected_command=expected_command,
-                        expected_register=None,
+                        expected_register=expected_register,
                     )
                     self._request_audit.append(audit)
                     return raw
@@ -355,6 +460,10 @@ class J7UartAdapter:
 
     def audit_snapshot(self) -> tuple[J7RequestAudit, ...]:
         return tuple(self._request_audit)
+
+    def rx_audit_snapshot(self) -> RxOwnerAudit:
+        with self.uart_lock:
+            return self.rx_owner.audit_snapshot()
 
 
 @dataclass(frozen=True)
@@ -459,6 +568,7 @@ __all__ = [
     "J7StopAdapter",
     "J7UartAdapter",
     "J7RequestAudit",
+    "RxDrainAudit",
     "RxOwnerAudit",
     "StopAudit",
     "StopAxisRecord",

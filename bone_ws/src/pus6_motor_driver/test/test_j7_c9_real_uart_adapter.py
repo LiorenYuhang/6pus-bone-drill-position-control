@@ -14,6 +14,8 @@ if str(PKG_ROOT) not in sys.path:
 
 from pus6_motor_driver.fake_bus import FakeBus
 from pus6_motor_driver.j7_real_uart_adapter import (
+    J7AdapterRxError,
+    J7RxOwner,
     J7AdapterTimeout,
     J7StopAdapter,
     J7UartAdapter,
@@ -22,6 +24,7 @@ from pus6_motor_driver.j7_servo_transport import ServoRxPolicy
 from pus6_motor_driver.j7_six_axis_servo_transport import J7SixAxisServoTransport
 from pus6_motor_driver.protocol import (
     CMD_RD_STATUS,
+    pack_write_register_cmd,
     pack_read_status_cmd,
     parse_frame,
 )
@@ -126,7 +129,8 @@ def test_j7_c9_single_rx_owner_classifies_stale_before_feedback() -> None:
     )
     assert parse_frame(response).motor_id == 1
     rx_audit = adapter.rx_owner.audit_snapshot()
-    assert rx_audit.stale_response_count >= 6
+    assert rx_audit.motion_write_response_count >= 6
+    assert rx_audit.stale_response_count == 0
     assert rx_audit.feedback_response_count >= 1
     assert rx_audit.malformed_count == 0
     assert serial.hardware_write_count == 0
@@ -181,3 +185,59 @@ def test_j7_c9_stop_timeout_is_recorded_without_retry() -> None:
     assert len(serial.writes) == 6
     assert serial.hardware_write_count == 0
 
+
+def test_j7_c9_delayed_interleaved_motion_and_feedback_frames_are_classified_once() -> None:
+    _clock, serial, adapter = make_adapter()
+    motion = pack_write_register_cmd(2, 0x29, [222])
+    delayed_status = serial.device.request(pack_read_status_cmd(2))
+    serial.rx.extend(serial.device.request(motion))
+    serial.rx.extend(delayed_status)
+
+    response = adapter.request(
+        pack_read_status_cmd(1),
+        expected_id=1,
+        expected_command=CMD_RD_STATUS,
+        expected_register=0x0000,
+        retries=0,
+    )
+
+    assert parse_frame(response).motor_id == 1
+    audit = adapter.rx_owner.audit_snapshot()
+    assert audit.motion_write_response_count == 1
+    assert audit.stale_response_count == 1
+    assert audit.feedback_response_count == 1
+    assert audit.residual_frames == 0
+    assert serial.hardware_write_count == 0
+
+
+def test_j7_c9_malformed_motion_status_is_rejected_by_single_rx_owner() -> None:
+    owner = J7RxOwner()
+    motion = pack_write_register_cmd(1, 0x29, [222])
+    raw = bytearray(FakeBus().request(motion))
+    raw[2] = 0x0E
+    raw[-1] = sum(raw[2:-1]) & 0xFF
+
+    with pytest.raises(J7AdapterRxError):
+        owner.ingest(bytes(raw))
+
+
+def test_j7_c9_feedback_match_requires_current_axis_and_register() -> None:
+    _clock, serial, adapter = make_adapter()
+    wrong_register = bytearray(serial.device.request(pack_read_status_cmd(1)))
+    wrong_register[5] = 0x01
+    wrong_register[6] = 0x00
+    wrong_register[-1] = sum(wrong_register[2:-1]) & 0xFF
+    serial.rx.extend(wrong_register)
+
+    response = adapter.request(
+        pack_read_status_cmd(1),
+        expected_id=1,
+        expected_command=CMD_RD_STATUS,
+        expected_register=0x0000,
+        retries=0,
+    )
+
+    assert parse_frame(response).register_addr == 0x0000
+    audit = adapter.rx_owner.audit_snapshot()
+    assert audit.stale_response_count == 1
+    assert audit.feedback_response_count == 1

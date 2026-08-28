@@ -50,11 +50,19 @@ from pus6_motor_driver.protocol import (
     parse_frame,
 )
 from pus6_motor_driver.safety import (
+    ABSOLUTE_RAW_LOWER_LIMIT,
+    ABSOLUTE_RAW_UPPER_LIMIT,
     CONTROL_MODE_ADDR,
+    FEEDBACK_LOWER_LIMIT,
+    FEEDBACK_UPPER_LIMIT,
     MOTOR_IDS,
     PAUSE_ADDR,
     TARGET_POSITION_ADDR,
     HardwareMode,
+    SafetyViolation,
+    StartupClassification,
+    StartupStateAssessment,
+    classify_startup_state,
 )
 from pus6_motor_driver.fake_bus import FakeBus
 from pus6_motor_driver.j7_real_uart_adapter import (
@@ -236,31 +244,48 @@ def run_servo_home_park(
             feedback_budget_s=0.010,
         )
 
-        # Step 1: Preflight 0x30 status scan
-        print(f"[{action.upper()} Phase 1] Preflight full status scan across ID1-ID6...")
-        preflight_audit = feedback.full_scan(
-            servo_cycle_id=0,
-            servo_cycle_timestamp_ns=time.monotonic_ns(),
-        )
-        if preflight_audit.deferred or len(preflight_audit.samples) != len(MOTOR_IDS):
-            raise RuntimeError("Preflight full scan incomplete")
+        # Step 1: Preflight 0x30 status scan (3 consecutive scans for stability audit)
+        print(f"[{action.upper()} Phase 1] Preflight full status scan across ID1-ID6 (3 stability samples)...")
+        samples_history: List[List[int]] = []
+        for pre_scan in range(3):
+            preflight_audit = feedback.full_scan(
+                servo_cycle_id=pre_scan,
+                servo_cycle_timestamp_ns=time.monotonic_ns(),
+            )
+            if preflight_audit.deferred or len(preflight_audit.samples) != len(MOTOR_IDS):
+                raise RuntimeError(f"Preflight full scan {pre_scan+1}/3 incomplete")
+            for sample in preflight_audit.samples:
+                if sample.timeout or sample.fault != 0:
+                    raise RuntimeError(
+                        f"ID{sample.motor_id} preflight failure: fault={sample.fault}, timeout={sample.timeout}"
+                    )
+            samples_history.append([s.position for s in preflight_audit.samples if s.position is not None])
+            if pre_scan < 2:
+                sleeper(0.02)
 
-        init_positions: List[int] = []
-        for sample in preflight_audit.samples:
-            if sample.timeout or sample.fault != 0:
-                raise RuntimeError(
-                    f"ID{sample.motor_id} preflight failure: fault={sample.fault}, timeout={sample.timeout}"
+        init_positions = samples_history[-1]
+        for s in preflight_audit.samples:
+            if s.position is not None:
+                latest_positions[s.motor_id] = s.position
+                print(
+                    f"  ID{s.motor_id}: position={s.position:4d} step, "
+                    f"current={s.current_mA:3d} mA, fault={s.fault}"
                 )
-            if sample.position is None or not (-10 <= sample.position <= 2010):
-                raise RuntimeError(f"ID{sample.motor_id} position out of bounds: {sample.position}")
-            init_positions.append(sample.position)
-            latest_positions[sample.motor_id] = sample.position
-            print(
-                f"  ID{sample.motor_id}: position={sample.position:4d} step, "
-                f"current={sample.current_mA:3d} mA, fault={sample.fault}"
+
+        # Authoritative Startup Classification
+        assessment = classify_startup_state(init_positions, history_samples=samples_history)
+        print(
+            f"  [STARTUP CLASSIFIER] Classification: {assessment.classification.value.upper()} | "
+            f"Planning Seed: {list(assessment.planning_seed)} | "
+            f"Info: {assessment.description}"
+        )
+        if not assessment.is_valid:
+            raise SafetyViolation(
+                f"Cannot execute {action.upper()} from invalid startup state: {assessment.description}"
             )
 
         q_initial = tuple(init_positions)
+        q_plan_start = assessment.planning_seed
         print(f"  q_initial = {list(q_initial)}")
         print(f"  q_target  = {list(target)}")
 
@@ -271,8 +296,8 @@ def run_servo_home_park(
             raise RuntimeError("Servo mode configuration failed or not acknowledged")
         print("  All 6 axes configured: mode=1 acknowledged, fault=0.")
 
-        # Step 3: Plan quintic smooth trajectory from q_initial to target
-        d_max = max(abs(target[i] - q_initial[i]) for i in range(6))
+        # Step 3: Plan quintic smooth trajectory from authoritative planning seed to target
+        d_max = max(abs(target[i] - q_plan_start[i]) for i in range(6))
         speed = max(1.0, float(speed))
         transition_duration_s = max(2.0, (QUINTIC_PEAK_DERIVATIVE * float(d_max)) / speed) if d_max > 0 else 0.0
         planned_peak_speed = (QUINTIC_PEAK_DERIVATIVE * float(d_max)) / transition_duration_s if transition_duration_s > 0 else 0.0
@@ -287,7 +312,7 @@ def run_servo_home_park(
         # Transition cycles
         for k in range(1, trans_cycles + 1):
             s = quintic_progress(k / trans_cycles) if trans_cycles > 0 else 1.0
-            tgt = tuple(int(round(q_initial[i] + (target[i] - q_initial[i]) * s)) for i in range(6))
+            tgt = tuple(int(round(q_plan_start[i] + (target[i] - q_plan_start[i]) * s)) for i in range(6))
             cycle_targets.append((tgt, f"TRANSITION_TO_{action.upper()}"))
 
         # Hold cycles

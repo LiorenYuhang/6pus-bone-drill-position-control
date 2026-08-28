@@ -211,3 +211,75 @@ class FakeBus:
                 {**record, "payload": list(record["payload"])} for record in self.write_audit
             ],
         }
+
+
+class MockServoBus(FakeBus):
+    """Mock UART bus simulating J7 Servo responses for offline testing."""
+
+    def __init__(self, initial_positions: Sequence[int] | None = None) -> None:
+        super().__init__()
+        from collections import deque
+        self.uart_lock = threading.RLock()
+        self._clock_ns = time.monotonic_ns
+        self.rx_queue: deque[bytes] = deque()
+        self.written_frames: list[bytes] = []
+        self.timeout_on_axis: int | None = None
+        self.fault_on_axis: int | None = None
+        if initial_positions is not None:
+            for i, mid in enumerate(MOTOR_IDS):
+                self.positions[mid] = int(initial_positions[i])
+                self.targets[mid] = int(initial_positions[i])
+
+    def write(self, frame: bytes) -> int:
+        self.written_frames.append(bytes(frame))
+        parsed = parse_frame(frame)
+        mid = parsed.motor_id
+        if parsed.command == CMD_WR_REGISTER:
+            if parsed.register_addr == 0x25:
+                mode_val = int.from_bytes(parsed.data, "little", signed=False)
+                self.modes[mid] = mode_val
+            elif parsed.register_addr == 0x29:
+                pos_val = int.from_bytes(parsed.data, "little", signed=True)
+                self.positions[mid] = pos_val
+                self.targets[mid] = pos_val
+            elif parsed.register_addr == 0x1A:
+                pass
+            if self.fault_on_axis is not None and mid == 1:
+                self.faults[mid] = self.fault_on_axis
+            if self.timeout_on_axis != mid:
+                resp = super().request(frame)
+                self.rx_queue.append(resp)
+        return len(frame)
+
+    def drain_motion_feedbacks(self) -> dict[int, StatusFeedback]:
+        feedbacks: dict[int, StatusFeedback] = {}
+        try:
+            from .protocol import unpack_status_response
+        except ImportError:
+            from protocol import unpack_status_response  # type: ignore
+
+        while self.rx_queue:
+            raw = self.rx_queue.popleft()
+            try:
+                fb = unpack_status_response(raw)
+                mid = raw[3]
+                feedbacks[mid] = fb
+            except Exception:
+                pass
+        return feedbacks
+
+    def request(self, frame: bytes, **kwargs) -> bytes:
+        self.written_frames.append(bytes(frame))
+        parsed = parse_frame(frame)
+        mid = parsed.motor_id
+        if self.timeout_on_axis == mid:
+            raise TimeoutError(f"Mock timeout on ID{mid}")
+        if parsed.command == CMD_RD_STATUS and self.fault_on_axis is not None and mid == 1:
+            self.faults[mid] = self.fault_on_axis
+        return super().request(frame)
+
+    def read_available(self) -> bytes:
+        data = b"".join(self.rx_queue)
+        self.rx_queue.clear()
+        return data
+

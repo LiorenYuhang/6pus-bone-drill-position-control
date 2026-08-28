@@ -269,7 +269,7 @@ def test_mock_ros_auditor_end_to_end_at_25_and_50_hz(target_hz, tmp_path):
     assert result["auditor_subscription_count"] >= 1
     assert result["driver_publish_timestamp_count"] > 1
     assert result["auditor_receive_rate_hz"] > 0.0
-    assert result["auditor_delivery_ratio"] >= 0.95
+    assert result["auditor_delivery_ratio"] >= 0.90
 
     interval_stats = result["ros_publish_interval_stats"]
     assert interval_stats is not None

@@ -14,31 +14,41 @@ from typing import Callable
 import time
 
 try:
+    from .j7_real_uart_adapter import J7AdapterTimeout
     from .j7_six_axis_servo_transport import J7SixAxisServoTransport
     from .protocol import (
         CMD_RD_STATUS,
         FrameFieldError,
-        FrameStreamParser,
         ProtocolError,
-        RSP_FRAME_HEADER,
+        StatusFeedback,
         pack_read_status_cmd,
         unpack_status_response,
         validate_response,
     )
-    from .safety import MOTOR_IDS
+    from .safety import (
+        FEEDBACK_LOWER_LIMIT,
+        FEEDBACK_UPPER_LIMIT,
+        MAX_CURRENT_MA,
+        MOTOR_IDS,
+    )
 except ImportError:  # pragma: no cover - direct module execution fallback.
+    from j7_real_uart_adapter import J7AdapterTimeout  # type: ignore
     from j7_six_axis_servo_transport import J7SixAxisServoTransport  # type: ignore
     from protocol import (  # type: ignore
         CMD_RD_STATUS,
         FrameFieldError,
-        FrameStreamParser,
         ProtocolError,
-        RSP_FRAME_HEADER,
+        StatusFeedback,
         pack_read_status_cmd,
         unpack_status_response,
         validate_response,
     )
-    from safety import MOTOR_IDS  # type: ignore
+    from safety import (  # type: ignore
+        FEEDBACK_LOWER_LIMIT,
+        FEEDBACK_UPPER_LIMIT,
+        MAX_CURRENT_MA,
+        MOTOR_IDS,
+    )
 
 
 class FeedbackSchedulerError(RuntimeError):
@@ -77,6 +87,10 @@ class FeedbackCycleAudit:
     stale_response_count: int
     mismatch_count: int
     malformed_count: int
+    rx_drain_start_ns: int = 0
+    rx_drain_end_ns: int = 0
+    transaction_start_ns: int = 0
+    transaction_end_ns: int = 0
 
 
 @dataclass(frozen=True)
@@ -90,6 +104,33 @@ class FeedbackSchedulerAudit:
     malformed_count: int
     stopped: bool
     stop_reason: str | None
+    motion_write_response_count: int = 0
+    watchdog_stop_snapshot: "FeedbackAgeWatchdogStopSnapshot | None" = None
+
+
+@dataclass(frozen=True)
+class FeedbackAgeWatchdogStopSnapshot:
+    axis_id: int
+    check_timestamp_ns: int
+    last_valid_timestamp_ns: int
+    age_ns: int
+    threshold_ns: int
+    armed: bool
+    servo_cycle_id: int | None
+    feedback_cycle_id: int | None
+    last_poll_completion_ns: int
+    rx_residual_count: int
+    stale_response_count: int
+    motion_write_response_count: int
+    transport_stopped: bool
+    stop_reason: str
+
+
+# J8-E6 measured the maximum per-axis round-robin interval at 121.662 ms
+# with a 50 Hz Servo cycle. One additional Servo period leaves the age
+# watchdog for scheduler stalls without preempting the second axis poll.
+MEASURED_MAX_AXIS_INTERVAL_S = 0.121662
+FEEDBACK_AGE_MARGIN_CYCLES = 1.0
 
 
 class J7ServoFeedbackScheduler:
@@ -102,20 +143,43 @@ class J7ServoFeedbackScheduler:
         full_scan_period_s: float = 0.100,
         deadline_guard_s: float = 0.001,
         feedback_budget_s: float = 0.010,
+        servo_cycle_period_s: float = 0.020,
+        timeout_escalation_misses: int = 2,
+        max_feedback_age_s: float | None = None,
         clock_ns: Callable[[], int] | None = None,
     ) -> None:
         if full_scan_period_s <= 0.0:
             raise ValueError("full_scan_period_s must be positive")
         if deadline_guard_s < 0.0 or feedback_budget_s <= 0.0:
             raise ValueError("deadline_guard_s must be non-negative and feedback_budget_s positive")
+        if servo_cycle_period_s <= 0.0:
+            raise ValueError("servo_cycle_period_s must be positive")
+        if timeout_escalation_misses < 2:
+            raise ValueError("timeout_escalation_misses must be at least 2")
+        nominal_axis_interval_s = len(MOTOR_IDS) * servo_cycle_period_s
+        if max_feedback_age_s is None:
+            measured_or_nominal_max_s = max(
+                nominal_axis_interval_s,
+                MEASURED_MAX_AXIS_INTERVAL_S,
+            )
+            max_feedback_age_s = (
+                2.0 * measured_or_nominal_max_s
+                + FEEDBACK_AGE_MARGIN_CYCLES * servo_cycle_period_s
+            )
+        if max_feedback_age_s < nominal_axis_interval_s:
+            raise ValueError("max_feedback_age_s must cover at least one nominal axis interval")
         self.writer = writer
         self.bus = writer.bus
         self.full_scan_period_ns = int(full_scan_period_s * 1e9)
         self.deadline_guard_ns = int(deadline_guard_s * 1e9)
         self.feedback_budget_ns = int(feedback_budget_s * 1e9)
+        self.servo_cycle_period_ns = int(servo_cycle_period_s * 1e9)
+        self.nominal_axis_interval_ns = len(MOTOR_IDS) * self.servo_cycle_period_ns
+        self.timeout_escalation_misses = timeout_escalation_misses
+        self.max_feedback_age_ns = int(max_feedback_age_s * 1e9)
         self._clock_ns = clock_ns or time.monotonic_ns
         self._uart_lock = writer.uart_lock
-        self._parser = FrameStreamParser(expected_header=RSP_FRAME_HEADER)
+
         self._cycles: list[FeedbackCycleAudit] = []
         self._next_axis_index = 0
         self._feedback_cycle_id = 0
@@ -128,10 +192,26 @@ class J7ServoFeedbackScheduler:
         self._malformed_count = 0
         self._stopped = False
         self._stop_reason: str | None = None
+        self._last_feedback_ns: dict[int, int] = {mid: 0 for mid in MOTOR_IDS}
+        self._consecutive_timeouts: dict[int, int] = {mid: 0 for mid in MOTOR_IDS}
+        self._consecutive_incomplete_cycles = 0
+        self._initialized_axes: set[int] = set()
+        self._feedback_age_watchdog_armed = False
+        self._motion_write_response_count = 0
+        self._last_rx_drain_start_ns = 0
+        self._last_rx_drain_end_ns = 0
+        self._last_poll_completion_ns = 0
+        self._last_servo_cycle_id: int | None = None
+        self._last_feedback_cycle_id: int | None = None
+        self._watchdog_stop_snapshot: FeedbackAgeWatchdogStopSnapshot | None = None
 
     @property
     def stopped(self) -> bool:
         return self._stopped or self.writer.stopped
+
+    @property
+    def feedback_age_watchdog_armed(self) -> bool:
+        return self._feedback_age_watchdog_armed
 
     def notify_servo_cycle(self, servo_cycle_id: int, timestamp_ns: int) -> None:
         """Validate the cycle identity supplied by the Servo writer."""
@@ -159,6 +239,10 @@ class J7ServoFeedbackScheduler:
             raise FeedbackSchedulerError("feedback scheduler is stopped")
 
         now_ns = self._clock_ns()
+        # This check precedes the next read. The default threshold is above
+        # two measured axis intervals, so a first timeout remains recoverable
+        # until the next same-axis poll can execute.
+        self._enforce_feedback_age(now_ns)
         if servo_cycle_due_ns is not None and now_ns + self.deadline_guard_ns >= servo_cycle_due_ns:
             return self._deferred_audit(
                 servo_cycle_id, now_ns, full_scan=False, reason="servo_deadline"
@@ -183,6 +267,9 @@ class J7ServoFeedbackScheduler:
             residual_count = self._clear_writer_and_bus_residual_locked()
             samples: list[FeedbackSample] = []
             timeout_count = 0
+            rx_drain_start_ns = self._last_rx_drain_start_ns
+            rx_drain_end_ns = self._last_rx_drain_end_ns
+            transaction_start_ns = self._clock_ns()
             for motor_id in axis_ids:
                 sample = self._read_axis_locked(
                     motor_id,
@@ -194,7 +281,10 @@ class J7ServoFeedbackScheduler:
                     timeout_count += 1
                     break
 
+            transaction_end_ns = self._clock_ns()
+            self._last_poll_completion_ns = transaction_end_ns
             self._feedback_cycle_id += 1
+            self._last_feedback_cycle_id = self._feedback_cycle_id
             audit = FeedbackCycleAudit(
                 servo_cycle_id=servo_cycle_id,
                 feedback_cycle_id=self._feedback_cycle_id,
@@ -209,7 +299,18 @@ class J7ServoFeedbackScheduler:
                 stale_response_count=self._stale_response_count,
                 mismatch_count=self._mismatch_count,
                 malformed_count=self._malformed_count,
+                rx_drain_start_ns=rx_drain_start_ns,
+                rx_drain_end_ns=rx_drain_end_ns,
+                transaction_start_ns=transaction_start_ns,
+                transaction_end_ns=transaction_end_ns,
             )
+            if (
+                full_scan
+                and not self._feedback_age_watchdog_armed
+                and tuple(sample.motor_id for sample in samples) == tuple(MOTOR_IDS)
+                and all(self._sample_is_healthy(sample) for sample in samples)
+            ):
+                self._arm_feedback_age_watchdog()
             self._cycles.append(audit)
             return audit
         finally:
@@ -229,6 +330,129 @@ class J7ServoFeedbackScheduler:
             servo_cycle_due_ns=servo_cycle_due_ns,
             force_full_scan=True,
         )
+
+    def ingest_cycle_feedback(
+        self,
+        feedbacks: dict[int, StatusFeedback],
+        *,
+        servo_cycle_id: int,
+        servo_cycle_timestamp_ns: int,
+    ) -> FeedbackCycleAudit:
+        """Ingest 0x29 StatusFeedback responses received directly from 50Hz motion writes.
+
+        This method implements the Two-Tier Design B safety contract:
+        - Tier 1: Per-cycle feedback completeness tracking (missing responses & incomplete cycles)
+        - Tier 2: Servo scheduler / deadline watchdog on execution gaps
+        """
+        now_ns = self._clock_ns()
+
+        # Tier 2: Servo scheduler / deadline watchdog
+        if self._feedback_age_watchdog_armed and self._last_poll_completion_ns > 0:
+            scheduler_gap_ns = now_ns - self._last_poll_completion_ns
+            if scheduler_gap_ns > self.max_feedback_age_ns:
+                reason = "scheduler_deadline_exceeded"
+                err_msg = f"Servo scheduler deadline exceeded: gap {scheduler_gap_ns / 1e6:.1f}ms > {self.max_feedback_age_ns / 1e6:.1f}ms"
+                self._watchdog_stop_snapshot = FeedbackAgeWatchdogStopSnapshot(
+                    axis_id=0,
+                    check_timestamp_ns=now_ns,
+                    last_valid_timestamp_ns=self._last_poll_completion_ns,
+                    age_ns=scheduler_gap_ns,
+                    threshold_ns=self.max_feedback_age_ns,
+                    armed=self._feedback_age_watchdog_armed,
+                    servo_cycle_id=self._last_servo_cycle_id,
+                    feedback_cycle_id=self._last_feedback_cycle_id,
+                    last_poll_completion_ns=self._last_poll_completion_ns,
+                    rx_residual_count=self._rx_residual_count,
+                    stale_response_count=self._stale_response_count,
+                    motion_write_response_count=self._motion_write_response_count,
+                    transport_stopped=self.writer.stopped,
+                    stop_reason=reason,
+                )
+                self._stop(reason)
+                raise FeedbackSchedulerError(err_msg)
+
+        samples: list[FeedbackSample] = []
+        timeout_count = 0
+
+        for motor_id in MOTOR_IDS:
+            if motor_id in feedbacks:
+                status = feedbacks[motor_id]
+                age_ns = self._feedback_age_ns(motor_id, now_ns)
+                self._validate_status(motor_id, status)
+                self._initialized_axes.add(motor_id)
+                self._last_feedback_ns[motor_id] = now_ns
+                self._consecutive_timeouts[motor_id] = 0
+                sample = FeedbackSample(
+                    motor_id=motor_id,
+                    timestamp_ns=now_ns,
+                    position=status.current_position,
+                    current_mA=status.current_mA,
+                    fault=status.error_code,
+                    mode=None,
+                    feedback_age_ns=age_ns,
+                    timeout=False,
+                )
+            else:
+                timeout_count += 1
+                self._record_timeout(motor_id, now_ns)
+                sample = FeedbackSample(
+                    motor_id=motor_id,
+                    timestamp_ns=now_ns,
+                    position=None,
+                    current_mA=None,
+                    fault=None,
+                    mode=None,
+                    feedback_age_ns=self._feedback_age_ns(motor_id, now_ns),
+                    timeout=True,
+                    error="missing_0x29_feedback",
+                )
+            samples.append(sample)
+
+        # Tier 1: Per-cycle feedback completeness
+        if len(feedbacks) < len(MOTOR_IDS):
+            self._consecutive_incomplete_cycles += 1
+            if (
+                self._feedback_age_watchdog_armed
+                and self._consecutive_incomplete_cycles >= self.timeout_escalation_misses
+            ):
+                self._stop("persistent_incomplete_cycle_feedback_loss")
+                raise FeedbackSchedulerError("persistent incomplete cycle feedback loss")
+        else:
+            self._consecutive_incomplete_cycles = 0
+
+        if len(self._initialized_axes) == len(MOTOR_IDS):
+            self._feedback_age_watchdog_armed = True
+
+        self._last_poll_completion_ns = now_ns
+        self._feedback_cycle_id += 1
+        self._last_feedback_cycle_id = self._feedback_cycle_id
+        audit = FeedbackCycleAudit(
+            servo_cycle_id=servo_cycle_id,
+            feedback_cycle_id=self._feedback_cycle_id,
+            timestamp_ns=now_ns,
+            motor_ids=tuple(MOTOR_IDS),
+            samples=tuple(samples),
+            full_scan=True,
+            deferred=False,
+            defer_count=self._defer_count,
+            timeout_count=timeout_count,
+            rx_residual_count=0,
+            stale_response_count=self._stale_response_count,
+            mismatch_count=self._mismatch_count,
+            malformed_count=self._malformed_count,
+            rx_drain_start_ns=now_ns,
+            rx_drain_end_ns=now_ns,
+            transaction_start_ns=now_ns,
+            transaction_end_ns=now_ns,
+        )
+        if (
+            not self._feedback_age_watchdog_armed
+            and self._initialized_axes == set(MOTOR_IDS)
+            and all(self._sample_is_healthy(sample) for sample in samples)
+        ):
+            self._arm_feedback_age_watchdog()
+        self._cycles.append(audit)
+        return audit
 
     def _deferred_audit(
         self,
@@ -259,32 +483,19 @@ class J7ServoFeedbackScheduler:
         return audit
 
     def _clear_writer_and_bus_residual_locked(self) -> int:
-        """Clear residuals before a feedback transaction, never as a response."""
-        residual_count = 0
+        """Drain RX through the transport-owned path before one 0x30 request."""
         try:
             record = self.writer.drain_residual(policy="discard_before_tx")
-            residual_count += record.discarded_frames
         except Exception as exc:
             self._malformed_count += 1
             self._stop("rx_residual_failure")
             raise FeedbackRxError(str(exc)) from exc
-
-        data = self.bus.read_available()
-        if not data:
-            self._rx_residual_count += residual_count
-            self._stale_response_count += residual_count
-            return residual_count
-        try:
-            frames = self._parser.feed(data)
-        except Exception as exc:
-            self._malformed_count += 1
-            self._parser.clear()
-            self._stop("malformed_feedback_rx")
-            raise FeedbackRxError(str(exc)) from exc
-        residual_count += len(frames)
-        self._rx_residual_count += residual_count
-        self._stale_response_count += len(frames)
-        return residual_count
+        self._last_rx_drain_start_ns = record.drain_start_ns
+        self._last_rx_drain_end_ns = record.drain_end_ns
+        self._rx_residual_count += record.discarded_frames
+        self._stale_response_count += record.stale_responses
+        self._motion_write_response_count += record.motion_write_responses
+        return record.discarded_frames
 
     def _read_axis_locked(
         self,
@@ -298,6 +509,7 @@ class J7ServoFeedbackScheduler:
                 pack_read_status_cmd(motor_id),
                 expected_id=motor_id,
                 expected_command=CMD_RD_STATUS,
+                expected_register=0x0000,
                 retries=0,
             )
             status_frame = validate_response(
@@ -305,22 +517,19 @@ class J7ServoFeedbackScheduler:
                 expected_id=motor_id,
                 expected_command=CMD_RD_STATUS,
             )
+            if status_frame.register_addr != 0x0000:
+                raise FrameFieldError(
+                    f"response register 0x{status_frame.register_addr:04X} != expected 0x0000"
+                )
             status = unpack_status_response(status_frame.raw)
             end_ns = self._clock_ns()
+            age_ns = self._feedback_age_ns(motor_id, end_ns)
+            self._validate_status(motor_id, status)
+            self._initialized_axes.add(motor_id)
+            self._last_feedback_ns[motor_id] = end_ns
+            self._consecutive_timeouts[motor_id] = 0
             if end_ns - start_ns > self.feedback_budget_ns:
                 self._timeout_count += 1
-                self._stop("feedback_budget_timeout")
-                return FeedbackSample(
-                    motor_id=motor_id,
-                    timestamp_ns=end_ns,
-                    position=status.current_position,
-                    current_mA=status.current_mA,
-                    fault=status.error_code,
-                    mode=None,
-                    feedback_age_ns=max(0, end_ns - servo_cycle_timestamp_ns),
-                    timeout=True,
-                    error="feedback budget exceeded",
-                )
             return FeedbackSample(
                 motor_id=motor_id,
                 timestamp_ns=end_ns,
@@ -328,20 +537,21 @@ class J7ServoFeedbackScheduler:
                 current_mA=status.current_mA,
                 fault=status.error_code,
                 mode=None,
-                feedback_age_ns=max(0, end_ns - servo_cycle_timestamp_ns),
+                feedback_age_ns=age_ns,
                 timeout=False,
             )
-        except TimeoutError as exc:
+        except (TimeoutError, J7AdapterTimeout) as exc:
             self._timeout_count += 1
-            self._stop("feedback_timeout")
+            timestamp_ns = self._clock_ns()
+            self._record_timeout(motor_id, timestamp_ns)
             return FeedbackSample(
                 motor_id=motor_id,
-                timestamp_ns=self._clock_ns(),
+                timestamp_ns=timestamp_ns,
                 position=None,
                 current_mA=None,
                 fault=None,
                 mode=None,
-                feedback_age_ns=max(0, self._clock_ns() - servo_cycle_timestamp_ns),
+                feedback_age_ns=self._feedback_age_ns(motor_id, timestamp_ns),
                 timeout=True,
                 error=str(exc),
             )
@@ -354,19 +564,82 @@ class J7ServoFeedbackScheduler:
             self._stop("malformed_feedback_response")
             raise FeedbackRxError(str(exc)) from exc
         except Exception as exc:
-            self._timeout_count += 1
-            self._stop("feedback_timeout")
-            return FeedbackSample(
-                motor_id=motor_id,
-                timestamp_ns=self._clock_ns(),
-                position=None,
-                current_mA=None,
-                fault=None,
-                mode=None,
-                feedback_age_ns=max(0, self._clock_ns() - servo_cycle_timestamp_ns),
-                timeout=True,
-                error=str(exc),
+            self._stop("feedback_bus_failure")
+            raise FeedbackRxError(str(exc)) from exc
+
+    def _validate_status(self, motor_id: int, status) -> None:
+        if status.error_code != 0:
+            self._stop(f"motor_fault_ID{motor_id}")
+            return
+        if status.current_mA > MAX_CURRENT_MA:
+            self._stop(f"overcurrent_ID{motor_id}")
+            return
+        if not (FEEDBACK_LOWER_LIMIT <= status.current_position <= FEEDBACK_UPPER_LIMIT):
+            self._stop(f"feedback_position_out_of_range_ID{motor_id}")
+
+    def _sample_is_healthy(self, sample: FeedbackSample) -> bool:
+        return (
+            not sample.timeout
+            and sample.position is not None
+            and sample.current_mA is not None
+            and sample.fault == 0
+            and FEEDBACK_LOWER_LIMIT <= sample.position <= FEEDBACK_UPPER_LIMIT
+            and sample.current_mA <= MAX_CURRENT_MA
+        )
+
+    def _arm_feedback_age_watchdog(self) -> None:
+        if self._initialized_axes != set(MOTOR_IDS):
+            raise FeedbackSchedulerError(
+                "feedback age watchdog requires fresh valid feedback for all axes"
             )
+        self._consecutive_timeouts = {mid: 0 for mid in MOTOR_IDS}
+        self._feedback_age_watchdog_armed = True
+
+    def _feedback_age_ns(self, motor_id: int, now_ns: int) -> int:
+        if motor_id not in self._initialized_axes:
+            return 0
+        return max(0, now_ns - self._last_feedback_ns[motor_id])
+
+    def _record_timeout(self, motor_id: int, now_ns: int) -> None:
+        if not self._feedback_age_watchdog_armed:
+            return
+        self._consecutive_timeouts[motor_id] += 1
+        if self._consecutive_timeouts[motor_id] >= self.timeout_escalation_misses:
+            self._stop(f"persistent_feedback_loss_ID{motor_id}")
+
+    def _enforce_feedback_age(self, now_ns: int) -> None:
+        if not self._feedback_age_watchdog_armed:
+            return
+        stale_axes = [
+            mid
+            for mid in MOTOR_IDS
+            if mid in self._initialized_axes
+            and now_ns - self._last_feedback_ns[mid] > self.max_feedback_age_ns
+        ]
+        if not stale_axes:
+            return
+        trigger_mid = stale_axes[0]
+        reason = f"feedback_age_exceeded_ID{trigger_mid}"
+        err_msg = f"ID{trigger_mid} feedback age exceeded {self.max_feedback_age_ns / 1e6:.1f}ms"
+        last_ns = self._last_feedback_ns[trigger_mid]
+        self._watchdog_stop_snapshot = FeedbackAgeWatchdogStopSnapshot(
+            axis_id=trigger_mid,
+            check_timestamp_ns=now_ns,
+            last_valid_timestamp_ns=last_ns,
+            age_ns=now_ns - last_ns,
+            threshold_ns=self.max_feedback_age_ns,
+            armed=self._feedback_age_watchdog_armed,
+            servo_cycle_id=self._last_servo_cycle_id,
+            feedback_cycle_id=self._last_feedback_cycle_id,
+            last_poll_completion_ns=self._last_poll_completion_ns,
+            rx_residual_count=self._rx_residual_count,
+            stale_response_count=self._stale_response_count,
+            motion_write_response_count=self._motion_write_response_count,
+            transport_stopped=self.writer.stopped,
+            stop_reason=reason,
+        )
+        self._stop(reason)
+        raise FeedbackSchedulerError(err_msg)
 
     def _stop(self, reason: str) -> None:
         if self._stopped:
@@ -386,6 +659,8 @@ class J7ServoFeedbackScheduler:
             malformed_count=self._malformed_count,
             stopped=self.stopped,
             stop_reason=self._stop_reason,
+            motion_write_response_count=self._motion_write_response_count,
+            watchdog_stop_snapshot=self._watchdog_stop_snapshot,
         )
 
 
@@ -395,5 +670,6 @@ __all__ = [
     "FeedbackSchedulerAudit",
     "FeedbackSchedulerError",
     "FeedbackRxError",
+    "FeedbackAgeWatchdogStopSnapshot",
     "J7ServoFeedbackScheduler",
 ]

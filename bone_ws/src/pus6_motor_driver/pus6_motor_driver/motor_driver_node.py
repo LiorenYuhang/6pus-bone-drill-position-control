@@ -6,6 +6,7 @@ import logging
 import threading
 import time
 from dataclasses import dataclass
+from typing import Any
 from enum import Enum
 import rclpy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
@@ -36,6 +37,10 @@ try:
         steps_to_meters,
     )
     from .six_motor_controller import SixAxisStateSnapshot, SixMotorController
+    from .j7_six_axis_servo_transport import J7SixAxisServoTransport, ServoRxPolicy
+    from .j7_servo_feedback_scheduler import J7ServoFeedbackScheduler
+    from .j7_real_uart_adapter import J7UartAdapter, J7StopAdapter
+    from .fake_bus import MockServoBus
 except ImportError:
     from safety import (
         MOTOR_IDS,
@@ -56,6 +61,10 @@ except ImportError:
         steps_to_meters,
     )
     from six_motor_controller import SixAxisStateSnapshot, SixMotorController
+    from j7_six_axis_servo_transport import J7SixAxisServoTransport, ServoRxPolicy
+    from j7_servo_feedback_scheduler import J7ServoFeedbackScheduler
+    from j7_real_uart_adapter import J7UartAdapter, J7StopAdapter
+    from fake_bus import MockServoBus
 
 try:
     from pus6_msgs.msg import TimedJointCommand, TimedJointFeedback
@@ -91,10 +100,14 @@ class Pus6MotorDriverNode(Node):
         publish_raw_diagnostics: bool | None = None,
         enable_j2_f0_instrumentation: bool | None = None,
         maintenance_mode: bool | None = None,
+        use_j7_servo: bool | None = None,
+        servo_speed: int | None = None,
+        bus: Any | None = None,
         node_name: str = "pus6_motor_driver_node",
         **kwargs,
     ) -> None:
         super().__init__(node_name, **kwargs)
+        self.mock_bus = bus if isinstance(bus, MockServoBus) else None
 
         # Declare parameters (default to safe mock mode)
         self.declare_parameter("port", "/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0")
@@ -102,7 +115,7 @@ class Pus6MotorDriverNode(Node):
         self.declare_parameter("timeout", 0.05)
         self.declare_parameter("poll_rate_hz", 10.0)        # Background low-rate telemetry
         self.declare_parameter("write_rate_hz", 50.0)       # Dedicated high-rate UART dispatch loop
-        self.declare_parameter("target_timeout_sec", 0.10)  # Watchdog threshold for target stream (100 ms)
+        self.declare_parameter("target_timeout_sec", 0.20)  # Watchdog threshold for target stream (200 ms)
         self.declare_parameter("timeout_behavior", "stop_write") # "stop_write" | "hold" | "pause"
         self.declare_parameter("reconnect_max_jump_steps", 10)   # Max jump allowed when recovering from timeout (10 steps = 0.25mm)
         self.declare_parameter("hardware_mode", "mock")     # Default must be "mock"
@@ -113,11 +126,15 @@ class Pus6MotorDriverNode(Node):
         self.declare_parameter("publish_raw_diagnostics", True)
         self.declare_parameter("enable_j2_f0_instrumentation", False)
         self.declare_parameter("maintenance_mode", False)
+        self.declare_parameter("use_j7_servo", True)
+        self.declare_parameter("servo_speed", 50)
 
         p_port = port if port is not None else self.get_parameter("port").get_parameter_value().string_value
         p_baudrate = baudrate if baudrate is not None else self.get_parameter("baudrate").get_parameter_value().integer_value
         p_timeout = timeout if timeout is not None else self.get_parameter("timeout").get_parameter_value().double_value
         p_poll_rate = poll_rate_hz if poll_rate_hz is not None else self.get_parameter("poll_rate_hz").get_parameter_value().double_value
+        self.use_j7_servo = use_j7_servo if use_j7_servo is not None else self.get_parameter("use_j7_servo").get_parameter_value().bool_value
+        self.servo_speed = servo_speed if servo_speed is not None else self.get_parameter("servo_speed").get_parameter_value().integer_value
         self.write_rate_hz = write_rate_hz if write_rate_hz is not None else self.get_parameter("write_rate_hz").get_parameter_value().double_value
         self.target_timeout_sec = self.get_parameter("target_timeout_sec").get_parameter_value().double_value
         self.timeout_behavior = self.get_parameter("timeout_behavior").get_parameter_value().string_value
@@ -129,6 +146,11 @@ class Pus6MotorDriverNode(Node):
         self.publish_raw_diagnostics = publish_raw_diagnostics if publish_raw_diagnostics is not None else self.get_parameter("publish_raw_diagnostics").get_parameter_value().bool_value
         self.enable_j2_f0_instrumentation = enable_j2_f0_instrumentation if enable_j2_f0_instrumentation is not None else self.get_parameter("enable_j2_f0_instrumentation").get_parameter_value().bool_value
         self.maintenance_mode = maintenance_mode if maintenance_mode is not None else self.get_parameter("maintenance_mode").get_parameter_value().bool_value
+        if self.enable_j2_f0_instrumentation:
+            self.use_j7_servo = False
+        else:
+            self.use_j7_servo = use_j7_servo if use_j7_servo is not None else self.get_parameter("use_j7_servo").get_parameter_value().bool_value
+        self.servo_speed = servo_speed if servo_speed is not None else self.get_parameter("servo_speed").get_parameter_value().integer_value
 
         self.hardware_mode = parse_hardware_mode(mode_str)
         self.runtime_error: Exception | None = None
@@ -136,10 +158,20 @@ class Pus6MotorDriverNode(Node):
         self._last_positions_snapshot: Any = None
         self._last_commanded_steps: list[int] | None = None
 
+        # Persistent 6-axis state cache for J7 round-robin feedback
+        self._latest_positions_steps: dict[int, int] = {mid: 1000 for mid in MOTOR_IDS}
+        self._latest_currents: dict[int, int] = {mid: 0 for mid in MOTOR_IDS}
+        self._latest_faults: dict[int, int] = {mid: 0 for mid in MOTOR_IDS}
+        self._latest_rx_done_ns: dict[int, int] = {mid: 0 for mid in MOTOR_IDS}
+        self.j7_adapter = None
+        self.j7_stop_adapter: J7StopAdapter | None = None
+        self.j7_writer: J7SixAxisServoTransport | None = None
+        self.j7_feedback: J7ServoFeedbackScheduler | None = None
+
         self.get_logger().info(
             f"Initializing Pus6MotorDriverNode (mode={self.hardware_mode.value}, "
             f"write_rate={self.write_rate_hz}Hz, timeout={self.target_timeout_sec*1e3:.0f}ms, "
-            f"poll_rate={p_poll_rate}Hz, port={p_port}, baud={p_baudrate})"
+            f"poll_rate={p_poll_rate}Hz, port={p_port}, baud={p_baudrate}, use_j7_servo={self.use_j7_servo})"
         )
 
         self.controller = SixMotorController(
@@ -160,7 +192,7 @@ class Pus6MotorDriverNode(Node):
         self.raw_faults_pub = self.create_publisher(Int32MultiArray, "/pus6/joint_faults_raw", 10)
 
         # Driver Performance & Scheduling Diagnostics Publisher
-        # [target_in_count, overwrite_count, consumed_count, deadline_miss_count, target_age_ms, write_duration_ms]
+        # [target counters, target age, 6x0x29 ms, RX drain ms, 0x30 ms, worker ms, stop age ms]
         self.driver_diagnostics_pub = self.create_publisher(
             Float64MultiArray, "/pus6/driver_diagnostics", 10
         )
@@ -201,6 +233,9 @@ class Pus6MotorDriverNode(Node):
         self._last_target_rx_time_ns: int = 0
         self._stale_target_timeout_count: int = 0
         self._stream_timed_out: bool = False
+        self._j7_fault_latched = False
+        self._j7_fault_reason: str | None = None
+        self._j7_fault_log_emitted = False
         self._consecutive_comm_failures: int = 0
 
         # Segmented Timing and Contention Instrumentation
@@ -209,6 +244,9 @@ class Pus6MotorDriverNode(Node):
         self._final_preflight_ms: float = 0.0
         self._uart_lock_wait_ms: float = 0.0
         self._six_axis_uart_transaction_ms: float = 0.0
+        self._rx_classification_ms: float = 0.0
+        self._feedback_transaction_ms: float = 0.0
+        self._watchdog_stop_age_ms: float = 0.0
         self._feedback_parse_ms: float = 0.0
         self._ros_publish_ms: float = 0.0
         self._worker_total_ms: float = 0.0
@@ -287,17 +325,24 @@ class Pus6MotorDriverNode(Node):
         )
 
         self.joint_names = [f"motor_{mid}" for mid in MOTOR_IDS]
+        self.is_j7_servo_active = bool(self.use_j7_servo and not self.enable_j2_f0_instrumentation and abs(self.write_rate_hz - 50.0) < 1e-3)
 
         if p_auto_connect:
-            try:
-                self.controller.connect()
-                if p_auto_configure:
-                    if self.hardware_mode == HardwareMode.READ_ONLY:
-                        self.get_logger().warn("auto_configure skipped: Node is in READ_ONLY mode.")
-                    else:
-                        self.controller.configure_all()
-            except Exception as exc:
-                self.get_logger().error(f"Failed to connect to hardware on startup: {exc}")
+            if self.is_j7_servo_active:
+                try:
+                    self._init_j7_servo_backend(p_port, p_baudrate, p_timeout)
+                except Exception as exc:
+                    self.get_logger().error(f"Failed to initialize J7 Servo backend on startup: {exc}")
+            else:
+                try:
+                    self.controller.connect()
+                    if p_auto_configure:
+                        if self.hardware_mode == HardwareMode.READ_ONLY:
+                            self.get_logger().warn("auto_configure skipped: Node is in READ_ONLY mode.")
+                        else:
+                            self.controller.configure_all()
+                except Exception as exc:
+                    self.get_logger().error(f"Failed to connect to hardware on startup: {exc}")
 
         # Dedicated high-rate UART dispatch worker timer (Latest-Value-Wins consumer in worker_cb_group)
         if self.write_rate_hz > 0.0:
@@ -308,14 +353,79 @@ class Pus6MotorDriverNode(Node):
         else:
             self.write_timer = None
 
-        # Background low-rate polling timer (in poll_cb_group)
-        if p_poll_rate > 0.0:
+        # Background low-rate polling timer (in poll_cb_group) - only for legacy non-J7 mode
+        if not self.use_j7_servo and p_poll_rate > 0.0:
             poll_interval = 1.0 / max(1.0, p_poll_rate)
             self.poll_timer = self.create_timer(
                 poll_interval, self._background_poll_and_publish, callback_group=self.poll_cb_group
             )
         else:
             self.poll_timer = None
+
+    def _init_j7_servo_backend(self, p_port: str, p_baudrate: int, p_timeout: float) -> None:
+        """Initializes the validated J7 50Hz Servo transport and round-robin feedback scheduler."""
+        if self.mock_bus is not None:
+            self.j7_adapter = self.mock_bus
+        elif self.hardware_mode == HardwareMode.MOCK:
+            self.mock_bus = MockServoBus(initial_positions=[1000] * NUM_MOTORS)
+            self.j7_adapter = self.mock_bus
+        else:
+            import serial
+            ser = serial.Serial(
+                port=p_port,
+                baudrate=p_baudrate,
+                bytesize=serial.EIGHTBITS,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE,
+                timeout=min(0.005, p_timeout),
+                write_timeout=None,
+            )
+            ser.reset_input_buffer()
+            ser.reset_output_buffer()
+            self.j7_adapter = J7UartAdapter(
+                ser,
+                baudrate=p_baudrate,
+                timeout_s=0.010,
+                min_frame_interval_s=0.0001,
+            )
+
+        self.j7_stop_adapter = J7StopAdapter(self.j7_adapter)
+        self.j7_writer = J7SixAxisServoTransport(
+            self.j7_adapter,
+            cycle_rate_hz=self.write_rate_hz,
+            rx_policy=ServoRxPolicy.DISCARD_BEFORE_TX,
+            min_frame_interval_s=0.0006,
+            rx_drain_budget_s=0.0040,
+            pause_callback=self.j7_stop_adapter,
+        )
+        self.j7_feedback = J7ServoFeedbackScheduler(
+            self.j7_writer,
+            full_scan_period_s=1e9,
+            feedback_budget_s=0.015,
+            servo_cycle_period_s=1.0 / self.write_rate_hz,
+            timeout_escalation_misses=4,
+        )
+
+        # Preflight full status scan across ID1..ID6
+        t_preflight_ns = time.monotonic_ns()
+        preflight_audit = self.j7_feedback.full_scan(
+            servo_cycle_id=0,
+            servo_cycle_timestamp_ns=t_preflight_ns,
+        )
+        for sample in preflight_audit.samples:
+            if sample.position is not None:
+                self._latest_positions_steps[sample.motor_id] = sample.position
+            if sample.current_mA is not None:
+                self._latest_currents[sample.motor_id] = sample.current_mA
+            if sample.fault is not None:
+                self._latest_faults[sample.motor_id] = sample.fault
+            self._latest_rx_done_ns[sample.motor_id] = sample.timestamp_ns
+
+        self._last_commanded_steps = None
+
+        if self.hardware_mode != HardwareMode.READ_ONLY:
+            self.j7_writer.configure_servo(speed=self.servo_speed)
+            self.get_logger().info(f"J7 Servo backend configured mode=1, speed={self.servo_speed} successfully.")
 
     def _handle_command_positions_meters(self, msg: Float64MultiArray) -> None:
         """Non-blocking ingestion of 6-axis position targets in SI meters."""
@@ -384,7 +494,8 @@ class Pus6MotorDriverNode(Node):
     def _execute_safety_preflight(self, targets_steps: list[int]) -> bool:
         """Exhaustive safety preflight check right before issuing 6-axis UART command."""
         # 1. Connection check
-        if not self.controller.is_connected:
+        is_conn = (self.j7_adapter is not None) if self.is_j7_servo_active else self.controller.is_connected
+        if not is_conn:
             self.get_logger().error("Safety preflight FAIL: Controller not connected.")
             return False
 
@@ -421,7 +532,7 @@ class Pus6MotorDriverNode(Node):
                     )
                     return False
 
-        # 6. Fresh feedback & Motor Fault Gate: check if previous snapshot reported fault != 0
+        # 6. Fresh feedback & Motor Fault Gate
         if self._last_state_snapshot is not None:
             now_ns = time.perf_counter_ns()
             feedback_age_ms = (now_ns - self._last_state_snapshot.timestamp_end_ns) / 1e6
@@ -435,7 +546,11 @@ class Pus6MotorDriverNode(Node):
                 if f != 0:
                     self.get_logger().error(f"Safety preflight FAIL: Motor {i+1} has active fault code {f}.")
                     return False
-
+        elif self.is_j7_servo_active:
+            for mid in MOTOR_IDS:
+                if self._latest_faults.get(mid, 0) != 0:
+                    self.get_logger().error(f"Safety preflight FAIL: Motor {mid} has active fault code {self._latest_faults[mid]}.")
+                    return False
         elif self.hardware_mode == HardwareMode.ACTIVE:
             self.get_logger().error("Safety preflight FAIL: No valid state snapshot available prior to physical write.")
             return False
@@ -510,8 +625,226 @@ class Pus6MotorDriverNode(Node):
 
         return dispatched, True, alpha, max_gap, sent_gap, remaining_gap
 
+
+
+    @property
+    def driver_fault_latched(self) -> bool:
+        return self._j7_fault_latched
+
+
+
+    @property
+    def driver_fault_reason(self) -> str | None:
+        return self._j7_fault_reason
+
+
+
+    @property
+    def telemetry_health_ok(self) -> bool:
+        if not self.is_j7_servo_active or self._j7_fault_latched:
+            return not self._j7_fault_latched
+        if self.j7_writer is None or self.j7_feedback is None:
+            return False
+        if self.j7_writer.stopped or self.j7_feedback.stopped:
+            return False
+        now_ns = time.monotonic_ns()
+        if any(
+            self._latest_rx_done_ns[mid] <= 0
+            or now_ns - self._latest_rx_done_ns[mid] > self.j7_feedback.max_feedback_age_ns
+            for mid in MOTOR_IDS
+        ):
+            return False
+        return all(self._latest_faults[mid] == 0 for mid in MOTOR_IDS)
+
+    def _j7_stop_reason(self) -> str:
+        if self._j7_fault_reason is not None:
+            return self._j7_fault_reason
+        if self.j7_feedback is not None:
+            reason = self.j7_feedback.audit_snapshot().stop_reason
+            if reason:
+                return reason
+        if self.j7_writer is not None:
+            reason = self.j7_writer.audit_snapshot().stop_reason
+            if reason:
+                return reason
+        return "j7_transport_stopped"
+
+    def _latch_j7_fault(self, reason: str) -> None:
+        if not self._j7_fault_latched:
+            self._j7_fault_latched = True
+            self._j7_fault_reason = str(reason)
+            self.runtime_error = DriverError(f"STOP: {self._j7_fault_reason}")
+        if not self._j7_fault_log_emitted:
+            self._j7_fault_log_emitted = True
+            self.get_logger().fatal(f"J7 driver STOP latched: {self._j7_fault_reason}")
+
     def _uart_worker_cycle(self) -> None:
         """High-rate UART worker: dispatches latest target with watchdog, preflight, and segmented telemetry."""
+        if self.is_j7_servo_active and self.j7_writer is not None:
+            if self._j7_fault_latched:
+                return
+            if self.j7_writer.stopped or (self.j7_feedback is not None and self.j7_feedback.stopped):
+                self._latch_j7_fault(self._j7_stop_reason())
+                return
+            t_entry_ns = time.perf_counter_ns()
+            if self._last_worker_start_ns > 0:
+                self._worker_start_to_start_ms = (t_entry_ns - self._last_worker_start_ns) / 1e6
+            self._last_worker_start_ns = t_entry_ns
+
+            candidate_targets: list[int] | None = None
+            with self._target_lock:
+                if self._last_target_rx_time_ns > 0:
+                    age_since_rx_ms = (t_entry_ns - self._last_target_rx_time_ns) / 1e6
+                    if age_since_rx_ms > (self.target_timeout_sec * 1000.0):
+                        if not self._stream_timed_out:
+                            self._stream_timed_out = True
+                            self._stale_target_timeout_count += 1
+
+                if self._latest_target is not None and not self._latest_target.consumed:
+                    candidate_targets = list(self._latest_target.targets_steps)
+                    self._latest_target.consumed = True
+                    self._target_consumed_count += 1
+                elif self._last_commanded_steps is not None:
+                    # Continuous 50Hz streaming: hold the last valid shaped target if no new Cartesian target arrived
+                    candidate_targets = list(self._last_commanded_steps)
+                else:
+                    candidate_targets = [self._latest_positions_steps[mid] for mid in MOTOR_IDS]
+
+            dispatched_targets, rec_active, alpha, orig_gap, sent_gap, rem_gap = self._apply_vector_slew_recovery(
+                candidate_targets, t_entry_ns
+            )
+
+            preflight_ok = self._execute_safety_preflight(dispatched_targets)
+            if not preflight_ok:
+                self.get_logger().error("Aborting J7 Servo UART write cycle due to safety preflight failure.")
+                self._latch_j7_fault("safety_preflight_failure")
+                if self.j7_writer is not None:
+                    self.j7_writer.stop("safety_preflight_failure")
+                return
+
+            t_write_start_ns = time.perf_counter_ns()
+            try:
+                cycle_start_ns = t_entry_ns
+                cycle_end_ns = t_entry_ns
+                tx_records = []
+
+                if self.hardware_mode != HardwareMode.READ_ONLY:
+                    # 1. 50Hz write-only 0x29 batch with integrated 0x29 StatusFeedback ingestion
+                    servo_audit = self.j7_writer.send_cycle(
+                        dispatched_targets,
+                        cycle_id=self._uart_cycle_seq,
+                        target_timestamp_ns=t_entry_ns,
+                    )
+                    self._consecutive_comm_failures = 0
+                    self._last_commanded_steps = list(dispatched_targets)
+                    t_write_end_ns = time.perf_counter_ns()
+                    write_dur_ms = (servo_audit.cycle_end_ns - servo_audit.cycle_start_ns) / 1e6
+                    self._six_axis_uart_transaction_ms = write_dur_ms
+                    self._last_write_duration_ms = write_dur_ms
+                    self._last_write_stamp_ns = t_write_end_ns
+                    cycle_start_ns = servo_audit.cycle_start_ns
+                    cycle_end_ns = servo_audit.cycle_end_ns
+                    tx_records = servo_audit.tx_records
+
+                    # 2. Design B: 50Hz primary feedback from 0x29 StatusFeedback (0x30 blocking poll eliminated)
+                    feedback_audit = self.j7_feedback.ingest_cycle_feedback(
+                        servo_audit.feedbacks,
+                        servo_cycle_id=self._uart_cycle_seq,
+                        servo_cycle_timestamp_ns=t_entry_ns,
+                    )
+                else:
+                    # READ_ONLY mode: 50Hz 0x30 round-robin polling
+                    feedback_audit = self.j7_feedback.poll_once(
+                        servo_cycle_id=self._uart_cycle_seq,
+                        servo_cycle_timestamp_ns=t_entry_ns,
+                        force_full_scan=False,
+                    )
+
+                if self.j7_feedback.stopped or self.j7_writer.stopped:
+                    self._latch_j7_fault(self._j7_stop_reason())
+                self._feedback_transaction_ms = max(0.0, (feedback_audit.transaction_end_ns - feedback_audit.transaction_start_ns) / 1e6)
+                self._rx_classification_ms = max(0.0, (feedback_audit.rx_drain_end_ns - feedback_audit.rx_drain_start_ns) / 1e6)
+                stop_snapshot = self.j7_feedback.audit_snapshot().watchdog_stop_snapshot
+                if stop_snapshot is not None:
+                    self._watchdog_stop_age_ms = stop_snapshot.age_ns / 1e6
+
+                for sample in feedback_audit.samples:
+                    if sample is not None and sample.position is not None:
+                        self._latest_positions_steps[sample.motor_id] = sample.position
+                        self._latest_currents[sample.motor_id] = sample.current_mA if sample.current_mA is not None else 0
+                        self._latest_faults[sample.motor_id] = sample.fault if sample.fault is not None else 0
+                        self._latest_rx_done_ns[sample.motor_id] = sample.timestamp_ns
+
+                current_uart_seq = self._uart_cycle_seq
+                self._uart_cycle_seq += 1
+
+                # 3. Publish Telemetry
+                js_msg = JointState()
+                js_msg.header.stamp = self.get_clock().now().to_msg()
+                js_msg.name = self.joint_names
+                js_msg.position = [steps_to_meters(self._latest_positions_steps[mid]) for mid in MOTOR_IDS]
+                self.joint_state_pub.publish(js_msg)
+
+                if self.timed_feedback_pub is not None:
+                    tf_msg = TimedJointFeedback()
+                    tf_msg.header.stamp = js_msg.header.stamp
+                    tf_msg.snapshot_start_monotonic_ns = cycle_start_ns
+                    tf_msg.snapshot_end_monotonic_ns = cycle_end_ns
+                    tf_msg.per_axis_rx_done_monotonic_ns = [self._latest_rx_done_ns[mid] for mid in MOTOR_IDS]
+                    tf_msg.raw_steps = [self._latest_positions_steps[mid] for mid in MOTOR_IDS]
+                    tf_msg.positions_meters = [0.050 + (s - 1000) * 0.000025 for s in tf_msg.raw_steps]
+                    tf_msg.currents_ma = [self._latest_currents[mid] for mid in MOTOR_IDS]
+                    tf_msg.fault_codes = [self._latest_faults[mid] for mid in MOTOR_IDS]
+                    tf_msg.uart_cycle_sequence = current_uart_seq
+                    self.timed_feedback_pub.publish(tf_msg)
+
+                if self.timed_command_pub is not None and self.hardware_mode != HardwareMode.READ_ONLY:
+                    tc_msg = TimedJointCommand()
+                    tc_msg.header.stamp = js_msg.header.stamp
+                    tc_msg.transaction_start_monotonic_ns = cycle_start_ns
+                    tc_msg.transaction_end_monotonic_ns = cycle_end_ns
+                    tc_msg.per_axis_tx_start_monotonic_ns = [rec.tx_start_ns for rec in tx_records]
+                    tc_msg.per_axis_tx_done_monotonic_ns = [rec.tx_end_ns for rec in tx_records]
+                    tc_msg.target_positions_meters = [steps_to_meters(s) for s in dispatched_targets]
+                    tc_msg.target_steps = list(dispatched_targets)
+                    tc_msg.uart_cycle_sequence = current_uart_seq
+                    self.timed_command_pub.publish(tc_msg)
+
+                self._publish_driver_diagnostics()
+                if self.publish_raw_diagnostics:
+                    self._publish_array(self.raw_steps_pub, [self._latest_positions_steps[mid] for mid in MOTOR_IDS])
+                    self._publish_array(self.raw_currents_pub, [self._latest_currents[mid] for mid in MOTOR_IDS])
+                    self._publish_array(self.raw_faults_pub, [self._latest_faults[mid] for mid in MOTOR_IDS])
+
+                if self.benchmark_stamp_pub is not None:
+                    t_cb_end_ns = time.perf_counter_ns()
+                    bench_msg = Int64MultiArray()
+                    bench_msg.data = [
+                        self._benchmark_seq_id,
+                        t_entry_ns,
+                        cycle_start_ns,
+                        cycle_end_ns,
+                        cycle_end_ns,
+                        t_cb_end_ns,
+                        t_cb_end_ns,
+                    ]
+                    self.benchmark_stamp_pub.publish(bench_msg)
+                    self.benchmark_publish_timestamps_ns.append(cycle_end_ns)
+                    self._benchmark_seq_id += 1
+
+                self._worker_total_ms = (time.perf_counter_ns() - t_entry_ns) / 1e6
+
+            except Exception as exc:
+                self._worker_total_ms = (time.perf_counter_ns() - t_entry_ns) / 1e6
+                if self.j7_writer.stopped or (self.j7_feedback is not None and self.j7_feedback.stopped):
+                    self._latch_j7_fault(self._j7_stop_reason())
+                else:
+                    self._latch_j7_fault(f"worker_exception: {exc}")
+                    if self.j7_writer is not None:
+                        self.j7_writer.stop(self._j7_fault_reason or "worker_exception")
+                return
+            return
+
         if not self.controller.is_connected:
             return
 
@@ -797,7 +1130,12 @@ class Pus6MotorDriverNode(Node):
             float(self._target_consumed_count),
             float(self._deadline_miss_count),
             float(self._last_target_age_ms),
+            float(self._worker_start_to_start_ms),
             float(self._last_write_duration_ms),
+            float(self._rx_classification_ms),
+            float(self._feedback_transaction_ms),
+            float(self._worker_total_ms),
+            float(self._watchdog_stop_age_ms),
         ]
         self.driver_diagnostics_pub.publish(diag_msg)
 
@@ -841,11 +1179,16 @@ class Pus6MotorDriverNode(Node):
             return response
 
         try:
-            res = self.controller.pause_all()
-            all_ok = all(res.values())
-            response.success = all_ok
-            response.message = f"Pause all results: {res}"
-            self.get_logger().warn(f"Pause all triggered: {res}")
+            if self.is_j7_servo_active and self.j7_stop_adapter is not None:
+                self.j7_stop_adapter.stop_all("service_pause")
+                response.success = True
+                response.message = "Successfully issued 0x1A stop to all 6 motors via J7StopAdapter."
+            else:
+                res = self.controller.pause_all()
+                all_ok = all(res.values())
+                response.success = all_ok
+                response.message = f"Pause all results: {res}"
+            self.get_logger().warn(f"Pause all triggered: {response.message}")
         except Exception as exc:
             response.success = False
             response.message = f"Pause all exception: {exc}"
@@ -864,9 +1207,14 @@ class Pus6MotorDriverNode(Node):
             return response
 
         try:
-            self.controller.configure_all()
-            response.success = True
-            response.message = "Configured mode=2, speed=50 on all 6 motors successfully."
+            if self.is_j7_servo_active and self.j7_writer is not None:
+                self.j7_writer.configure_servo(speed=self.servo_speed)
+                response.success = True
+                response.message = f"Configured mode=1 (Servo), speed={self.servo_speed} on all 6 motors successfully."
+            else:
+                self.controller.configure_all()
+                response.success = True
+                response.message = "Configured mode=2, speed=50 on all 6 motors successfully."
             self.get_logger().info("Configured all motors successfully via service.")
         except Exception as exc:
             response.success = False
@@ -875,8 +1223,15 @@ class Pus6MotorDriverNode(Node):
         return response
 
     def destroy_node(self) -> None:
-        """Safe shutdown: execute best-effort pause_all ONLY if active real hardware is connected."""
-        if self.controller.is_connected:
+        """Safe shutdown: execute best-effort pause_all/0x1A ONLY if active real hardware is connected."""
+        if self.is_j7_servo_active and self.j7_stop_adapter is not None:
+            if self.hardware_mode == HardwareMode.ACTIVE:
+                try:
+                    self.get_logger().info("Active node shutting down: executing J7 0x1A stop_all.")
+                    self.j7_stop_adapter.stop_all("shutdown")
+                except Exception as exc:
+                    self.get_logger().error(f"Error during J7 shutdown stop_all: {exc}")
+        elif self.controller.is_connected:
             if self.hardware_mode == HardwareMode.ACTIVE:
                 try:
                     self.get_logger().info("Active node shutting down: executing best-effort hardware pause_all.")

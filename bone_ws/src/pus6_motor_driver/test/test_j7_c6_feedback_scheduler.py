@@ -17,6 +17,7 @@ if str(PKG_ROOT) not in sys.path:
 from pus6_motor_driver.fake_bus import FakeBus
 from pus6_motor_driver.j7_servo_feedback_scheduler import (
     FeedbackRxError,
+    FeedbackSchedulerError,
     J7ServoFeedbackScheduler,
 )
 from pus6_motor_driver.j7_six_axis_servo_transport import J7SixAxisServoTransport
@@ -24,6 +25,7 @@ from pus6_motor_driver.j7_servo_transport import ServoRxPolicy
 from pus6_motor_driver.protocol import (
     CMD_RD_REGISTER,
     CMD_RD_STATUS,
+    StatusFeedback,
     pack_read_status_cmd,
     parse_frame,
 )
@@ -139,11 +141,67 @@ def test_j7_c6_full_scan_reads_all_axes() -> None:
     clock, bus, writer, scheduler = make_stack()
     audit = scheduler.full_scan(servo_cycle_id=10, servo_cycle_timestamp_ns=clock.now_ns())
 
+    assert scheduler.feedback_age_watchdog_armed
+
     assert audit.full_scan
     assert audit.motor_ids == MOTOR_IDS
     assert len(audit.samples) == 6
     assert all(sample.mode is None for sample in audit.samples)
     assert all(sample.timeout is False for sample in audit.samples)
+    assert bus.hardware_write_count == 0
+
+
+def test_j7_c6_startup_before_all_axes_initialized_does_not_age_stop() -> None:
+    clock, bus, writer, scheduler = make_stack()
+    scheduler.full_scan_period_ns = 10**18
+    clock.now = 1_000_000_000
+
+    first = scheduler.poll_once(servo_cycle_id=1, servo_cycle_timestamp_ns=clock.now_ns())
+    assert first.motor_ids == (1,)
+    assert not scheduler.feedback_age_watchdog_armed
+
+    # A long startup gap must not evaluate the partially initialized session.
+    clock.sleep(0.300)
+    second = scheduler.poll_once(servo_cycle_id=2, servo_cycle_timestamp_ns=clock.now_ns())
+    assert second.motor_ids == (2,)
+    assert not scheduler.stopped
+    assert not scheduler.feedback_age_watchdog_armed
+    assert scheduler._consecutive_timeouts == {mid: 0 for mid in MOTOR_IDS}
+    assert bus.hardware_write_count == 0
+
+
+def test_j7_c6_watchdog_arms_only_after_fresh_six_axis_feedback() -> None:
+    clock, bus, writer, scheduler = make_stack()
+    scheduler.full_scan_period_ns = 10**18
+    clock.now = 1_000_000_000
+
+    scheduler.poll_once(servo_cycle_id=1, servo_cycle_timestamp_ns=clock.now_ns())
+    assert not scheduler.feedback_age_watchdog_armed
+    assert scheduler._initialized_axes == {1}
+
+    audit = scheduler.full_scan(servo_cycle_id=2, servo_cycle_timestamp_ns=clock.now_ns())
+    assert audit.motor_ids == MOTOR_IDS
+    assert all(not sample.timeout for sample in audit.samples)
+    assert scheduler._initialized_axes == set(MOTOR_IDS)
+    assert scheduler.feedback_age_watchdog_armed
+    assert scheduler._consecutive_timeouts == {mid: 0 for mid in MOTOR_IDS}
+    assert bus.hardware_write_count == 0
+
+
+def test_j7_c6_post_arm_stale_feedback_stops() -> None:
+    pauses: list[str] = []
+    clock, bus, writer, scheduler = make_stack(pause_events=pauses)
+    clock.now = 1_000_000_000
+    scheduler.full_scan(servo_cycle_id=1, servo_cycle_timestamp_ns=clock.now_ns())
+    assert scheduler.feedback_age_watchdog_armed
+
+    clock.sleep((scheduler.max_feedback_age_ns / 1e9) + 0.001)
+    with pytest.raises(FeedbackSchedulerError, match="feedback age exceeded"):
+        scheduler.poll_once(servo_cycle_id=2, servo_cycle_timestamp_ns=clock.now_ns())
+
+    assert scheduler.stopped
+    assert scheduler.audit_snapshot().stop_reason == "feedback_age_exceeded_ID1"
+    assert pauses == ["feedback_age_exceeded_ID1"]
     assert bus.hardware_write_count == 0
 
 
@@ -259,7 +317,8 @@ def test_j7_c6_stale_motion_responses_are_not_feedback_matches() -> None:
 
     assert audit.samples[0].position == 123
     assert audit.rx_residual_count == 6
-    assert audit.stale_response_count >= 6
+    assert scheduler.audit_snapshot().motion_write_response_count >= 6
+    assert audit.stale_response_count == 0
     assert scheduler.audit_snapshot().mismatch_count == 0
     assert bus.hardware_write_count == 0
 
@@ -279,20 +338,115 @@ def test_j7_c6_feedback_mismatch_stops_safely() -> None:
     assert bus.hardware_write_count == 0
 
 
-def test_j7_c6_timeout_enters_safe_stop_without_retry() -> None:
+def test_j7_c6_isolated_timeout_recovers_without_stop() -> None:
     pauses: list[str] = []
     clock, bus, writer, scheduler = make_stack(pause_events=pauses)
+    scheduler.full_scan(servo_cycle_id=1, servo_cycle_timestamp_ns=clock.now_ns())
+    assert scheduler.feedback_age_watchdog_armed
     bus.timeout_next = True
 
-    audit = scheduler.poll_once(servo_cycle_id=14, servo_cycle_timestamp_ns=clock.now_ns())
+    timeout_audit = scheduler.poll_once(servo_cycle_id=2, servo_cycle_timestamp_ns=clock.now_ns())
+    assert timeout_audit.samples[0].timeout
+    assert not scheduler.stopped
+    assert not writer.stopped
+    assert pauses == []
 
-    assert audit.samples[0].timeout
+    # The round-robin slot returns to ID1 after five other axis polls.
+    for cycle_id in range(3, 8):
+        scheduler.poll_once(servo_cycle_id=cycle_id, servo_cycle_timestamp_ns=clock.now_ns())
+    recovered = scheduler.poll_once(servo_cycle_id=8, servo_cycle_timestamp_ns=clock.now_ns())
+    assert recovered.motor_ids == (1,)
+    assert recovered.samples[0].timeout is False
+    assert not scheduler.stopped
+    assert scheduler.audit_snapshot().timeout_count == 1
+    assert bus.hardware_write_count == 0
+
+
+def test_j7_c6_persistent_timeout_escalates_to_stop() -> None:
+    pauses: list[str] = []
+    clock, bus, writer, scheduler = make_stack(pause_events=pauses)
+    scheduler.full_scan(servo_cycle_id=1, servo_cycle_timestamp_ns=clock.now_ns())
+
+    bus.timeout_next = True
+    first = scheduler.poll_once(servo_cycle_id=2, servo_cycle_timestamp_ns=clock.now_ns())
+    assert first.samples[0].timeout
+    for cycle_id in range(3, 8):
+        scheduler.poll_once(servo_cycle_id=cycle_id, servo_cycle_timestamp_ns=clock.now_ns())
+
+    bus.timeout_next = True
+    second = scheduler.poll_once(servo_cycle_id=8, servo_cycle_timestamp_ns=clock.now_ns())
+    assert second.samples[0].timeout
     assert scheduler.stopped
     assert writer.stopped
-    assert scheduler.audit_snapshot().timeout_count == 1
-    assert pauses == ["feedback_timeout"]
-    # One status request was attempted; no scheduler retry is performed.
-    assert len(bus.request_log) == 7
+    assert scheduler.audit_snapshot().stop_reason == "persistent_feedback_loss_ID1"
+    assert pauses == ["persistent_feedback_loss_ID1"]
+    assert bus.hardware_write_count == 0
+
+
+def test_j7_c6_age_watchdog_does_not_preempt_second_same_axis_poll() -> None:
+    pauses: list[str] = []
+    clock, bus, writer, scheduler = make_stack(pause_events=pauses)
+    scheduler.full_scan_period_ns = 10**18
+    clock.now = 1_000_000_000
+    scheduler.full_scan(servo_cycle_id=1, servo_cycle_timestamp_ns=clock.now_ns())
+    assert scheduler.max_feedback_age_ns == 263_324_000
+
+    # ID1's first retry opportunity is approximately 240 ms after its last
+    # valid sample: one initial poll plus five intervening axis polls.
+    bus.timeout_next = True
+    clock.sleep(0.120)
+    first = scheduler.poll_once(servo_cycle_id=2, servo_cycle_timestamp_ns=clock.now_ns())
+    assert first.samples[0].motor_id == 1
+    assert first.samples[0].timeout
+    assert not scheduler.stopped
+
+    for cycle_id in range(3, 8):
+        clock.sleep(0.020)
+        scheduler.poll_once(servo_cycle_id=cycle_id, servo_cycle_timestamp_ns=clock.now_ns())
+
+    bus.timeout_next = True
+    clock.sleep(0.020)
+    second = scheduler.poll_once(servo_cycle_id=8, servo_cycle_timestamp_ns=clock.now_ns())
+
+    assert second.samples[0].motor_id == 1
+    assert second.samples[0].timeout
+    assert scheduler.stopped
+    assert scheduler.audit_snapshot().stop_reason == "persistent_feedback_loss_ID1"
+    assert pauses == ["persistent_feedback_loss_ID1"]
+    assert [motor_id for motor_id, _command, _register in bus.request_log[-7:]] == [1, 2, 3, 4, 5, 6, 1]
+    assert bus.hardware_write_count == 0
+
+
+def test_j7_c6_age_watchdog_stops_after_scheduler_stall() -> None:
+    pauses: list[str] = []
+    clock, bus, writer, scheduler = make_stack(pause_events=pauses)
+    clock.now = 1_000_000_000
+    scheduler.full_scan(servo_cycle_id=1, servo_cycle_timestamp_ns=clock.now_ns())
+    requests_before_stall = len(bus.request_log)
+
+    clock.sleep(0.263325)
+    with pytest.raises(FeedbackSchedulerError, match="feedback age exceeded"):
+        scheduler.poll_once(servo_cycle_id=2, servo_cycle_timestamp_ns=clock.now_ns())
+
+    assert scheduler.stopped
+    assert scheduler.audit_snapshot().stop_reason == "feedback_age_exceeded_ID1"
+    assert pauses == ["feedback_age_exceeded_ID1"]
+    assert len(bus.request_log) == requests_before_stall
+    assert bus.hardware_write_count == 0
+
+def test_j7_c6_motor_fault_stops_immediately() -> None:
+    pauses: list[str] = []
+    clock, bus, writer, scheduler = make_stack(pause_events=pauses)
+    scheduler.full_scan(servo_cycle_id=1, servo_cycle_timestamp_ns=clock.now_ns())
+    bus.faults[1] = 7
+
+    audit = scheduler.poll_once(servo_cycle_id=2, servo_cycle_timestamp_ns=clock.now_ns())
+
+    assert audit.samples[0].fault == 7
+    assert scheduler.stopped
+    assert writer.stopped
+    assert scheduler.audit_snapshot().stop_reason == "motor_fault_ID1"
+    assert pauses == ["motor_fault_ID1"]
     assert bus.hardware_write_count == 0
 
 
@@ -308,4 +462,201 @@ def test_j7_c6_malformed_response_stops_safely() -> None:
     assert scheduler.audit_snapshot().malformed_count == 1
     assert pauses == ["malformed_feedback_response"]
     assert bus.hardware_write_count == 0
+
+
+def test_j8_design_b_healthy_cycles_do_not_trigger_feedback_age_stop() -> None:
+    pauses: list[str] = []
+    clock, bus, writer, scheduler = make_stack(pause_events=pauses)
+
+    for cycle_id in range(1, 20):
+        clock.sleep(0.020)
+        feedbacks = {
+            mid: StatusFeedback(
+                target_position=1000 + cycle_id,
+                current_position=1000 + cycle_id,
+                current_mA=0,
+                force_g=0,
+                force_adc=0,
+                temperature=25,
+                error_code=0,
+            )
+            for mid in (1, 2, 3, 4, 5, 6)
+        }
+        audit = scheduler.ingest_cycle_feedback(
+            feedbacks,
+            servo_cycle_id=cycle_id,
+            servo_cycle_timestamp_ns=clock.now_ns(),
+        )
+        assert not audit.deferred
+        assert len(audit.samples) == 6
+        assert all(not s.timeout and s.fault == 0 for s in audit.samples)
+        assert not scheduler.stopped
+        assert scheduler.audit_snapshot().stop_reason is None
+
+
+def test_j8_design_b_tier1_missing_axis_escalation() -> None:
+    pauses: list[str] = []
+    clock, bus, writer, scheduler = make_stack(pause_events=pauses)
+    clock.now = 1_000_000_000
+    scheduler.timeout_escalation_misses = 4
+
+    # 1. Arm watchdog with healthy cycle
+    feedbacks_ok = {
+        mid: StatusFeedback(
+            target_position=1000,
+            current_position=1000,
+            current_mA=0,
+            force_g=0,
+            force_adc=0,
+            temperature=25,
+            error_code=0,
+        )
+        for mid in (1, 2, 3, 4, 5, 6)
+    }
+    scheduler.ingest_cycle_feedback(feedbacks_ok, servo_cycle_id=1, servo_cycle_timestamp_ns=clock.now_ns())
+    assert scheduler.feedback_age_watchdog_armed
+    assert not scheduler.stopped
+
+    # 2. Cycles 2, 3, 4 miss axis ID3 (3 consecutive misses: warning, not yet stopped)
+    feedbacks_missing_id3 = {
+        mid: StatusFeedback(
+            target_position=1000,
+            current_position=1000,
+            current_mA=0,
+            force_g=0,
+            force_adc=0,
+            temperature=25,
+            error_code=0,
+        )
+        for mid in (1, 2, 4, 5, 6)
+    }
+    for c in range(2, 5):
+        clock.sleep(0.020)
+        scheduler.ingest_cycle_feedback(feedbacks_missing_id3, servo_cycle_id=c, servo_cycle_timestamp_ns=clock.now_ns())
+        assert not scheduler.stopped
+
+    # 3. 4th consecutive miss (N=4) -> Tier-1 escalation trips persistent feedback loss
+    clock.sleep(0.020)
+    with pytest.raises(FeedbackSchedulerError, match="persistent.*feedback loss"):
+        scheduler.ingest_cycle_feedback(feedbacks_missing_id3, servo_cycle_id=5, servo_cycle_timestamp_ns=clock.now_ns())
+    assert scheduler.stopped
+    assert scheduler.audit_snapshot().stop_reason.startswith("persistent_")
+
+
+def test_j8_design_b_tier1_incomplete_cycle_escalation() -> None:
+    pauses: list[str] = []
+    clock, bus, writer, scheduler = make_stack(pause_events=pauses)
+    clock.now = 1_000_000_000
+    scheduler.timeout_escalation_misses = 4
+
+    # 1. Arm watchdog
+    feedbacks_ok = {
+        mid: StatusFeedback(
+            target_position=1000,
+            current_position=1000,
+            current_mA=0,
+            force_g=0,
+            force_adc=0,
+            temperature=25,
+            error_code=0,
+        )
+        for mid in (1, 2, 3, 4, 5, 6)
+    }
+    scheduler.ingest_cycle_feedback(feedbacks_ok, servo_cycle_id=1, servo_cycle_timestamp_ns=clock.now_ns())
+    assert scheduler.feedback_age_watchdog_armed
+
+    # 2. Multiple missing axes (ID2 and ID5)
+    feedbacks_incomplete = {
+        mid: StatusFeedback(
+            target_position=1000,
+            current_position=1000,
+            current_mA=0,
+            force_g=0,
+            force_adc=0,
+            temperature=25,
+            error_code=0,
+        )
+        for mid in (1, 3, 4, 6)
+    }
+    for c in range(2, 5):
+        clock.sleep(0.020)
+        scheduler.ingest_cycle_feedback(feedbacks_incomplete, servo_cycle_id=c, servo_cycle_timestamp_ns=clock.now_ns())
+        assert not scheduler.stopped
+
+    # 3. 4th consecutive incomplete cycle -> Tier-1 escalation
+    clock.sleep(0.020)
+    with pytest.raises(FeedbackSchedulerError):
+        scheduler.ingest_cycle_feedback(feedbacks_incomplete, servo_cycle_id=5, servo_cycle_timestamp_ns=clock.now_ns())
+    assert scheduler.stopped
+    assert scheduler.audit_snapshot().stop_reason.startswith("persistent_")
+
+
+def test_j8_design_b_tier2_scheduler_deadline_fault() -> None:
+    pauses: list[str] = []
+    clock, bus, writer, scheduler = make_stack(pause_events=pauses)
+    clock.now = 1_000_000_000
+
+    # 1. Arm watchdog
+    feedbacks_ok = {
+        mid: StatusFeedback(
+            target_position=1000,
+            current_position=1000,
+            current_mA=0,
+            force_g=0,
+            force_adc=0,
+            temperature=25,
+            error_code=0,
+        )
+        for mid in (1, 2, 3, 4, 5, 6)
+    }
+    scheduler.ingest_cycle_feedback(feedbacks_ok, servo_cycle_id=1, servo_cycle_timestamp_ns=clock.now_ns())
+    assert scheduler.feedback_age_watchdog_armed
+
+    # 2. Simulate long scheduler gap > 263.324 ms
+    clock.sleep(0.270)
+    with pytest.raises(FeedbackSchedulerError, match="Servo scheduler deadline exceeded"):
+        scheduler.ingest_cycle_feedback(feedbacks_ok, servo_cycle_id=2, servo_cycle_timestamp_ns=clock.now_ns())
+
+    assert scheduler.stopped
+    assert scheduler.audit_snapshot().stop_reason == "scheduler_deadline_exceeded"
+    assert pauses == ["scheduler_deadline_exceeded"]
+
+
+def test_j8_demo_health_check_reports_original_stop_reason_without_attribute_error() -> None:
+    import sys
+    from pathlib import Path
+    scripts_dir = Path(__file__).resolve().parent.parent.parent.parent / "scripts"
+    if str(scripts_dir) not in sys.path:
+        sys.path.insert(0, str(scripts_dir))
+
+    from run_j8_final_video_demonstration import demo_health_failure_reason
+
+    class MockNode:
+        driver_fault_latched = False
+        driver_fault_reason = None
+        j7_writer = None
+        j7_feedback = None
+        _latest_faults = {mid: 0 for mid in (1, 2, 3, 4, 5, 6)}
+
+    node = MockNode()
+    assert demo_health_failure_reason(node) is None
+
+    # Test driver latched fault
+    node.driver_fault_latched = True
+    node.driver_fault_reason = "feedback_age_exceeded_ID1"
+    assert demo_health_failure_reason(node) == "driver fault latched: feedback_age_exceeded_ID1"
+
+    # Test transport stop reason via audit_snapshot
+    class MockAudit:
+        stop_reason = "transport_write_timeout"
+
+    class MockTransport:
+        stopped = True
+        def audit_snapshot(self):
+            return MockAudit()
+
+    node.driver_fault_latched = False
+    node.j7_writer = MockTransport()
+    assert demo_health_failure_reason(node) == "driver writer stopped: transport_write_timeout"
+
 

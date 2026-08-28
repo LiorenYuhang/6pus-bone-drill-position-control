@@ -118,6 +118,10 @@ class RxResidualRecord:
     discarded_bytes: int
     malformed_frames: int
     residual_frames_after: int
+    motion_write_responses: int = 0
+    stale_responses: int = 0
+    drain_start_ns: int = 0
+    drain_end_ns: int = 0
 
 
 @dataclass(frozen=True)

@@ -1,37 +1,42 @@
 # 6PUS 当前开发阶段状态卡 (Current Stage State Sheet)
 
-**最后更新时间**: 2026-08-26  
-**当前冻结状态**: $\mathbf{J7\ SIX\text{-}AXIS\ 50Hz\ SERVO\ HARDWARE\ BASELINE\ FROZEN\ v1.0}$  
-*(官方 Release Tag: `v1.0-j7-servo-hardware-frozen`)*
+**最后更新时间**: 2026-08-28  
+**当前冻结状态**: $\mathbf{J8\ ACTIVE\ SERVO\ HARDWARE\ QUALIFIED\ v1.0}$  
+*(官方 Release Tag: `v1.0-j8-active-servo-hardware-qualified`)*
 
 ---
 
 ## 1. 阶段导航 (Stage Status)
 
-* **当前推进阶段**: **$\mathbf{J7\ 伺服运动控制基线正式收尾并全面冻结}$；下一阶段为 Dual-IMU / FK 融合滤波与高频主动抑振**
+* **当前推进阶段**: **$\mathbf{J8\ 连续笛卡尔伺服与伴随反馈闭环硬件准入正式收尾并全面冻结}$；下一阶段 (J9) 为 Dual-IMU / FK 融合滤波与高频主动抑振**
 * **已正式 PASS & 冻结的 Gates (Frozen Milestones)**:
   * **J1 (单总线半双工 921600 8N1 底层驱动协议)**: $\mathbf{PASS\ /\ FROZEN}$
-  * **J2 (六轴同步通信、0x29 伴随反馈与基准性能)**: $\mathbf{PASS\ /\ FROZEN}$（10Hz 轮询，18.18ms 串行通信耗时，15.18ms 扫描跨度，0 写入 READ_ONLY 审计）
-  * **J3 (IK / 执行器闭环就位验证)**: $\mathbf{PASS\ /\ FROZEN}$（解析逆运动学、S 曲线规划、独立台架电缸 PARK `[0]*6` $\leftrightarrow$ HOME `[1000]*6` 往返就位精度 $\le 2\text{ steps}$）
-  * **J4 (连续笛卡尔轨迹控制管线与安全策略)**: $\mathbf{PASS\ /\ FROZEN}$（J4 控制算法与安全策略保持冻结；UART transport 层应用 batch-atomicity hotfix 6 轴 Batch 全局锁 `with self._bus_lock_ctx:` 与 Active 模式轮询抑制）
-  * **J5 (装配前软件与传感器基线)**: $\mathbf{PASS\ /\ FROZEN}$（统一时间轴 Host `CLOCK_MONOTONIC`、Fixed-Lag 严格零外推状态重构、解析雅可比 LM 数值正解、双 H30 硬件微秒时间戳与自动零偏估计）
+  * **J2 (六轴同步通信、0x29 伴随反馈与基准性能)**: $\mathbf{PASS\ /\ FROZEN}$
+  * **J3 (IK / 执行器闭环就位验证)**: $\mathbf{PASS\ /\ FROZEN}$
+  * **J4 (连续笛卡尔轨迹控制管线与安全策略)**: $\mathbf{PASS\ /\ FROZEN}$
+  * **J5 (装配前软件与传感器基线)**: $\mathbf{PASS\ /\ FROZEN}$
   * **J6 (总装后现场调试与 HOME/PARK 定位基线)**: $\mathbf{PASS\ /\ FROZEN}$
-    - 定位模式（mode=0, 10Hz, speed=50）六轴独立 HOME (`[1000]*6`) / PARK (`[0]*6`) 启动与收拢调试，通过连续 10 循环实机测试（详见 [`agent_docs/j6/J6_FINAL_SUMMARY.md`](file:///home/lyapunov/bone_drill/agent_docs/j6/J6_FINAL_SUMMARY.md)）；
-    - J6 定位模式作为系统底层 commissioning、故障排查与可靠 fallback 基线。
-  * **J7 (六轴 50Hz Servo 伺服运动控制实机基线 -- 当前版本)**: $\mathbf{PASS\ /\ FROZEN}$
-    - 50Hz 连续 0x29 目标流（周期 $20.00\,\text{ms} \pm 0.10\,\text{ms}$，单总线纯写批次耗时均值 $3.38\,\text{ms}$，最大 $\le 6.83\,\text{ms}$）；
-    - 非阻塞轮询反馈调度器（每周期 1 轴 0x30 状态查询，单轴采样率 $\approx 8.33\,\text{Hz}$），运行期取消 0x25 模式回读，以避免错误 mode 门禁与额外 UART/RX residual 交互；
-    - PARK $\leftrightarrow$ HOME 全行程（1000 步 / 25.0mm）五次多项式 S 曲线实机验证（2326 周期，46.50s，Fault=0，Timeout=0，0x1A 干净停机）；
-    - A/B 定量对比证实：目标刷新率提升 5 倍，全行程 RMS 跟踪误差降低 61.6%（$7.53 \to 2.89\,\text{步}$），峰值冲击电流降低 46.9%（$145 \to 77\,\text{mA}$），实机视觉运动显著平滑；
-    - 工作空间核心功能包全量单元测试 **304 项 100% PASS**。
+  * **J7 (六轴 50Hz Servo 伺服运动控制实机基线)**: $\mathbf{PASS\ /\ FROZEN}$
+  * **J8 (连续笛卡尔伺服、Design-B 0x29 伴随反馈与全自由度实机验证 -- 当前版本)**: $\mathbf{PASS\ /\ FROZEN}$
+    - **系统架构**: `Cartesian Target (50Hz) -> Analytical IK -> Trajectory Shaper -> J7 Design-B Servo -> 0x29 StatusFeedback -> TimedJointFeedback -> FixedLag (tau=160ms) -> LM Analytical Jacobian FK (50Hz)`；
+    - **Design-B 伴随反馈**: ACTIVE 模式以 50Hz 0x29 目标写入伴随返回的 `StatusFeedback` 作为运行期主反馈源，常规阻塞式 0x30 轮询完全移出 50Hz 关键控制路径；
+    - **两级安全看门狗**:
+      - Tier 1: 执行周期内 6/6 轴反馈完整性监测，连续 $N=4$ 周期缺轴触发通信安全保护；
+      - Tier 2: 263.324 ms 调度/截止期非实时操作系统安全上限（非反馈超期时间），容忍标准 Linux 调度抖动；
+    - **集约化 PARK/HOME 契约**:
+      - `PARK_CMD = 0 step` ($25.000\text{ mm}$)，`HOME_CMD = 1000 step` ($50.000\text{ mm}$)；
+      - 引入暂定 PARK 测量带 $[-5, +5]\text{ steps}$，多样本稳定性校验通过后判定 `VALID_PARK`，规划种子设为 `[0]*6`，指令空间严格 $\ge 0$；
+      - 遥测保留原始未篡改编码器读数，严格拒绝混合/未分类负向异常状态；
+    - **三轮自治硬件准入**: 连续 3 轮完整 PARK $\to$ HOME $\to$ 20s 保持 $\to$ PARK 循环 100% PASS（56,754 / 56,754 帧反馈，0 故障，0 超时，0 停机）；
+    - **最终 9 阶段实机视频演示考核**: 137.128s，6898 周期，实测持续刷新率 50.30 Hz，41,388 / 41,388 响应（100.0% 完整率），0 丢帧，0 故障，0 STOP，各轴单向与 6 自由度复合运动全部平滑就位；
+    - **全工作空间回归测试**: 349 项单元与集成测试 **100% PASS**。
 
 ---
 
 ## 2. 权威依据文档 (Authoritative References)
 
-1. **统一文档地图**: [`agent_docs/README.md`](file:///home/lyapunov/bone_drill/agent_docs/README.md)
-2. **唯一日常实机操作指南**: [`6PUS_SERVO_OPERATION_GUIDE.md`](file:///home/lyapunov/bone_drill/6PUS_SERVO_OPERATION_GUIDE.md)
-3. **ROS 2 架构与教学教程**: [`6PUS_ROS2_CODE_LEARNING_TUTORIAL.md`](file:///home/lyapunov/bone_drill/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md)
-4. **J7 决策与时序审计**: [`agent_docs/decisions/J7_C2_UART_TIMING_BUDGET_AUDIT.md`](file:///home/lyapunov/bone_drill/agent_docs/decisions/J7_C2_UART_TIMING_BUDGET_AUDIT.md)
-5. **J6 最终调试总结**: [`agent_docs/j6/J6_FINAL_SUMMARY.md`](file:///home/lyapunov/bone_drill/agent_docs/j6/J6_FINAL_SUMMARY.md)
-6. **J5 最终冻结清单**: [`agent_docs/frozen/J5_PRE_ASSEMBLY_FROZEN_v1.0.md`](file:///home/lyapunov/bone_drill/agent_docs/frozen/J5_PRE_ASSEMBLY_FROZEN_v1.0.md)
+1. **J8 最终硬件准入报告**: [`agent_docs/decisions/J8_FINAL_HARDWARE_QUALIFICATION.md`](file:///home/lyapunov/bone_drill/agent_docs/decisions/J8_FINAL_HARDWARE_QUALIFICATION.md)
+2. **统一文档地图**: [`agent_docs/README.md`](file:///home/lyapunov/bone_drill/agent_docs/README.md)
+3. **唯一日常实机操作指南**: [`6PUS_SERVO_OPERATION_GUIDE.md`](file:///home/lyapunov/bone_drill/6PUS_SERVO_OPERATION_GUIDE.md)
+4. **ROS 2 架构与教学教程**: [`6PUS_ROS2_CODE_LEARNING_TUTORIAL.md`](file:///home/lyapunov/bone_drill/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md)
+5. **J7 基线设计与决策**: [`agent_docs/decisions/J7_C0_SERVO_ARCHITECTURE_DESIGN.md`](file:///home/lyapunov/bone_drill/agent_docs/decisions/J7_C0_SERVO_ARCHITECTURE_DESIGN.md)
