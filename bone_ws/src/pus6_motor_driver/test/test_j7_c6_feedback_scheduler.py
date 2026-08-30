@@ -591,6 +591,62 @@ def test_j8_design_b_tier1_incomplete_cycle_escalation() -> None:
     assert scheduler.audit_snapshot().stop_reason.startswith("persistent_")
 
 
+def test_j8_design_b_incomplete_cycle_counter_resets_after_complete_feedback() -> None:
+    pauses: list[str] = []
+    clock, bus, writer, scheduler = make_stack(pause_events=pauses)
+    clock.now = 1_000_000_000
+    scheduler.timeout_escalation_misses = 4
+
+    feedbacks_ok = {
+        mid: StatusFeedback(
+            target_position=1000,
+            current_position=1000,
+            current_mA=0,
+            force_g=0,
+            force_adc=0,
+            temperature=25,
+            error_code=0,
+        )
+        for mid in (1, 2, 3, 4, 5, 6)
+    }
+    feedbacks_incomplete = {
+        mid: StatusFeedback(
+            target_position=1000,
+            current_position=1000,
+            current_mA=0,
+            force_g=0,
+            force_adc=0,
+            temperature=25,
+            error_code=0,
+        )
+        for mid in (1, 3, 4, 6)
+    }
+
+    scheduler.ingest_cycle_feedback(feedbacks_ok, servo_cycle_id=1, servo_cycle_timestamp_ns=clock.now_ns())
+    assert scheduler.feedback_age_watchdog_armed
+
+    for cycle_id in range(2, 5):
+        clock.sleep(0.020)
+        scheduler.ingest_cycle_feedback(feedbacks_incomplete, servo_cycle_id=cycle_id, servo_cycle_timestamp_ns=clock.now_ns())
+        assert not scheduler.stopped
+
+    clock.sleep(0.020)
+    scheduler.ingest_cycle_feedback(feedbacks_ok, servo_cycle_id=5, servo_cycle_timestamp_ns=clock.now_ns())
+    assert scheduler._consecutive_incomplete_cycles == 0
+    assert not scheduler.stopped
+
+    for cycle_id in range(6, 9):
+        clock.sleep(0.020)
+        scheduler.ingest_cycle_feedback(feedbacks_incomplete, servo_cycle_id=cycle_id, servo_cycle_timestamp_ns=clock.now_ns())
+        assert not scheduler.stopped
+
+    clock.sleep(0.020)
+    with pytest.raises(FeedbackSchedulerError, match="persistent.*feedback loss"):
+        scheduler.ingest_cycle_feedback(feedbacks_incomplete, servo_cycle_id=9, servo_cycle_timestamp_ns=clock.now_ns())
+    assert scheduler.stopped
+    assert pauses == ["persistent_feedback_loss_ID2"] or pauses == ["persistent_feedback_loss_ID3"] or pauses == ["persistent_feedback_loss_ID4"] or pauses == ["persistent_feedback_loss_ID6"]
+
+
 def test_j8_design_b_tier2_scheduler_deadline_fault() -> None:
     pauses: list[str] = []
     clock, bus, writer, scheduler = make_stack(pause_events=pauses)
@@ -623,13 +679,19 @@ def test_j8_design_b_tier2_scheduler_deadline_fault() -> None:
 
 
 def test_j8_demo_health_check_reports_original_stop_reason_without_attribute_error() -> None:
-    import sys
+    import ast
     from pathlib import Path
-    scripts_dir = Path(__file__).resolve().parent.parent.parent.parent / "scripts"
-    if str(scripts_dir) not in sys.path:
-        sys.path.insert(0, str(scripts_dir))
 
-    from run_j8_final_video_demonstration import demo_health_failure_reason
+    demo_path = Path(__file__).resolve().parents[3] / "scripts" / "run_j8_final_video_demonstration.py"
+    tree = ast.parse(demo_path.read_text())
+    selected = [
+        node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == "demo_health_failure_reason"
+    ]
+    namespace: dict[str, object] = {}
+    exec(compile(ast.Module(body=selected, type_ignores=[]), str(demo_path), "exec"), namespace)
+    demo_health_failure_reason = namespace["demo_health_failure_reason"]
 
     class MockNode:
         driver_fault_latched = False

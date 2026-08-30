@@ -201,6 +201,7 @@ class J7SixAxisServoTransport:
         self._motion_write_response_count = 0
         self._stale_response_count = 0
         self._pending_rx_drain_audit: RxDrainAudit | None = None
+        self.last_tx_failure_provenance: dict[str, Any] | None = None
 
     @property
     def configured(self) -> tuple[ServoConfig, ...] | None:
@@ -316,12 +317,18 @@ class J7SixAxisServoTransport:
                 )
 
             records: list[SixAxisTxRecord] = []
+            current_motor_id: int | None = None
+            current_target: int | None = None
+            current_frame: bytes | None = None
             try:
                 for motor_id, target in zip(MOTOR_IDS, targets):
+                    current_motor_id = motor_id
+                    current_target = target
                     self._wait_for_frame_interval_locked()
                     frame = pack_write_register_cmd(
                         motor_id, TARGET_POSITION_ADDR, [target]
                     )
+                    current_frame = frame
                     tx_start_ns = self._clock_ns()
                     written = self.bus.write(frame)
                     if written is not None and written != len(frame):
@@ -346,9 +353,26 @@ class J7SixAxisServoTransport:
                             residual_frames_after=len(self._residual),
                         )
                     )
-            except Exception:
+            except Exception as exc:
                 self._delivery_uncertain = True
                 self.stop("motion_write_failure")
+                adapter_audit = getattr(self.bus, "last_write_failure_audit", None) or {}
+                self.last_tx_failure_provenance = {
+                    "monotonic_timestamp_ns": self._clock_ns(),
+                    "cycle_id": cycle_id,
+                    "motor_id": current_motor_id,
+                    "command": "0x32",
+                    "register_address": TARGET_POSITION_ADDR,
+                    "target_step": current_target,
+                    "frame_length": len(current_frame) if current_frame else None,
+                    "raw_frame_hex": current_frame.hex() if current_frame else None,
+                    "batch_elapsed_time_ms": (self._clock_ns() - cycle_start_ns) / 1e6,
+                    "last_successful_motor_id": records[-1].motor_id if records else None,
+                    "last_successful_frame_count": len(records),
+                    "delivery_uncertain": True,
+                    "stop_reason": "motion_write_failure",
+                    **adapter_audit,
+                }
                 raise
 
             # Ingest and unmarshal 0x29 StatusFeedback responses directly from the bus

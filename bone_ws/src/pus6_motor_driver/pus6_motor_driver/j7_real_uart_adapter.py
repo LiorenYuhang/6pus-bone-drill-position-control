@@ -323,6 +323,19 @@ class J7UartAdapter:
                 if written is not None and written != len(frame):
                     raise J7AdapterError(f"short UART write: {written}/{len(frame)} bytes")
             except Exception as exc:
+                elapsed_ms = (self._clock_ns() - start_ns) / 1e6
+                self.last_write_failure_audit = {
+                    "timestamp_ns": self._clock_ns(),
+                    "frame_length": len(frame),
+                    "raw_frame_hex": frame.hex(),
+                    "elapsed_write_time_ms": elapsed_ms,
+                    "serial_out_waiting": getattr(self.serial, "out_waiting", None),
+                    "serial_in_waiting": getattr(self.serial, "in_waiting", None),
+                    "write_timeout": getattr(self.serial, "write_timeout", None),
+                    "timeout_s": self.timeout_s,
+                    "exception_type": type(exc).__name__,
+                    "exception_message": str(exc),
+                }
                 raise J7AdapterError(f"UART write failed: {exc}") from exc
             self._last_tx_end_ns = self._clock_ns()
             return written

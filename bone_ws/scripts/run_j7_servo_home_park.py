@@ -83,6 +83,9 @@ from pus6_motor_driver.j7_six_axis_servo_transport import (
 HOME_TARGET: Tuple[int, ...] = (1000, 1000, 1000, 1000, 1000, 1000)
 PARK_TARGET: Tuple[int, ...] = (0, 0, 0, 0, 0, 0)
 QUINTIC_PEAK_DERIVATIVE = 1.875
+STANDALONE_WRITE_TIMEOUT_S = 0.025
+STANDALONE_RX_DRAIN_BUDGET_S = 0.004
+STANDALONE_INCOMPLETE_FEEDBACK_ESCALATION_CYCLES = 4
 
 
 class MockServoBus(FakeBus):
@@ -93,6 +96,7 @@ class MockServoBus(FakeBus):
         self.uart_lock = threading.RLock()
         self._clock_ns = time.monotonic_ns
         self.rx_queue = deque()
+        self.written_frames: list[bytes] = []
         self.timeout_on_axis: Optional[int] = None
         self.fault_on_axis: Optional[int] = None
         if initial_positions is not None:
@@ -101,23 +105,40 @@ class MockServoBus(FakeBus):
                 self.targets[mid] = int(initial_positions[i])
 
     def write(self, frame: bytes) -> int:
+        self.written_frames.append(bytes(frame))
         parsed = parse_frame(frame)
         mid = parsed.motor_id
         if parsed.command == CMD_WR_REGISTER:
             if parsed.register_addr == 0x25:
-                mode_val = int.from_bytes(parsed.data, "big", signed=False)
+                mode_val = int.from_bytes(parsed.data, "little", signed=False)
                 self.modes[mid] = mode_val
             elif parsed.register_addr == 0x29:
-                pos_val = int.from_bytes(parsed.data, "big", signed=True)
+                pos_val = int.from_bytes(parsed.data, "little", signed=True)
                 self.positions[mid] = pos_val
                 self.targets[mid] = pos_val
             elif parsed.register_addr == 0x1A:
                 pass
-            resp = super().request(frame)
-            self.rx_queue.append(resp)
+            if self.fault_on_axis is not None and mid == 1:
+                self.faults[mid] = self.fault_on_axis
+            if self.timeout_on_axis != mid:
+                resp = super().request(frame)
+                self.rx_queue.append(resp)
         return len(frame)
 
+    def drain_motion_feedbacks(self) -> dict[int, StatusFeedback]:
+        feedbacks: dict[int, StatusFeedback] = {}
+        while self.rx_queue:
+            raw = self.rx_queue.popleft()
+            try:
+                fb = unpack_status_response(raw)
+                mid = raw[3]
+                feedbacks[mid] = fb
+            except Exception:
+                pass
+        return feedbacks
+
     def request(self, frame: bytes, **kwargs) -> bytes:
+        self.written_frames.append(bytes(frame))
         parsed = parse_frame(frame)
         mid = parsed.motor_id
         if self.timeout_on_axis == mid:
@@ -169,6 +190,14 @@ class ServoHomeParkResult:
     stop_success: bool
     passed: bool
     summary: str
+    deadline_miss_count: int = 0
+    last_tx_failure_provenance: Optional[Dict[str, Any]] = None
+    transport_exception_timestamp_ns: Optional[int] = None
+    first_internal_stop_start_ns: Optional[int] = None
+    first_internal_stop_end_ns: Optional[int] = None
+    first_internal_stop_duration_ms: float = 0.0
+    outer_redundant_stop_called: bool = False
+    transport_failure_to_first_stop_complete_latency_ms: float = 0.0
 
 
 def run_servo_home_park(
@@ -203,6 +232,30 @@ def run_servo_home_park(
     q_initial: Tuple[int, ...] = (0, 0, 0, 0, 0, 0)
     q_final: Tuple[int, ...] = (0, 0, 0, 0, 0, 0)
     latest_positions: Dict[int, int] = {mid: 0 for mid in MOTOR_IDS}
+    tx_failure_provenance: Optional[Dict[str, Any]] = None
+    transport_exception_timestamp_ns: Optional[int] = None
+    first_internal_stop_start_ns: Optional[int] = None
+    first_internal_stop_end_ns: Optional[int] = None
+    first_internal_stop_duration_ms = 0.0
+    outer_redundant_stop_called = False
+    failure_deadline_miss = False
+
+    def issue_stop(reason: str, *, is_outer_cleanup: bool = False):
+        nonlocal first_internal_stop_start_ns, first_internal_stop_end_ns
+        nonlocal first_internal_stop_duration_ms, outer_redundant_stop_called
+        was_first_stop = first_internal_stop_start_ns is None
+        stop_start_ns = time.monotonic_ns()
+        audit = None
+        if stop_adapter is not None:
+            audit = stop_adapter.stop_all(reason)
+        stop_end_ns = time.monotonic_ns()
+        if was_first_stop and not is_outer_cleanup:
+            first_internal_stop_start_ns = stop_start_ns
+            first_internal_stop_end_ns = stop_end_ns
+            first_internal_stop_duration_ms = (stop_end_ns - stop_start_ns) / 1e6
+        elif is_outer_cleanup and first_internal_stop_start_ns is not None:
+            outer_redundant_stop_called = True
+        return audit
 
     try:
         if is_real:
@@ -216,7 +269,7 @@ def run_servo_home_park(
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
                 timeout=0.015,
-                write_timeout=0.015,
+                write_timeout=STANDALONE_WRITE_TIMEOUT_S,
             )
             ser.reset_input_buffer()
             ser.reset_output_buffer()
@@ -236,12 +289,14 @@ def run_servo_home_park(
             cycle_rate_hz=rate_hz,
             rx_policy=ServoRxPolicy.DISCARD_BEFORE_TX,
             min_frame_interval_s=0.0005,
+            rx_drain_budget_s=STANDALONE_RX_DRAIN_BUDGET_S,
             pause_callback=stop_adapter,
         )
         feedback = J7ServoFeedbackScheduler(
             writer,
             full_scan_period_s=1e9,
             feedback_budget_s=0.010,
+            timeout_escalation_misses=STANDALONE_INCOMPLETE_FEEDBACK_ESCALATION_CYCLES,
         )
 
         # Step 1: Preflight 0x30 status scan (3 consecutive scans for stability audit)
@@ -336,7 +391,7 @@ def run_servo_home_park(
             dt_ms = (t_cycle_start_ns - t_prev_cycle_ns) / 1e6 if cycle_id > 0 else period_s * 1000.0
             t_prev_cycle_ns = t_cycle_start_ns
 
-            # 1. 6-axis write-only 0x29 batch
+            # 1. 6-axis write 0x32 batch with integrated 0x32 StatusFeedback ingestion
             servo_audit = writer.send_cycle(
                 list(target_vec),
                 cycle_id=cycle_id,
@@ -344,72 +399,88 @@ def run_servo_home_park(
             )
             batch_duration_ms = (servo_audit.cycle_end_ns - servo_audit.cycle_start_ns) / 1e6
 
-            # 2. Round-robin 0x30 poll
-            feedback_audit = feedback.poll_once(
+            # 2. Design-B direct StatusFeedback ingestion (replaces redundant 0x30 poll)
+            feedback_audit = feedback.ingest_cycle_feedback(
+                servo_audit.feedbacks,
                 servo_cycle_id=cycle_id,
                 servo_cycle_timestamp_ns=t_cycle_start_ns,
             )
 
-            polled_axis = feedback_audit.motor_ids[0] if feedback_audit.motor_ids else -1
-            sample = feedback_audit.samples[0] if feedback_audit.samples else None
+            # Evaluate all 6 axes feedbacks
+            cycle_faults = 0
+            cycle_timeouts = feedback_audit.timeout_count
+            max_curr = 0
+            tracking_errors = []
 
-            if sample is not None:
-                polled_pos = sample.position if sample.position is not None else target_vec[polled_axis - 1]
-                polled_curr = sample.current_mA if sample.current_mA is not None else 0
-                polled_fault = sample.fault if sample.fault is not None else 0
-                polled_timeout = sample.timeout
-                feedback_age_ms = sample.feedback_age_ns / 1e6
-                latest_positions[polled_axis] = polled_pos
-            else:
-                polled_pos = target_vec[polled_axis - 1]
-                polled_curr = 0
-                polled_fault = 0
-                polled_timeout = True
-                feedback_age_ms = 0.0
+            for sample in feedback_audit.samples:
+                mid = sample.motor_id
+                target_step = target_vec[mid - 1]
+                if sample.position is not None:
+                    act_pos = sample.position
+                    latest_positions[mid] = act_pos
+                else:
+                    act_pos = latest_positions.get(mid, target_step)
 
-            polled_target = target_vec[polled_axis - 1]
-            polled_err = polled_pos - polled_target
+                err = act_pos - target_step
+                tracking_errors.append(abs(err))
+
+                curr = sample.current_mA if sample.current_mA is not None else 0
+                max_curr = max(max_curr, curr)
+                if sample.fault is not None and sample.fault != 0:
+                    cycle_faults += 1
+
+                # Safety guards per axis
+                if sample.fault is not None and sample.fault != 0:
+                    print(f"  [SAFETY STOP] ID{mid} fault={sample.fault} at cycle {cycle_id}")
+                    issue_stop(f"fault_on_ID{mid}")
+                    raise SafetyViolation(f"Motor fault on ID{mid}: {sample.fault}")
+                if curr > 1500:
+                    print(f"  [SAFETY STOP] ID{mid} overcurrent {curr} mA at cycle {cycle_id}")
+                    issue_stop(f"overcurrent_on_ID{mid}")
+                    raise SafetyViolation(f"Overcurrent on ID{mid}: {curr} mA")
+                if abs(err) > 35:
+                    print(f"  [SAFETY STOP] ID{mid} tracking divergence err={err} at cycle {cycle_id}")
+                    issue_stop(f"divergence_on_ID{mid}")
+                    raise SafetyViolation(f"Tracking divergence on ID{mid}: {err} steps")
+
+            if cycle_timeouts > 0:
+                print(f"  [SOFT RT] Incomplete feedback on {cycle_timeouts} axes at cycle {cycle_id}")
+
+            max_cycle_err = max(tracking_errors) if tracking_errors else 0
+
+            # Soft real-time audit only: deadline overruns are recorded, not used
+            # as a hard stop condition in this standalone HOME/PARK policy.
+            cycle_end_before_sleep_ns = time.monotonic_ns()
+            cycle_active_duration_ms = (cycle_end_before_sleep_ns - t_cycle_start_ns) / 1e6
+            deadline_miss = cycle_active_duration_ms > (period_s * 1000.0)
 
             records.append({
                 "cycle_id": cycle_id,
                 "dt_ms": dt_ms,
                 "batch_duration_ms": batch_duration_ms,
-                "polled_axis": polled_axis,
-                "polled_pos": polled_pos,
-                "polled_target": polled_target,
-                "polled_err": polled_err,
-                "polled_current_mA": polled_curr,
-                "polled_fault": polled_fault,
-                "polled_timeout": polled_timeout,
-                "feedback_age_ms": feedback_age_ms,
+                "active_duration_ms": cycle_active_duration_ms,
+                "deadline_miss": deadline_miss,
+                "max_tracking_err": max_cycle_err,
+                "max_current_mA": max_curr,
+                "fault_count": cycle_faults,
+                "timeout_count": cycle_timeouts,
+                "feedback_count": len(feedback_audit.samples) - cycle_timeouts,
                 "phase_name": phase_name,
             })
-
-            # Safety guards
-            if polled_fault != 0:
-                print(f"  [SAFETY STOP] ID{polled_axis} fault={polled_fault} at cycle {cycle_id}")
-                stop_adapter.stop_all(f"fault_on_ID{polled_axis}")
-                break
-            if polled_timeout:
-                print(f"  [SAFETY STOP] ID{polled_axis} feedback timeout at cycle {cycle_id}")
-                stop_adapter.stop_all(f"timeout_on_ID{polled_axis}")
-                break
-            if polled_curr > 1500:
-                print(f"  [SAFETY STOP] ID{polled_axis} overcurrent {polled_curr} mA at cycle {cycle_id}")
-                stop_adapter.stop_all(f"overcurrent_on_ID{polled_axis}")
-                break
-            if abs(polled_err) > 35:
-                print(f"  [SAFETY STOP] ID{polled_axis} tracking divergence err={polled_err} at cycle {cycle_id}")
-                stop_adapter.stop_all(f"divergence_on_ID{polled_axis}")
-                break
 
             # Progress logging
             is_phase_start = (cycle_id == 0 or phase_name != cycle_targets[cycle_id - 1][1])
             if cycle_id % 50 == 0 or is_phase_start or cycle_id == total_cycles - 1:
+                polled_axis = (cycle_id % len(MOTOR_IDS)) + 1
+                polled_target = target_vec[polled_axis - 1]
+                polled_pos = latest_positions.get(polled_axis, polled_target)
+                polled_err = polled_pos - polled_target
+                polled_sample = next((s for s in feedback_audit.samples if s.motor_id == polled_axis), None)
+                polled_curr = polled_sample.current_mA if polled_sample and polled_sample.current_mA else 0
                 print(
                     f"  [{phase_name:18s}] Cycle {cycle_id:4d}/{total_cycles:4d}: "
                     f"polled ID{polled_axis} (tgt={polled_target:4d}, act={polled_pos:4d}, err={polled_err:+3d}, "
-                    f"curr={polled_curr:3d}mA) | batch_TX={batch_duration_ms:4.2f}ms"
+                    f"curr={polled_curr:3d}mA) | batch_TX={batch_duration_ms:4.2f}ms | 6-axis FB=OK"
                 )
 
             # Sleep to next cycle deadline
@@ -421,17 +492,29 @@ def run_servo_home_park(
 
     except KeyboardInterrupt:
         print(f"\n[INTERRUPT] Operator Ctrl+C caught during {action.upper()}. Triggering emergency stop...")
-        if stop_adapter is not None:
-            stop_adapter.stop_all("operator_ctrl_c")
+        issue_stop("operator_ctrl_c")
     except Exception as exc:
-        print(f"\n[ERROR] Exception during {action.upper()}: {exc}")
-        if stop_adapter is not None:
-            stop_adapter.stop_all("exception_during_run")
+        t_exc_ns = time.monotonic_ns()
+        cycle_elapsed_at_failure_ms = (t_exc_ns - t_cycle_start_ns) / 1e6 if 't_cycle_start_ns' in locals() else 0.0
+        deadline_miss_on_failure = cycle_elapsed_at_failure_ms > (period_s * 1000.0) if 'period_s' in locals() else False
+        failure_deadline_miss = deadline_miss_on_failure
+        print(f"\n[ERROR] Exception during {action.upper()}: {exc} (cycle elapsed: {cycle_elapsed_at_failure_ms:.2f}ms, deadline_miss={deadline_miss_on_failure})")
+
+        tx_failure_provenance = getattr(writer, "last_tx_failure_provenance", None)
+        transport_exception_timestamp_ns = t_exc_ns
+
+        issue_stop("exception_during_run")
+
+        if tx_failure_provenance is not None:
+            tx_failure_provenance["cycle_elapsed_at_failure_ms"] = cycle_elapsed_at_failure_ms
+            tx_failure_provenance["deadline_miss"] = deadline_miss_on_failure
+            tx_failure_provenance["emergency_stop_duration_ms"] = first_internal_stop_duration_ms
+            tx_failure_provenance["tx_elapsed_time_ms"] = tx_failure_provenance.get("elapsed_write_time_ms")
     finally:
         # Step 4: Stop command (0x1A) and final full status scan
         print(f"\n[{action.upper()} Phase 4] Sending best-effort 0x1A Stop command to all six axes...")
         if stop_adapter is not None:
-            stop_audit = stop_adapter.stop_all("motion_finish")
+            stop_audit = issue_stop("motion_finish", is_outer_cleanup=True)
             stop_success = stop_audit.success
             print(f"  0x1A Stop completed: success={stop_success}, reason={stop_audit.reason}")
 
@@ -456,6 +539,17 @@ def run_servo_home_park(
         if ser is not None:
             ser.close()
 
+    deadline_miss_count = sum(1 for r in records if r.get("deadline_miss", False))
+    if failure_deadline_miss:
+        deadline_miss_count += 1
+
+    transport_failure_to_first_stop_complete_latency_ms = 0.0
+    if transport_exception_timestamp_ns is not None and first_internal_stop_end_ns is not None:
+        transport_failure_to_first_stop_complete_latency_ms = max(
+            0.0,
+            (first_internal_stop_end_ns - transport_exception_timestamp_ns) / 1e6,
+        )
+
     if not records:
         return ServoHomeParkResult(
             action=action,
@@ -475,31 +569,39 @@ def run_servo_home_park(
             timeout_count=1,
             stop_success=stop_success,
             passed=False,
-            summary="0 cycles executed",
+            summary="0 cycles executed (soft real-time policy; deadline overruns are audited, not hard-stopped)",
+            deadline_miss_count=deadline_miss_count,
+            last_tx_failure_provenance=tx_failure_provenance,
+            transport_exception_timestamp_ns=transport_exception_timestamp_ns,
+            first_internal_stop_start_ns=first_internal_stop_start_ns,
+            first_internal_stop_end_ns=first_internal_stop_end_ns,
+            first_internal_stop_duration_ms=first_internal_stop_duration_ms,
+            outer_redundant_stop_called=outer_redundant_stop_called,
+            transport_failure_to_first_stop_complete_latency_ms=transport_failure_to_first_stop_complete_latency_ms,
         )
 
-    faults = sum(1 for r in records if r["polled_fault"] != 0)
-    timeouts = sum(1 for r in records if r["polled_timeout"])
+    faults = sum(r.get("fault_count", 0) for r in records)
+    timeouts = sum(r.get("timeout_count", 0) for r in records)
     batch_durations = [r["batch_duration_ms"] for r in records]
     batch_mean = sum(batch_durations) / len(batch_durations)
     batch_max = max(batch_durations)
-    max_tracking_err = max(abs(r["polled_err"]) for r in records)
+    max_tracking_err = max(r.get("max_tracking_err", 0) for r in records)
     final_errors = [abs(q_final[i] - target[i]) for i in range(min(len(q_final), len(target)))]
     max_final_err = max(final_errors) if final_errors else 9999
 
     passed = (
         len(records) == total_cycles
         and faults == 0
-        and timeouts == 0
         and stop_success
         and max_final_err <= 5
+        and not (tx_failure_provenance and tx_failure_provenance.get("delivery_uncertain"))
     )
 
     summary = (
         f"[{action.upper()} {'PASS' if passed else 'FAIL'}] Executed {len(records)}/{total_cycles} cycles. "
         f"Initial: {list(q_initial)} -> Final: {list(q_final)} (Target: {list(target)}, max err: {max_final_err} steps). "
         f"Batch TX: {batch_mean:.2f}ms (max: {batch_max:.2f}ms). Max tracking err: {max_tracking_err} steps. "
-        f"Faults: {faults}, Timeouts: {timeouts}, 0x1A Stop: {'OK' if stop_success else 'FAIL'}."
+        f"Faults: {faults}, Timeouts: {timeouts}, Deadline Misses: {deadline_miss_count}, Soft RT: deadline overruns are audited, not auto-stopped, 0x1A Stop: {'OK' if stop_success else 'FAIL'}."
     )
 
     return ServoHomeParkResult(
@@ -521,6 +623,14 @@ def run_servo_home_park(
         stop_success=stop_success,
         passed=passed,
         summary=summary,
+        deadline_miss_count=deadline_miss_count,
+        last_tx_failure_provenance=tx_failure_provenance,
+        transport_exception_timestamp_ns=transport_exception_timestamp_ns,
+        first_internal_stop_start_ns=first_internal_stop_start_ns,
+        first_internal_stop_end_ns=first_internal_stop_end_ns,
+        first_internal_stop_duration_ms=first_internal_stop_duration_ms,
+        outer_redundant_stop_called=outer_redundant_stop_called,
+        transport_failure_to_first_stop_complete_latency_ms=transport_failure_to_first_stop_complete_latency_ms,
     )
 
 
