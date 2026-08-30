@@ -1,14 +1,16 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.conditions import IfCondition
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
     bringup_share = get_package_share_directory("pus6_bringup")
+    h30_share = get_package_share_directory("h30_imu")
     default_config = os.path.join(bringup_share, "config", "system_params.yaml")
 
     mode_arg = DeclareLaunchArgument(
@@ -20,7 +22,19 @@ def generate_launch_description():
     launch_imu_arg = DeclareLaunchArgument(
         "launch_imu",
         default_value="false",
-        description="Whether to launch H30 IMU node",
+        description="Whether to launch the legacy single H30 IMU node",
+    )
+
+    launch_dual_imu_arg = DeclareLaunchArgument(
+        "launch_dual_imu",
+        default_value="false",
+        description="Whether to launch dual timed H30 IMU nodes without relative attitude",
+    )
+
+    launch_relative_imu_arg = DeclareLaunchArgument(
+        "launch_relative_imu",
+        default_value="false",
+        description="Whether to launch dual timed H30 IMU nodes plus relative attitude observer",
     )
 
     launch_fk_arg = DeclareLaunchArgument(
@@ -88,9 +102,21 @@ def generate_launch_description():
         condition=IfCondition(LaunchConfiguration("launch_imu")),
     )
 
+    dual_imu_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(h30_share, "launch", "h30_dual.launch.py")),
+        condition=IfCondition(LaunchConfiguration("launch_dual_imu")),
+    )
+
+    relative_imu_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(h30_share, "launch", "h30_relative.launch.py")),
+        condition=IfCondition(LaunchConfiguration("launch_relative_imu")),
+    )
+
     return LaunchDescription([
         mode_arg,
         launch_imu_arg,
+        launch_dual_imu_arg,
+        launch_relative_imu_arg,
         launch_fk_arg,
         fixed_lag_delay_arg,
         config_arg,
@@ -99,4 +125,6 @@ def generate_launch_description():
         control_node,
         fk_node,
         imu_node,
+        dual_imu_launch,
+        relative_imu_launch,
     ])

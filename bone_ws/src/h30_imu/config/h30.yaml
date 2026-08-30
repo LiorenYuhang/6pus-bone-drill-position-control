@@ -5,4 +5,16 @@ h30_imu:
     frame_id: imu_link
     world_frame: world
     imu_topic: imu/data
+    temperature_topic: imu/temperature
+    euler_topic: imu/euler
+    timed_topic: imu/timed
+    diagnostics_topic: imu/diagnostics
+    # Default stays ROS sensor-data QoS. Use timed_qos_profile:=calibration only for offline calibration recording.
+    timed_qos_profile: sensor_data
+    timed_qos_depth: 10
+    timed_qos_reliability: best_effort
+    source_capture_enabled: false
+    source_capture_path: ""
+    source_capture_queue_capacity: 65536
     publish_euler: true
+    publish_tf: true

@@ -1,0 +1,52 @@
+h30_relative_attitude:
+  ros__parameters:
+    base_topic: /pus6/imu_base/timed
+    platform_topic: /pus6/imu_platform/timed
+    relative_topic: /pus6/imu_relative/data
+    quaternion_topic: /pus6/imu_relative/quaternion
+    angular_velocity_topic: /pus6/imu_relative/angular_velocity
+    diagnostics_topic: /pus6/imu_relative/diagnostics
+    frame_id: pus6_base_imu_link
+    base_link_frame: base_link
+    platform_link_frame: platform_link
+    base_imu_frame: pus6_base_imu_link
+    platform_imu_frame: pus6_platform_imu_link
+    robot_extrinsics_status: UNCALIBRATED_UNSET
+
+    # J9-B frame contract: base/platform IMU sensor frames are named for data
+    # routing only. No final base_link->base IMU or platform_link->platform IMU
+    # extrinsic calibration is applied in this node.
+
+    # J9-D affine clock contract.
+    # Formula and units:
+    #   host_monotonic_us = affine_a * unwrapped_0x51_sample_timestamp_us + affine_b_us
+    # - affine_a is dimensionless. ppm equivalent = (affine_a - 1.0) * 1e6.
+    # - affine_b_us is an additive host-monotonic intercept in microseconds.
+    # - with *_anchor_to_first_host_arrival=true, effective_b_us is computed at
+    #   runtime from the first observed sample: host_arrival_us - a * device_us
+    #   plus the configured affine_b_us offset. No final calibration is implied.
+    # - 0x52 data_ready_timestamp_us is kept as diagnostic latency, not as the
+    #   measurement timestamp.
+    base_clock_affine_a: 0.999985373783
+    base_clock_affine_b_us: 0.0
+    base_clock_anchor_to_first_host_arrival: true
+    platform_clock_affine_a: 0.999982444509
+    platform_clock_affine_b_us: 0.0
+    platform_clock_anchor_to_first_host_arrival: true
+
+    # J5-B3-5A Fortified startup stationary gyro bias auto-initialization.
+    enable_auto_bias_init: true
+    bias_init_duration_s: 6.0
+    max_static_gyro_norm: 0.012
+    max_static_gyro_std: 0.004
+    bias_init_timeout_s: 30.0
+    trim_ratio: 0.05
+
+    # J5-B3-2A/B frozen sensor-frame calibration & fallback, SI units.
+    base_gyro_bias: [-7.9678928e-05, -7.09914984e-05, 4.02002268e-04]
+    platform_gyro_bias: [1.13674e-03, -9.5788e-04, 9.0635e-04]
+    # R_SB_SP, Platform sensor frame to Base sensor frame, [x, y, z, w].
+    r_sb_sp_xyzw: [-0.00271995, 0.00834791, 0.01094542, 0.99990155]
+
+    max_interpolation_gap_us: 15000.0
+    max_dt_s: 0.020
