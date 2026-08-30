@@ -1,0 +1,803 @@
+{
+  "stage": "J9-E1D-5R2",
+  "source_raw_artifact": "/home/lyapunov/bone_drill/reports/j9_e1d_5_static_gravity_closure_20260830/j9_e1d_5_raw.json",
+  "data_acquisition_status": {
+    "status": "PASS",
+    "accepted_dwell_count": 18,
+    "fit_valid_count": 9,
+    "validation_valid_count": 9,
+    "invalid_dwell_poses": [],
+    "required_fit_pose_count": 9,
+    "required_validation_pose_count": 9
+  },
+  "calibration_result": {
+    "status": "PASS",
+    "estimator": "solve_gravity_wahba",
+    "convention": "u_P = R_P_IP * u_I; Euler XYZ degrees via scipy Rotation.as_euler('xyz')",
+    "fit": {
+      "status": "PASS",
+      "traversal": "fit",
+      "pose_count": 9,
+      "rotation_matrix_R_P_IP": [
+        [
+          -0.008632055072738065,
+          -0.99992315180766,
+          0.008898207923849669
+        ],
+        [
+          0.9995310242932023,
+          -0.008366532608523491,
+          0.029457301429237904
+        ],
+        [
+          -0.029380590542119486,
+          0.009148311928730491,
+          0.9995264325110425
+        ]
+      ],
+      "quaternion_xyzw_R_P_IP": [
+        -0.0072118829847551925,
+        0.013593104439130362,
+        0.7100220102560737,
+        0.7040113359935656
+      ],
+      "euler_xyz_deg_R_P_IP": [
+        0.5243933631209545,
+        1.6836261199718294,
+        90.49480007831087
+      ],
+      "gravity_direction_residuals_rad": [
+        0.0009029144965929837,
+        0.0010837366181806064,
+        0.002336395114489782,
+        0.0018984713765676869,
+        0.001212413826073596,
+        0.0007303390159909223,
+        0.0011680592652588903,
+        0.0021322306505596926,
+        0.0015750011519366173
+      ],
+      "gravity_direction_residual_rms_rad": 0.0015437118445587878,
+      "gravity_direction_residual_p95_rad": 0.0022547293289177464,
+      "observability": {
+        "singular_values": [
+          2.9972647023136236,
+          2.997259696139929,
+          0.1812142879576658
+        ],
+        "rank": 3,
+        "condition_number": 16.53989172759836
+      },
+      "dwells": [
+        {
+          "pose": "home",
+          "dwell_start_monotonic_ns": 10675020472799,
+          "dwell_end_monotonic_ns": 10680049786851,
+          "imu_sample_count": 1006,
+          "fk_sample_count": 399,
+          "platform_gravity_direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "imu_gravity_direction": [
+            0.029560666429268554,
+            -0.010032979561397733,
+            -0.9995126343980741
+          ],
+          "mean_acceleration_m_s2": [
+            -0.2900548528827041,
+            0.09844549403578531,
+            9.807407110337971
+          ],
+          "mean_fk_quaternion_xyzw": [
+            2.636517526942505e-05,
+            0.00013553045434488986,
+            0.00023176786901565112,
+            -0.9999999636100134
+          ],
+          "mean_fk_euler_xyz_deg": [
+            -0.003017627035715463,
+            -0.01553134590719058,
+            -0.026558232934793324
+          ]
+        },
+        {
+          "pose": "r-3_p-3",
+          "dwell_start_monotonic_ns": 10685015810912,
+          "dwell_end_monotonic_ns": 10690025783208,
+          "imu_sample_count": 1002,
+          "fk_sample_count": 365,
+          "platform_gravity_direction": [
+            -0.052335956242943835,
+            0.052264231633826735,
+            -0.9972609476841365
+          ],
+          "imu_gravity_direction": [
+            0.08096638209334447,
+            0.04243415652723551,
+            -0.9958131287197094
+          ],
+          "mean_acceleration_m_s2": [
+            -0.794341079840319,
+            -0.4163109780439127,
+            9.769675457085823
+          ],
+          "mean_fk_quaternion_xyzw": [
+            0.02556946208137638,
+            0.02580672396410233,
+            0.0011038307196412547,
+            -0.99933928030717
+          ],
+          "mean_fk_euler_xyz_deg": [
+            -2.930028221594669,
+            -2.9598293754184177,
+            -0.050859112236109866
+          ]
+        },
+        {
+          "pose": "r-3_p0",
+          "dwell_start_monotonic_ns": 10702052984582,
+          "dwell_end_monotonic_ns": 10707094283856,
+          "imu_sample_count": 1008,
+          "fk_sample_count": 341,
+          "platform_gravity_direction": [
+            0.0,
+            0.052335956242943835,
+            -0.9986295347545738
+          ],
+          "imu_gravity_direction": [
+            0.07968249103565674,
+            -0.00832796621550034,
+            -0.9967855063157098
+          ],
+          "mean_acceleration_m_s2": [
+            -0.781906077380953,
+            0.08172042956349203,
+            9.781228411706369
+          ],
+          "mean_fk_quaternion_xyzw": [
+            0.02590244969420518,
+            0.0006840902889413414,
+            -0.00010219804459467855,
+            -0.9996642359691953
+          ],
+          "mean_fk_euler_xyz_deg": [
+            -2.9685441745578096,
+            -0.07806133155526859,
+            0.01373763222485052
+          ]
+        },
+        {
+          "pose": "r-3_p+3",
+          "dwell_start_monotonic_ns": 10711630790403,
+          "dwell_end_monotonic_ns": 10716671152010,
+          "imu_sample_count": 1008,
+          "fk_sample_count": 266,
+          "platform_gravity_direction": [
+            0.052335956242943835,
+            0.052264231633826735,
+            -0.9972609476841365
+          ],
+          "imu_gravity_direction": [
+            0.07947375976830459,
+            -0.0609117479930993,
+            -0.9949742109545932
+          ],
+          "mean_acceleration_m_s2": [
+            -0.7800427857142862,
+            0.5978548105158731,
+            9.765769953373022
+          ],
+          "mean_fk_quaternion_xyzw": [
+            0.02607706564987804,
+            -0.02562765912870213,
+            -0.002619209877436569,
+            -0.9993279489108138
+          ],
+          "mean_fk_euler_xyz_deg": [
+            -2.9837958449160165,
+            2.943861630855828,
+            0.2236524795756623
+          ]
+        },
+        {
+          "pose": "r0_p+3",
+          "dwell_start_monotonic_ns": 10721623978875,
+          "dwell_end_monotonic_ns": 10726631767477,
+          "imu_sample_count": 1002,
+          "fk_sample_count": 291,
+          "platform_gravity_direction": [
+            0.052335956242943835,
+            0.0,
+            -0.9986295347545738
+          ],
+          "imu_gravity_direction": [
+            0.02874980587095679,
+            -0.060265746134778336,
+            -0.9977682539072893
+          ],
+          "mean_acceleration_m_s2": [
+            -0.2821346247504993,
+            0.5914145558882231,
+            9.791543399201586
+          ],
+          "mean_fk_quaternion_xyzw": [
+            4.3407224589161145e-05,
+            -0.02564676196187654,
+            -0.0017781410879202102,
+            -0.9996694853455089
+          ],
+          "mean_fk_euler_xyz_deg": [
+            0.00025365934479449286,
+            2.9392289126853264,
+            0.2038336200815043
+          ]
+        },
+        {
+          "pose": "r+3_p+3",
+          "dwell_start_monotonic_ns": 10731230956343,
+          "dwell_end_monotonic_ns": 10736237306457,
+          "imu_sample_count": 1002,
+          "fk_sample_count": 293,
+          "platform_gravity_direction": [
+            0.052335956242943835,
+            -0.052264231633826735,
+            -0.9972609476841365
+          ],
+          "imu_gravity_direction": [
+            -0.0226951400867448,
+            -0.060799308441748856,
+            -0.9978919654498918
+          ],
+          "mean_acceleration_m_s2": [
+            0.2227069231536924,
+            0.5966223103792406,
+            9.792292465069863
+          ],
+          "mean_fk_quaternion_xyzw": [
+            0.025884276184386993,
+            0.02627338365458709,
+            0.002487012562274074,
+            0.9993165305979204
+          ],
+          "mean_fk_euler_xyz_deg": [
+            2.9770045414135837,
+            3.00264771276579,
+            0.36322696007723004
+          ]
+        },
+        {
+          "pose": "r+3_p0",
+          "dwell_start_monotonic_ns": 10741755327405,
+          "dwell_end_monotonic_ns": 10746763769262,
+          "imu_sample_count": 1002,
+          "fk_sample_count": 244,
+          "platform_gravity_direction": [
+            0.0,
+            -0.052335956242943835,
+            -0.9986295347545738
+          ],
+          "imu_gravity_direction": [
+            -0.021803709525775837,
+            -0.008667966533375746,
+            -0.9997246944069611
+          ],
+          "mean_acceleration_m_s2": [
+            0.21391923552894218,
+            0.0850426287425151,
+            9.808438427145699
+          ],
+          "mean_fk_quaternion_xyzw": [
+            0.026279089682694993,
+            0.00033014778215834095,
+            0.0007397289258042395,
+            0.9996543168760925
+          ],
+          "mean_fk_euler_xyz_deg": [
+            3.0117361834179692,
+            0.035591481948719465,
+            0.08573163142013251
+          ]
+        },
+        {
+          "pose": "r+3_p-3",
+          "dwell_start_monotonic_ns": 10752999350702,
+          "dwell_end_monotonic_ns": 10758042502234,
+          "imu_sample_count": 1009,
+          "fk_sample_count": 235,
+          "platform_gravity_direction": [
+            -0.052335956242943835,
+            -0.052264231633826735,
+            -0.9972609476841365
+          ],
+          "imu_gravity_direction": [
+            -0.02075014111245783,
+            0.04241364079537545,
+            -0.9988846353399845
+          ],
+          "mean_acceleration_m_s2": [
+            0.20353738156590692,
+            -0.41603386422200134,
+            9.79802315857284
+          ],
+          "mean_fk_quaternion_xyzw": [
+            0.026446905373699175,
+            -0.02596624821879978,
+            0.0015771705386162865,
+            0.9993116769470303
+          ],
+          "mean_fk_euler_xyz_deg": [
+            3.0293177391533517,
+            -2.9795873174549423,
+            0.10205093756671108
+          ]
+        },
+        {
+          "pose": "r0_p-3",
+          "dwell_start_monotonic_ns": 10763191503967,
+          "dwell_end_monotonic_ns": 10768206450137,
+          "imu_sample_count": 1003,
+          "fk_sample_count": 211,
+          "platform_gravity_direction": [
+            -0.052335956242943835,
+            0.0,
+            -0.9986295347545738
+          ],
+          "imu_gravity_direction": [
+            0.030780440705027397,
+            0.04197006932107734,
+            -0.9986446203485942
+          ],
+          "mean_acceleration_m_s2": [
+            -0.3019370199401794,
+            -0.4117003320039878,
+            9.796083933200398
+          ],
+          "mean_fk_quaternion_xyzw": [
+            0.00024181398543422588,
+            -0.025651716972990735,
+            -4.490010071962677e-05,
+            0.999670910313146
+          ],
+          "mean_fk_euler_xyz_deg": [
+            0.027869382833922637,
+            -2.939791367347815,
+            -0.005861998850162897
+          ]
+        }
+      ]
+    },
+    "validation": {
+      "status": "PASS",
+      "traversal": "validation",
+      "pose_count": 9,
+      "rotation_matrix_R_P_IP": [
+        [
+          -0.02772423844199412,
+          -0.9995783942367192,
+          0.008625565370058095
+        ],
+        [
+          0.9991788463569202,
+          -0.027456041271028728,
+          0.029795952587189933
+        ],
+        [
+          -0.029546566563070403,
+          0.009444552549764918,
+          0.9995187846316186
+        ]
+      ],
+      "quaternion_xyzw_R_P_IP": [
+        -0.007297571469597027,
+        0.013687700129555115,
+        0.7167110757384458,
+        0.6971976952268626
+      ],
+      "euler_xyz_deg_R_P_IP": [
+        0.5413774153789761,
+        1.6931399758811367,
+        91.5893795099681
+      ],
+      "gravity_direction_residuals_rad": [
+        0.0008696883315920276,
+        0.0019580983879162327,
+        0.00035046485105981077,
+        0.0010946276419637915,
+        0.0019139854041680736,
+        0.0017697264680037318,
+        0.000561695054499143,
+        0.002375705937460242,
+        0.0026955205636353683
+      ],
+      "gravity_direction_residual_rms_rad": 0.0016974531713613461,
+      "gravity_direction_residual_p95_rad": 0.0025675947131653175,
+      "observability": {
+        "singular_values": [
+          2.9972647023136236,
+          2.997259696139929,
+          0.1812142879576658
+        ],
+        "rank": 3,
+        "condition_number": 16.53989172759836
+      },
+      "dwells": [
+        {
+          "pose": "home",
+          "dwell_start_monotonic_ns": 10779354020437,
+          "dwell_end_monotonic_ns": 10784379515756,
+          "imu_sample_count": 1005,
+          "fk_sample_count": 209,
+          "platform_gravity_direction": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "imu_gravity_direction": [
+            0.02960584800836308,
+            -0.008576908245397242,
+            -0.9995248523216698
+          ],
+          "mean_acceleration_m_s2": [
+            -0.2904929144278605,
+            0.08415672039800998,
+            9.807349119403
+          ],
+          "mean_fk_quaternion_xyzw": [
+            6.555661566899809e-05,
+            -0.0006578023817139789,
+            -0.0009229402712647954,
+            0.9999993555895985
+          ],
+          "mean_fk_euler_xyz_deg": [
+            0.007581806481245743,
+            -0.07537164027134276,
+            -0.10576618956665504
+          ]
+        },
+        {
+          "pose": "r+3_p+3",
+          "dwell_start_monotonic_ns": 10789570122873,
+          "dwell_end_monotonic_ns": 10794582210919,
+          "imu_sample_count": 1002,
+          "fk_sample_count": 196,
+          "platform_gravity_direction": [
+            0.052335956242943835,
+            -0.052264231633826735,
+            -0.9972609476841365
+          ],
+          "imu_gravity_direction": [
+            -0.022407156248569635,
+            -0.06106957591654685,
+            -0.9978819700977793
+          ],
+          "mean_acceleration_m_s2": [
+            0.21988874750499005,
+            0.5992957075848303,
+            9.792541906187651
+          ],
+          "mean_fk_quaternion_xyzw": [
+            0.02569717330449583,
+            0.026261544740790344,
+            0.0016703317760159862,
+            0.9993233693573588
+          ],
+          "mean_fk_euler_xyz_deg": [
+            2.9530760638358524,
+            3.003772310605294,
+            0.26897877460103503
+          ]
+        },
+        {
+          "pose": "r0_p+3",
+          "dwell_start_monotonic_ns": 10799145611148,
+          "dwell_end_monotonic_ns": 10804162929004,
+          "imu_sample_count": 1003,
+          "fk_sample_count": 197,
+          "platform_gravity_direction": [
+            0.052335956242943835,
+            0.0,
+            -0.9986295347545738
+          ],
+          "imu_gravity_direction": [
+            0.02783744708913897,
+            -0.06147177756805774,
+            -0.9977205506063221
+          ],
+          "mean_acceleration_m_s2": [
+            -0.27320611166500525,
+            0.6033047956131602,
+            9.791966601196423
+          ],
+          "mean_fk_quaternion_xyzw": [
+            0.0001432200234335771,
+            0.0264180444532075,
+            0.0015421945818553091,
+            0.9996497826995039
+          ],
+          "mean_fk_euler_xyz_deg": [
+            0.021104178117989914,
+            3.027608158273011,
+            0.1773419745958219
+          ]
+        },
+        {
+          "pose": "r-3_p+3",
+          "dwell_start_monotonic_ns": 10809153444007,
+          "dwell_end_monotonic_ns": 10814179451477,
+          "imu_sample_count": 1005,
+          "fk_sample_count": 206,
+          "platform_gravity_direction": [
+            0.052335956242943835,
+            0.052264231633826735,
+            -0.9972609476841365
+          ],
+          "imu_gravity_direction": [
+            0.07943960560797521,
+            -0.062424760892233595,
+            -0.9948831581087283
+          ],
+          "mean_acceleration_m_s2": [
+            -0.7797092646766165,
+            0.6127065213930342,
+            9.764897618905467
+          ],
+          "mean_fk_quaternion_xyzw": [
+            0.025979622819333484,
+            -0.025917160286674124,
+            -0.0017452030056509633,
+            -0.9993249292734115
+          ],
+          "mean_fk_euler_xyz_deg": [
+            -2.9751959509525436,
+            2.9744142914915304,
+            0.12285957362184027
+          ]
+        },
+        {
+          "pose": "r-3_p0",
+          "dwell_start_monotonic_ns": 10820373369383,
+          "dwell_end_monotonic_ns": 10825398977253,
+          "imu_sample_count": 1005,
+          "fk_sample_count": 187,
+          "platform_gravity_direction": [
+            0.0,
+            0.052335956242943835,
+            -0.9986295347545738
+          ],
+          "imu_gravity_direction": [
+            0.08012718808459385,
+            -0.011791855192476818,
+            -0.9967148969894931
+          ],
+          "mean_acceleration_m_s2": [
+            -0.786235869651741,
+            0.11570578905472646,
+            9.780113623880599
+          ],
+          "mean_fk_quaternion_xyzw": [
+            0.025924127376966134,
+            -0.00038241048041898207,
+            -0.0005220714273227818,
+            -0.9996637038641505
+          ],
+          "mean_fk_euler_xyz_deg": [
+            -2.9709964201142647,
+            0.045357191409403176,
+            0.05866886698012005
+          ]
+        },
+        {
+          "pose": "r-3_p-3",
+          "dwell_start_monotonic_ns": 10830824750041,
+          "dwell_end_monotonic_ns": 10835871451520,
+          "imu_sample_count": 1009,
+          "fk_sample_count": 178,
+          "platform_gravity_direction": [
+            -0.052335956242943835,
+            0.052264231633826735,
+            -0.9972609476841365
+          ],
+          "imu_gravity_direction": [
+            0.08141845019441134,
+            0.04107252363429318,
+            -0.9958333614467084
+          ],
+          "mean_acceleration_m_s2": [
+            -0.7987529157581762,
+            -0.4029405857284444,
+            9.769589069375618
+          ],
+          "mean_fk_quaternion_xyzw": [
+            0.02592104285798528,
+            0.025734245773366027,
+            -0.0009813862424874508,
+            -0.999332219540966
+          ],
+          "mean_fk_euler_xyz_deg": [
+            -2.976512050214564,
+            -2.9453401010805123,
+            0.18907286027883033
+          ]
+        },
+        {
+          "pose": "r0_p-3",
+          "dwell_start_monotonic_ns": 10841397675313,
+          "dwell_end_monotonic_ns": 10846409071509,
+          "imu_sample_count": 1002,
+          "fk_sample_count": 184,
+          "platform_gravity_direction": [
+            -0.052335956242943835,
+            0.0,
+            -0.9986295347545738
+          ],
+          "imu_gravity_direction": [
+            0.03102275804978998,
+            0.04232486751935473,
+            -0.9986221477978813
+          ],
+          "mean_acceleration_m_s2": [
+            -0.30430802594810347,
+            -0.4151725279441115,
+            9.795671099800417
+          ],
+          "mean_fk_quaternion_xyzw": [
+            9.198885355775833e-05,
+            0.02628426591447741,
+            0.0018251203446285867,
+            -0.9996528386590596
+          ],
+          "mean_fk_euler_xyz_deg": [
+            -0.005047280326921709,
+            -3.0123161522484083,
+            -0.209083074414089
+          ]
+        },
+        {
+          "pose": "r+3_p-3",
+          "dwell_start_monotonic_ns": 10851576887097,
+          "dwell_end_monotonic_ns": 10856611710497,
+          "imu_sample_count": 1007,
+          "fk_sample_count": 175,
+          "platform_gravity_direction": [
+            -0.052335956242943835,
+            -0.052264231633826735,
+            -0.9972609476841365
+          ],
+          "imu_gravity_direction": [
+            -0.019730782778858563,
+            0.04255401699044943,
+            -0.998899320176418
+          ],
+          "mean_acceleration_m_s2": [
+            0.19352592949354508,
+            -0.41738362760675285,
+            9.797529148957304
+          ],
+          "mean_fk_quaternion_xyzw": [
+            0.02591595970181331,
+            -0.026016053000154082,
+            -0.0003317923935020424,
+            0.9993254814788
+          ],
+          "mean_fk_euler_xyz_deg": [
+            2.9740903694842995,
+            -2.9795666218251893,
+            -0.11541224093233124
+          ]
+        },
+        {
+          "pose": "r+3_p0",
+          "dwell_start_monotonic_ns": 10861751108925,
+          "dwell_end_monotonic_ns": 10866781900906,
+          "imu_sample_count": 1006,
+          "fk_sample_count": 167,
+          "platform_gravity_direction": [
+            0.0,
+            -0.052335956242943835,
+            -0.9986295347545738
+          ],
+          "imu_gravity_direction": [
+            -0.02186094056872767,
+            -0.005463467336264525,
+            -0.9997460926665911
+          ],
+          "mean_acceleration_m_s2": [
+            0.21447144930417497,
+            0.053600518886679833,
+            9.808223610337965
+          ],
+          "mean_fk_quaternion_xyzw": [
+            0.0263675278961575,
+            -0.0005244240652567678,
+            -0.0016094056821619811,
+            0.9996508831914247
+          ],
+          "mean_fk_euler_xyz_deg": [
+            3.0219402723640973,
+            -0.05521078670885188,
+            -0.1859448786157771
+          ]
+        }
+      ]
+    },
+    "fit_vs_validation_so3_delta_deg": 1.0942520793147956,
+    "reference_comparisons": {
+      "E1D-1 clean": {
+        "reference_euler_xyz_deg_R_P_IP": [
+          0.524,
+          1.68,
+          90.492
+        ],
+        "fit_so3_delta_deg": 0.004591216228715042,
+        "validation_so3_delta_deg": 1.097084270145767
+      },
+      "E1D-3": {
+        "reference_euler_xyz_deg_R_P_IP": [
+          0.53,
+          1.69,
+          90.4
+        ],
+        "fit_so3_delta_deg": 0.09534362480029694,
+        "validation_so3_delta_deg": 1.1891021856566004
+      },
+      "E1C-2 dynamic": {
+        "reference_euler_xyz_deg_R_P_IP": [
+          -1.5887907912730772,
+          0.04626813473352346,
+          90.49374663690152
+        ],
+        "fit_so3_delta_deg": 2.6732224797019417,
+        "validation_so3_delta_deg": 2.89462068171835
+      }
+    },
+    "observability_interpretation": "static gravity strongly constrains roll/pitch-like tilt; yaw-like rotation remains weakly observable",
+    "freeze_recommendation": "DO_NOT_FREEZE_R_P_IP"
+  },
+  "hardware_teardown_result": {
+    "status": "FAIL",
+    "park_passed": false,
+    "park_summary": "[PARK FAIL] Executed 748/1038 cycles. Initial: [1001, 999, 998, 998, 1000, 1001] -> Final: [59, 60, 59, 60, 60, 60] (Target: [0, 0, 0, 0, 0, 0], max err: 60 steps). Batch TX: 6.20ms (max: 11.01ms). Max tracking err: 8 steps. Faults: 0, Timeouts: 0, Deadline Misses: 1, Soft RT: deadline overruns are audited, not auto-stopped, 0x1A Stop: OK.",
+    "final_readonly_status": "PASS",
+    "final_positions_steps": {
+      "1": 59,
+      "2": 61,
+      "3": 59,
+      "4": 60,
+      "5": 60,
+      "6": 60
+    },
+    "final_currents_ma": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0,
+      "6": 0
+    },
+    "final_faults": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0,
+      "6": 0
+    },
+    "note": "hardware teardown is reported separately from accepted static calibration dwells"
+  },
+  "scientific_closure": {
+    "status": "STATIC_GRAVITY_SCIENTIFIC_CLOSURE_NOT_FROZEN",
+    "data_acquisition_status": "PASS",
+    "calibration_status": "PASS",
+    "hardware_teardown_status": "FAIL",
+    "findings": [
+      "static gravity FIT estimates are highly repeatable across E1D-1/E1D-3/E1D-5",
+      "gravity-only data strongly supports roll/pitch consistency",
+      "yaw-like orientation remains weakly observable",
+      "static-vs-dynamic E1C discrepancy remains unresolved",
+      "full R_P_IP is not frozen or written to runtime configuration"
+    ]
+  },
+  "robot_extrinsics_status": "UNCALIBRATED_UNSET"
+}
