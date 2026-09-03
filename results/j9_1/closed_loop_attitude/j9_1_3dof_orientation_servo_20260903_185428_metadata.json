@@ -1,0 +1,92 @@
+{
+  "csv_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_3dof_orientation_servo_20260903_185428.csv",
+  "metadata_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_3dof_orientation_servo_20260903_185428_metadata.json",
+  "start_time": "2026-09-03 18:54:28",
+  "hardware_mode": "active",
+  "experiment_type": "3dof_orientation_servo",
+  "active_axes": [
+    "yaw"
+  ],
+  "ref_rpy_deg": [
+    0.0,
+    0.0,
+    2.0
+  ],
+  "kp": {
+    "roll": 0.5,
+    "pitch": 0.5,
+    "yaw": 0.5
+  },
+  "residual_limits_deg": {
+    "roll": 0.25,
+    "pitch": 0.25,
+    "yaw": 0.5
+  },
+  "stages_executed": [
+    "yaw_pos_closed_loop",
+    "yaw_ret_home"
+  ],
+  "stage_metrics": {
+    "yaw_pos_closed_loop": {
+      "count": 251,
+      "total_stage_count": 501,
+      "mean_plat_r": 0.07907244243345547,
+      "mean_plat_p": -0.008803899139468812,
+      "mean_plat_y": 1.3480194412931248,
+      "mean_error": 0.6519805587068751,
+      "max_error": 0.6536628503839392,
+      "mean_residual": 0.3259868610350283,
+      "max_residual": 0.3268314251919696,
+      "mean_cmd": 2.3259868610350285,
+      "min_cmd": 2.3248748983584786,
+      "max_cmd": 2.32683142519197,
+      "peak_meas": 1.3541411771376384,
+      "abs_overshoot_deg": 0.0,
+      "overshoot_pct": 0.0
+    },
+    "yaw_ret_home": {
+      "count": 243,
+      "total_stage_count": 485,
+      "mean_plat_r": -0.027055505438721875,
+      "mean_plat_p": 0.016686910015458876,
+      "mean_plat_y": 0.07495513767399467,
+      "mean_error": -0.07495513767399467,
+      "max_error": -0.0782720464390692,
+      "mean_residual": -0.03745703306327175,
+      "max_residual": -0.0391360232195346,
+      "mean_cmd": -0.03745703306327175,
+      "min_cmd": -0.0391360232195346,
+      "max_cmd": -0.035399882756522075,
+      "peak_meas": 1.3479939364924687,
+      "abs_overshoot_deg": 1.3479939364924687,
+      "overshoot_pct": 0.0
+    }
+  },
+  "status": "PASS",
+  "end_time": "2026-09-03 18:54:40",
+  "total_recorded_samples": 1181,
+  "total_imu_samples": 1545,
+  "final_write_count": 229,
+  "final_motor_steps": [
+    1000,
+    999,
+    999,
+    1000,
+    999,
+    1000
+  ],
+  "final_motor_faults": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "q0_xyzw": [
+    0.013866308588795876,
+    0.007480716470066499,
+    -0.6923406101293992,
+    0.7213988105984556
+  ]
+}

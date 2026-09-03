@@ -1,0 +1,92 @@
+{
+  "csv_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_3dof_orientation_servo_20260903_183743.csv",
+  "metadata_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_3dof_orientation_servo_20260903_183743_metadata.json",
+  "start_time": "2026-09-03 18:37:43",
+  "hardware_mode": "active",
+  "experiment_type": "3dof_orientation_servo",
+  "active_axes": [
+    "roll"
+  ],
+  "ref_rpy_deg": [
+    0.5,
+    0.0,
+    0.0
+  ],
+  "kp": {
+    "roll": 0.5,
+    "pitch": 0.5,
+    "yaw": 0.5
+  },
+  "residual_limits_deg": {
+    "roll": 0.25,
+    "pitch": 0.25,
+    "yaw": 0.5
+  },
+  "stages_executed": [
+    "roll_pos_closed_loop",
+    "roll_ret_home"
+  ],
+  "stage_metrics": {
+    "roll_pos_closed_loop": {
+      "count": 246,
+      "total_stage_count": 491,
+      "mean_plat_r": 0.44899621608037216,
+      "mean_plat_p": -0.0287419349125666,
+      "mean_plat_y": -0.058197306850100314,
+      "mean_error": 0.05100378391962789,
+      "max_error": 0.07979795028333375,
+      "mean_residual": 0.02572124251608377,
+      "max_residual": 0.03981697288004252,
+      "mean_cmd": 0.5257212425160839,
+      "min_cmd": 0.5197995895781651,
+      "max_cmd": 0.5398169728800427,
+      "peak_meas": 0.6048953629185118,
+      "abs_overshoot_deg": 0.10489536291851176,
+      "overshoot_pct": 20.97907258370235
+    },
+    "roll_ret_home": {
+      "count": 257,
+      "total_stage_count": 514,
+      "mean_plat_r": 0.03004685971833668,
+      "mean_plat_p": -0.018175814482250106,
+      "mean_plat_y": -0.01570973572741246,
+      "mean_error": -0.03004685971833668,
+      "max_error": -0.03220603451807025,
+      "mean_residual": -0.015024345956845802,
+      "max_residual": -0.016102605921261066,
+      "mean_cmd": -0.015024345956845802,
+      "min_cmd": -0.016102605921261066,
+      "max_cmd": -0.013256816838795244,
+      "peak_meas": 0.4597478762365782,
+      "abs_overshoot_deg": 0.4597478762365782,
+      "overshoot_pct": 0.0
+    }
+  },
+  "status": "PASS",
+  "end_time": "2026-09-03 18:37:54",
+  "total_recorded_samples": 1194,
+  "total_imu_samples": 1515,
+  "final_write_count": 229,
+  "final_motor_steps": [
+    999,
+    999,
+    999,
+    999,
+    999,
+    1000
+  ],
+  "final_motor_faults": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "q0_xyzw": [
+    0.014170968755137353,
+    0.007256895704868048,
+    -0.691991601397453,
+    0.7217299666112377
+  ]
+}
