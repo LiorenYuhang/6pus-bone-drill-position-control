@@ -1,0 +1,89 @@
+{
+  "csv_path": "/home/lyapunov/bone_drill/results/j9_1/open_loop_attitude/j9_1_open_loop_attitude_20260903_161349.csv",
+  "metadata_path": "/home/lyapunov/bone_drill/results/j9_1/open_loop_attitude/j9_1_open_loop_attitude_20260903_161349_metadata.json",
+  "start_time": "2026-09-03 16:13:50",
+  "hardware_mode": "active",
+  "target_angle_deg": 2.0,
+  "dofs_requested": [
+    "yaw"
+  ],
+  "stages_executed": [
+    "yaw_pos",
+    "yaw_ret1",
+    "yaw_neg",
+    "yaw_ret2"
+  ],
+  "dof_results": {
+    "yaw": {
+      "pos_stage": "yaw_pos",
+      "pos_cmd_deg": 2.0,
+      "pos_meas": {
+        "count": 238,
+        "total_stage_count": 475,
+        "mean_r": -0.050713637646513786,
+        "min_r": -0.055367141993507445,
+        "max_r": -0.04726902823187985,
+        "mean_p": -0.07561234716765078,
+        "min_p": -0.08086208198015257,
+        "max_p": -0.07103886850636632,
+        "mean_y": 1.049541394399642,
+        "min_y": 1.041829057949355,
+        "max_y": 1.0572564451004869,
+        "mean_plat_r": 0.07561237692014207,
+        "mean_plat_p": -0.0507135933343242,
+        "mean_plat_y": 1.0494743877610608
+      },
+      "pos_3d_norm_deg": 1.0534829085684723,
+      "pos_error_deg": 0.9504586056003581,
+      "pos_sign_correct": true,
+      "neg_stage": "yaw_neg",
+      "neg_cmd_deg": -2.0,
+      "neg_meas": {
+        "count": 241,
+        "total_stage_count": 482,
+        "mean_r": -0.009095083992484225,
+        "min_r": -0.013726491191827513,
+        "max_r": -0.006208359109335402,
+        "mean_p": 0.022114466497474686,
+        "min_p": 0.015737156896497188,
+        "max_p": 0.025099773063322,
+        "mean_y": -1.2329564207488664,
+        "min_y": -1.2350709656407908,
+        "max_y": -1.2300360539217001,
+        "mean_plat_r": -0.022114466785655117,
+        "mean_plat_p": -0.009095083315832739,
+        "mean_plat_y": -1.2329529246018924
+      },
+      "neg_3d_norm_deg": 1.2331882685328928,
+      "neg_error_deg": -0.7670435792511336,
+      "neg_sign_correct": true
+    }
+  },
+  "status": "PASS",
+  "end_time": "2026-09-03 16:14:06",
+  "total_recorded_samples": 2096,
+  "total_imu_samples": 2422,
+  "final_write_count": 372,
+  "final_motor_steps": [
+    999,
+    1000,
+    999,
+    1000,
+    998,
+    1000
+  ],
+  "final_motor_faults": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "q0_xyzw": [
+    0.014439972975056873,
+    0.007490698326160834,
+    -0.692878819157624,
+    0.7208705283071315
+  ]
+}

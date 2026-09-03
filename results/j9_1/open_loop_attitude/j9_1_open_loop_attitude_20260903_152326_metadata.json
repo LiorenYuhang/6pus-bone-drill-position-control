@@ -1,0 +1,81 @@
+{
+  "csv_path": "/home/lyapunov/bone_drill/results/j9_1/open_loop_attitude/j9_1_open_loop_attitude_20260903_152326.csv",
+  "metadata_path": "/home/lyapunov/bone_drill/results/j9_1/open_loop_attitude/j9_1_open_loop_attitude_20260903_152326_metadata.json",
+  "start_time": "2026-09-03 15:23:26",
+  "hardware_mode": "active",
+  "target_angle_deg": 0.5,
+  "dofs_requested": [
+    "roll"
+  ],
+  "stages_executed": [
+    "roll_pos",
+    "roll_ret1",
+    "roll_neg",
+    "roll_ret2"
+  ],
+  "dof_results": {
+    "roll": {
+      "pos_stage": "roll_pos",
+      "pos_cmd_deg": 0.5,
+      "pos_meas": {
+        "count": 268,
+        "total_stage_count": 536,
+        "mean_r": -0.04330196829887734,
+        "min_r": -0.04690084727580961,
+        "max_r": -0.03972771106777856,
+        "mean_p": -0.31629974072754347,
+        "min_p": -0.320587116148548,
+        "max_p": -0.3121906184424555,
+        "mean_y": -0.15572469169547234,
+        "min_y": -0.16064469013326074,
+        "max_y": -0.15261014952109012
+      },
+      "pos_error_deg": 0.5433019682988773,
+      "pos_sign_correct": false,
+      "neg_stage": "roll_neg",
+      "neg_cmd_deg": -0.5,
+      "neg_meas": {
+        "count": 236,
+        "total_stage_count": 472,
+        "mean_r": -0.06580797450041431,
+        "min_r": -0.0724548785167022,
+        "max_r": -0.06142491647625531,
+        "mean_p": 0.46375995928458563,
+        "min_p": 0.460721721258883,
+        "max_p": 0.4657757794899307,
+        "mean_y": -0.38006354716596075,
+        "min_y": -0.38608722781978677,
+        "max_y": -0.37536148911881373
+      },
+      "neg_error_deg": -0.4341920254995857,
+      "neg_sign_correct": true
+    }
+  },
+  "status": "PASS",
+  "end_time": "2026-09-03 15:23:42",
+  "total_recorded_samples": 2268,
+  "total_imu_samples": 2630,
+  "final_write_count": 411,
+  "final_motor_steps": [
+    999,
+    998,
+    999,
+    999,
+    999,
+    999
+  ],
+  "final_motor_faults": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "q0_xyzw": [
+    0.014218139886702478,
+    0.007248858128622794,
+    -0.692244269693545,
+    0.7214867771695083
+  ]
+}
