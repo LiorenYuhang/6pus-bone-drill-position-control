@@ -1,0 +1,89 @@
+{
+  "csv_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_pitch_closed_loop_20260903_173709.csv",
+  "metadata_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_pitch_closed_loop_20260903_173709_metadata.json",
+  "start_time": "2026-09-03 17:37:09",
+  "hardware_mode": "active",
+  "dof": "pitch",
+  "ref_angle_deg": -0.5,
+  "kp": 0.5,
+  "residual_limit_deg": 0.25,
+  "stages_executed": [
+    "pitch_neg_closed_loop",
+    "pitch_ret_home"
+  ],
+  "stage_metrics": {
+    "pitch_neg_closed_loop": {
+      "count": 254,
+      "total_stage_count": 507,
+      "mean_plat_r": 0.027354521303404624,
+      "min_plat_r": 0.01980973168396664,
+      "max_plat_r": 0.03328289395914365,
+      "mean_plat_p": -0.5213121523677222,
+      "min_plat_p": -0.5250227280692793,
+      "max_plat_p": -0.5181774254880062,
+      "mean_plat_y": -0.10142416558322548,
+      "min_plat_y": -0.10558853080992228,
+      "max_plat_y": -0.09906327582328855,
+      "mean_error": 0.021312152367722194,
+      "max_error": 0.0250227280692793,
+      "mean_residual": 0.010626732332356463,
+      "max_residual": 0.01251136403463965,
+      "mean_cmd": -0.48937326766764355,
+      "min_cmd": -0.49090454831339886,
+      "max_cmd": -0.48748863596536035,
+      "peak_plat_p": -0.7115966607803677,
+      "abs_overshoot_deg": 0.21159666078036765,
+      "overshoot_pct": 42.31933215607353
+    },
+    "pitch_ret_home": {
+      "count": 235,
+      "total_stage_count": 469,
+      "mean_plat_r": 0.09085173958442797,
+      "min_plat_r": 0.08712728272313015,
+      "max_plat_r": 0.09946684197970783,
+      "mean_plat_p": 0.008158755749882746,
+      "min_plat_p": 0.005453885064608814,
+      "max_plat_p": 0.010854656869632313,
+      "mean_plat_y": 0.2825228143081416,
+      "min_plat_y": 0.2730979250366969,
+      "max_plat_y": 0.2899292723563915,
+      "mean_error": -0.008158755749882746,
+      "max_error": -0.005453885064608814,
+      "mean_residual": -0.004123955267678766,
+      "max_residual": -0.005268436257348495,
+      "mean_cmd": -0.004123955267678766,
+      "min_cmd": -0.005268436257348495,
+      "max_cmd": -0.002726942532304407,
+      "peak_plat_p": 0.12383098761330397,
+      "abs_overshoot_deg": 0.12383098761330397,
+      "overshoot_pct": 0.0
+    }
+  },
+  "status": "PASS",
+  "end_time": "2026-09-03 17:37:21",
+  "total_recorded_samples": 1155,
+  "total_imu_samples": 1491,
+  "final_write_count": 203,
+  "final_motor_steps": [
+    1001,
+    1000,
+    1000,
+    998,
+    999,
+    999
+  ],
+  "final_motor_faults": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "q0_xyzw": [
+    0.014368598820648202,
+    0.007446656727333902,
+    -0.6930016533205297,
+    0.7207543264986545
+  ]
+}
