@@ -1,0 +1,13 @@
+stem,family,status,hardware_mode,has_quaternion,has_gyro_xyz,has_platform_accel_xyz,has_timestamp,has_stage_labels,has_cartesian_reference,has_joint_feedback,has_joint_command,usable_for_lever_arm_fit,missing_for_lever_arm_fit
+j9_1_open_loop_attitude_20260903_152326,open_loop_attitude,PASS,active,True,True,False,True,True,True,True,True,False,missing Platform acceleration telemetry required for b = A r
+j9_1_open_loop_attitude_20260903_152450,open_loop_attitude,PASS,active,True,True,False,True,True,True,True,True,False,missing Platform acceleration telemetry required for b = A r
+j9_1_open_loop_attitude_20260903_161349,open_loop_attitude,PASS,active,True,True,False,True,True,True,True,True,False,missing Platform acceleration telemetry required for b = A r
+j9_1_3dof_orientation_servo_20260903_183743,closed_loop_attitude,PASS,active,True,True,False,True,True,True,True,True,False,missing Platform acceleration telemetry required for b = A r
+j9_1_3dof_orientation_servo_20260903_184719,closed_loop_attitude,PASS,active,True,True,False,True,True,True,True,True,False,missing Platform acceleration telemetry required for b = A r
+j9_1_3dof_orientation_servo_20260903_185428,closed_loop_attitude,PASS,active,True,True,False,True,True,True,True,True,False,missing Platform acceleration telemetry required for b = A r
+j9_1_pitch_closed_loop_20260903_172948,closed_loop_attitude,PASS,active,True,True,False,True,True,False,True,True,False,missing Platform acceleration telemetry required for b = A r
+j9_1_pitch_closed_loop_20260903_173709,closed_loop_attitude,PASS,active,True,True,False,True,True,False,True,True,False,missing Platform acceleration telemetry required for b = A r
+j9_1_roll_closed_loop_20260903_162702,closed_loop_attitude,PASS,active,True,True,False,True,True,False,True,True,False,missing Platform acceleration telemetry required for b = A r
+j9_1_roll_closed_loop_20260903_172228,closed_loop_attitude,PASS,active,True,True,False,True,True,False,True,True,False,missing Platform acceleration telemetry required for b = A r
+j9_1_yaw_closed_loop_20260903_174906,closed_loop_attitude,PASS,active,True,True,False,True,True,False,True,True,False,missing Platform acceleration telemetry required for b = A r
+j9_1_yaw_closed_loop_20260903_182631,closed_loop_attitude,PASS,active,True,True,False,True,True,False,True,True,False,missing Platform acceleration telemetry required for b = A r

@@ -1,0 +1,1118 @@
+{
+  "analysis_name": "J9.1-4F_Platform_IMU_Lever_Arm_Identifiability_Audit",
+  "timestamp": "20260904_141409",
+  "scope": "offline_only_frozen_attitude_artifacts",
+  "hardware_write_count": 0,
+  "frame_convention": {
+    "r_definition": "r_P_IP is from Platform origin P to Platform H30 measurement point I_P, expressed in Platform frame P.",
+    "R_P_IP": "Rz(+90 deg), frozen from J9.1; vector transform v_P = R_P_IP * v_IP.",
+    "base_imu": "out_of_scope; R_B_IB remains UNKNOWN"
+  },
+  "gyro_filtering_alpha_method": {
+    "method": "offline moving-average smoothing of gyro in Platform frame followed by numpy.gradient central finite difference on host_monotonic_time_ns",
+    "primary_filter_window_samples": 11,
+    "sensitivity_filter_window_samples": [
+      5,
+      11,
+      21
+    ],
+    "no_parameter_tuning_against_lever_arm_result": true
+  },
+  "datasets": [
+    {
+      "stem": "j9_1_open_loop_attitude_20260903_152326",
+      "family": "open_loop_attitude",
+      "csv_path": "/home/lyapunov/bone_drill/results/j9_1/open_loop_attitude/j9_1_open_loop_attitude_20260903_152326.csv",
+      "metadata_path": "/home/lyapunov/bone_drill/results/j9_1/open_loop_attitude/j9_1_open_loop_attitude_20260903_152326_metadata.json",
+      "status": "PASS",
+      "hardware_mode": "active",
+      "total_recorded_samples": 2268,
+      "final_write_count": 411,
+      "stages_executed": [
+        "roll_pos",
+        "roll_ret1",
+        "roll_neg",
+        "roll_ret2"
+      ],
+      "has_quaternion": true,
+      "has_gyro_xyz": true,
+      "has_platform_accel_xyz": false,
+      "has_timestamp": true,
+      "has_stage_labels": true,
+      "has_cartesian_reference": true,
+      "has_joint_feedback": true,
+      "has_joint_command": true,
+      "has_fk_origin_translation": false,
+      "usable_for_lever_arm_fit": false,
+      "missing_for_lever_arm_fit": [
+        "missing Platform acceleration telemetry required for b = A r"
+      ]
+    },
+    {
+      "stem": "j9_1_open_loop_attitude_20260903_152450",
+      "family": "open_loop_attitude",
+      "csv_path": "/home/lyapunov/bone_drill/results/j9_1/open_loop_attitude/j9_1_open_loop_attitude_20260903_152450.csv",
+      "metadata_path": "/home/lyapunov/bone_drill/results/j9_1/open_loop_attitude/j9_1_open_loop_attitude_20260903_152450_metadata.json",
+      "status": "PASS",
+      "hardware_mode": "active",
+      "total_recorded_samples": 6069,
+      "final_write_count": 1019,
+      "stages_executed": [
+        "roll_pos",
+        "roll_ret1",
+        "roll_neg",
+        "roll_ret2",
+        "pitch_pos",
+        "pitch_ret1",
+        "pitch_neg",
+        "pitch_ret2",
+        "yaw_pos",
+        "yaw_ret1",
+        "yaw_neg",
+        "yaw_ret2"
+      ],
+      "has_quaternion": true,
+      "has_gyro_xyz": true,
+      "has_platform_accel_xyz": false,
+      "has_timestamp": true,
+      "has_stage_labels": true,
+      "has_cartesian_reference": true,
+      "has_joint_feedback": true,
+      "has_joint_command": true,
+      "has_fk_origin_translation": false,
+      "usable_for_lever_arm_fit": false,
+      "missing_for_lever_arm_fit": [
+        "missing Platform acceleration telemetry required for b = A r"
+      ]
+    },
+    {
+      "stem": "j9_1_open_loop_attitude_20260903_161349",
+      "family": "open_loop_attitude",
+      "csv_path": "/home/lyapunov/bone_drill/results/j9_1/open_loop_attitude/j9_1_open_loop_attitude_20260903_161349.csv",
+      "metadata_path": "/home/lyapunov/bone_drill/results/j9_1/open_loop_attitude/j9_1_open_loop_attitude_20260903_161349_metadata.json",
+      "status": "PASS",
+      "hardware_mode": "active",
+      "total_recorded_samples": 2096,
+      "final_write_count": 372,
+      "stages_executed": [
+        "yaw_pos",
+        "yaw_ret1",
+        "yaw_neg",
+        "yaw_ret2"
+      ],
+      "has_quaternion": true,
+      "has_gyro_xyz": true,
+      "has_platform_accel_xyz": false,
+      "has_timestamp": true,
+      "has_stage_labels": true,
+      "has_cartesian_reference": true,
+      "has_joint_feedback": true,
+      "has_joint_command": true,
+      "has_fk_origin_translation": false,
+      "usable_for_lever_arm_fit": false,
+      "missing_for_lever_arm_fit": [
+        "missing Platform acceleration telemetry required for b = A r"
+      ]
+    },
+    {
+      "stem": "j9_1_3dof_orientation_servo_20260903_183743",
+      "family": "closed_loop_attitude",
+      "csv_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_3dof_orientation_servo_20260903_183743.csv",
+      "metadata_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_3dof_orientation_servo_20260903_183743_metadata.json",
+      "status": "PASS",
+      "hardware_mode": "active",
+      "total_recorded_samples": 1194,
+      "final_write_count": 229,
+      "stages_executed": [
+        "roll_pos_closed_loop",
+        "roll_ret_home"
+      ],
+      "has_quaternion": true,
+      "has_gyro_xyz": true,
+      "has_platform_accel_xyz": false,
+      "has_timestamp": true,
+      "has_stage_labels": true,
+      "has_cartesian_reference": true,
+      "has_joint_feedback": true,
+      "has_joint_command": true,
+      "has_fk_origin_translation": false,
+      "usable_for_lever_arm_fit": false,
+      "missing_for_lever_arm_fit": [
+        "missing Platform acceleration telemetry required for b = A r"
+      ]
+    },
+    {
+      "stem": "j9_1_3dof_orientation_servo_20260903_184719",
+      "family": "closed_loop_attitude",
+      "csv_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_3dof_orientation_servo_20260903_184719.csv",
+      "metadata_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_3dof_orientation_servo_20260903_184719_metadata.json",
+      "status": "PASS",
+      "hardware_mode": "active",
+      "total_recorded_samples": 1177,
+      "final_write_count": 253,
+      "stages_executed": [
+        "pitch_pos_closed_loop",
+        "pitch_ret_home"
+      ],
+      "has_quaternion": true,
+      "has_gyro_xyz": true,
+      "has_platform_accel_xyz": false,
+      "has_timestamp": true,
+      "has_stage_labels": true,
+      "has_cartesian_reference": true,
+      "has_joint_feedback": true,
+      "has_joint_command": true,
+      "has_fk_origin_translation": false,
+      "usable_for_lever_arm_fit": false,
+      "missing_for_lever_arm_fit": [
+        "missing Platform acceleration telemetry required for b = A r"
+      ]
+    },
+    {
+      "stem": "j9_1_3dof_orientation_servo_20260903_185428",
+      "family": "closed_loop_attitude",
+      "csv_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_3dof_orientation_servo_20260903_185428.csv",
+      "metadata_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_3dof_orientation_servo_20260903_185428_metadata.json",
+      "status": "PASS",
+      "hardware_mode": "active",
+      "total_recorded_samples": 1181,
+      "final_write_count": 229,
+      "stages_executed": [
+        "yaw_pos_closed_loop",
+        "yaw_ret_home"
+      ],
+      "has_quaternion": true,
+      "has_gyro_xyz": true,
+      "has_platform_accel_xyz": false,
+      "has_timestamp": true,
+      "has_stage_labels": true,
+      "has_cartesian_reference": true,
+      "has_joint_feedback": true,
+      "has_joint_command": true,
+      "has_fk_origin_translation": false,
+      "usable_for_lever_arm_fit": false,
+      "missing_for_lever_arm_fit": [
+        "missing Platform acceleration telemetry required for b = A r"
+      ]
+    },
+    {
+      "stem": "j9_1_pitch_closed_loop_20260903_172948",
+      "family": "closed_loop_attitude",
+      "csv_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_pitch_closed_loop_20260903_172948.csv",
+      "metadata_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_pitch_closed_loop_20260903_172948_metadata.json",
+      "status": "PASS",
+      "hardware_mode": "active",
+      "total_recorded_samples": 1160,
+      "final_write_count": 245,
+      "stages_executed": [
+        "pitch_pos_closed_loop",
+        "pitch_ret_home"
+      ],
+      "has_quaternion": true,
+      "has_gyro_xyz": true,
+      "has_platform_accel_xyz": false,
+      "has_timestamp": true,
+      "has_stage_labels": true,
+      "has_cartesian_reference": false,
+      "has_joint_feedback": true,
+      "has_joint_command": true,
+      "has_fk_origin_translation": false,
+      "usable_for_lever_arm_fit": false,
+      "missing_for_lever_arm_fit": [
+        "missing Platform acceleration telemetry required for b = A r"
+      ]
+    },
+    {
+      "stem": "j9_1_pitch_closed_loop_20260903_173709",
+      "family": "closed_loop_attitude",
+      "csv_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_pitch_closed_loop_20260903_173709.csv",
+      "metadata_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_pitch_closed_loop_20260903_173709_metadata.json",
+      "status": "PASS",
+      "hardware_mode": "active",
+      "total_recorded_samples": 1155,
+      "final_write_count": 203,
+      "stages_executed": [
+        "pitch_neg_closed_loop",
+        "pitch_ret_home"
+      ],
+      "has_quaternion": true,
+      "has_gyro_xyz": true,
+      "has_platform_accel_xyz": false,
+      "has_timestamp": true,
+      "has_stage_labels": true,
+      "has_cartesian_reference": false,
+      "has_joint_feedback": true,
+      "has_joint_command": true,
+      "has_fk_origin_translation": false,
+      "usable_for_lever_arm_fit": false,
+      "missing_for_lever_arm_fit": [
+        "missing Platform acceleration telemetry required for b = A r"
+      ]
+    },
+    {
+      "stem": "j9_1_roll_closed_loop_20260903_162702",
+      "family": "closed_loop_attitude",
+      "csv_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_roll_closed_loop_20260903_162702.csv",
+      "metadata_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_roll_closed_loop_20260903_162702_metadata.json",
+      "status": "PASS",
+      "hardware_mode": "active",
+      "total_recorded_samples": 1133,
+      "final_write_count": 207,
+      "stages_executed": [
+        "roll_pos_closed_loop",
+        "roll_ret_home"
+      ],
+      "has_quaternion": true,
+      "has_gyro_xyz": true,
+      "has_platform_accel_xyz": false,
+      "has_timestamp": true,
+      "has_stage_labels": true,
+      "has_cartesian_reference": false,
+      "has_joint_feedback": true,
+      "has_joint_command": true,
+      "has_fk_origin_translation": false,
+      "usable_for_lever_arm_fit": false,
+      "missing_for_lever_arm_fit": [
+        "missing Platform acceleration telemetry required for b = A r"
+      ]
+    },
+    {
+      "stem": "j9_1_roll_closed_loop_20260903_172228",
+      "family": "closed_loop_attitude",
+      "csv_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_roll_closed_loop_20260903_172228.csv",
+      "metadata_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_roll_closed_loop_20260903_172228_metadata.json",
+      "status": "PASS",
+      "hardware_mode": "active",
+      "total_recorded_samples": 1119,
+      "final_write_count": 209,
+      "stages_executed": [
+        "roll_neg_closed_loop",
+        "roll_ret_home"
+      ],
+      "has_quaternion": true,
+      "has_gyro_xyz": true,
+      "has_platform_accel_xyz": false,
+      "has_timestamp": true,
+      "has_stage_labels": true,
+      "has_cartesian_reference": false,
+      "has_joint_feedback": true,
+      "has_joint_command": true,
+      "has_fk_origin_translation": false,
+      "usable_for_lever_arm_fit": false,
+      "missing_for_lever_arm_fit": [
+        "missing Platform acceleration telemetry required for b = A r"
+      ]
+    },
+    {
+      "stem": "j9_1_yaw_closed_loop_20260903_174906",
+      "family": "closed_loop_attitude",
+      "csv_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_yaw_closed_loop_20260903_174906.csv",
+      "metadata_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_yaw_closed_loop_20260903_174906_metadata.json",
+      "status": "PASS",
+      "hardware_mode": "active",
+      "total_recorded_samples": 1255,
+      "final_write_count": 252,
+      "stages_executed": [
+        "yaw_pos_closed_loop",
+        "yaw_ret_home"
+      ],
+      "has_quaternion": true,
+      "has_gyro_xyz": true,
+      "has_platform_accel_xyz": false,
+      "has_timestamp": true,
+      "has_stage_labels": true,
+      "has_cartesian_reference": false,
+      "has_joint_feedback": true,
+      "has_joint_command": true,
+      "has_fk_origin_translation": false,
+      "usable_for_lever_arm_fit": false,
+      "missing_for_lever_arm_fit": [
+        "missing Platform acceleration telemetry required for b = A r"
+      ]
+    },
+    {
+      "stem": "j9_1_yaw_closed_loop_20260903_182631",
+      "family": "closed_loop_attitude",
+      "csv_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_yaw_closed_loop_20260903_182631.csv",
+      "metadata_path": "/home/lyapunov/bone_drill/results/j9_1/closed_loop_attitude/j9_1_yaw_closed_loop_20260903_182631_metadata.json",
+      "status": "PASS",
+      "hardware_mode": "active",
+      "total_recorded_samples": 1178,
+      "final_write_count": 213,
+      "stages_executed": [
+        "yaw_neg_closed_loop",
+        "yaw_ret_home"
+      ],
+      "has_quaternion": true,
+      "has_gyro_xyz": true,
+      "has_platform_accel_xyz": false,
+      "has_timestamp": true,
+      "has_stage_labels": true,
+      "has_cartesian_reference": false,
+      "has_joint_feedback": true,
+      "has_joint_command": true,
+      "has_fk_origin_translation": false,
+      "usable_for_lever_arm_fit": false,
+      "missing_for_lever_arm_fit": [
+        "missing Platform acceleration telemetry required for b = A r"
+      ]
+    }
+  ],
+  "availability_summary": {
+    "candidate_count": 12,
+    "usable_for_lever_arm_fit_count": 0,
+    "all_candidate_stems_missing_platform_accel": true,
+    "stems_missing_platform_accel": [
+      "j9_1_open_loop_attitude_20260903_152326",
+      "j9_1_open_loop_attitude_20260903_152450",
+      "j9_1_open_loop_attitude_20260903_161349",
+      "j9_1_3dof_orientation_servo_20260903_183743",
+      "j9_1_3dof_orientation_servo_20260903_184719",
+      "j9_1_3dof_orientation_servo_20260903_185428",
+      "j9_1_pitch_closed_loop_20260903_172948",
+      "j9_1_pitch_closed_loop_20260903_173709",
+      "j9_1_roll_closed_loop_20260903_162702",
+      "j9_1_roll_closed_loop_20260903_172228",
+      "j9_1_yaw_closed_loop_20260903_174906",
+      "j9_1_yaw_closed_loop_20260903_182631"
+    ]
+  },
+  "angular_excitation_identifiability_audit": {
+    "5": {
+      "j9_1_open_loop_attitude_20260903_152326": {
+        "stem": "j9_1_open_loop_attitude_20260903_152326",
+        "filter_window_samples": 5,
+        "sample_count": 1008,
+        "rank": 3,
+        "singular_values": [
+          52.186426350603305,
+          49.49663543781041,
+          18.62744553101052
+        ],
+        "condition_number": 2.8015879184145036,
+        "dt_ms": {
+          "mean": 8.96252147368421,
+          "median": 4.937052000000053,
+          "p95": 14.738404000000298,
+          "p99": 22.02737968000005,
+          "max": 3029.471665
+        }
+      },
+      "j9_1_open_loop_attitude_20260903_152450": {
+        "stem": "j9_1_open_loop_attitude_20260903_152450",
+        "filter_window_samples": 5,
+        "sample_count": 2965,
+        "rank": 3,
+        "singular_values": [
+          33.90349463124524,
+          33.493571488766854,
+          15.509347082612901
+        ],
+        "condition_number": 2.186003991699528,
+        "dt_ms": {
+          "mean": 11.203960758097164,
+          "median": 4.8519005000002835,
+          "p95": 15.147264449998053,
+          "p99": 28.43408346999967,
+          "max": 3073.6804540000016
+        }
+      },
+      "j9_1_open_loop_attitude_20260903_161349": {
+        "stem": "j9_1_open_loop_attitude_20260903_161349",
+        "filter_window_samples": 5,
+        "sample_count": 957,
+        "rank": 3,
+        "singular_values": [
+          21.02873893974375,
+          20.717257696982237,
+          7.221261728615867
+        ],
+        "condition_number": 2.912058824348197,
+        "dt_ms": {
+          "mean": 9.44466346966527,
+          "median": 5.061103500000108,
+          "p95": 15.62156750000021,
+          "p99": 25.16837144999991,
+          "max": 3011.7487169999995
+        }
+      },
+      "j9_1_3dof_orientation_servo_20260903_183743": {
+        "stem": "j9_1_3dof_orientation_servo_20260903_183743",
+        "filter_window_samples": 5,
+        "sample_count": 491,
+        "rank": 3,
+        "singular_values": [
+          22.19723083378568,
+          20.922940200435423,
+          9.335046689770527
+        ],
+        "condition_number": 2.3778382231456554,
+        "dt_ms": {
+          "mean": 6.1135345265306125,
+          "median": 4.998294000000014,
+          "p95": 15.612946299999933,
+          "p99": 23.854531730000115,
+          "max": 34.47266000000005
+        }
+      },
+      "j9_1_3dof_orientation_servo_20260903_184719": {
+        "stem": "j9_1_3dof_orientation_servo_20260903_184719",
+        "filter_window_samples": 5,
+        "sample_count": 523,
+        "rank": 3,
+        "singular_values": [
+          62.4142342354006,
+          61.57417187041159,
+          14.525504261342096
+        ],
+        "condition_number": 4.296872116275417,
+        "dt_ms": {
+          "mean": 5.746982670498085,
+          "median": 5.0085760000000015,
+          "p95": 12.73399950000008,
+          "p99": 22.939200379999992,
+          "max": 40.022411999999896
+        }
+      },
+      "j9_1_3dof_orientation_servo_20260903_185428": {
+        "stem": "j9_1_3dof_orientation_servo_20260903_185428",
+        "filter_window_samples": 5,
+        "sample_count": 501,
+        "rank": 3,
+        "singular_values": [
+          14.531338520593804,
+          14.277780336299655,
+          5.04330711956787
+        ],
+        "condition_number": 2.8813114442728813,
+        "dt_ms": {
+          "mean": 6.034517,
+          "median": 4.984374499999777,
+          "p95": 13.770822350000198,
+          "p99": 26.59411013999981,
+          "max": 45.64033699999959
+        }
+      },
+      "j9_1_pitch_closed_loop_20260903_172948": {
+        "stem": "j9_1_pitch_closed_loop_20260903_172948",
+        "filter_window_samples": 5,
+        "sample_count": 516,
+        "rank": 3,
+        "singular_values": [
+          41.48640752418894,
+          39.51891117319458,
+          16.74920154499262
+        ],
+        "condition_number": 2.4769185213244875,
+        "dt_ms": {
+          "mean": 5.851101524271844,
+          "median": 4.896384000000031,
+          "p95": 13.59273339999971,
+          "p99": 22.480666740000107,
+          "max": 35.93508600000006
+        }
+      },
+      "j9_1_pitch_closed_loop_20260903_173709": {
+        "stem": "j9_1_pitch_closed_loop_20260903_173709",
+        "filter_window_samples": 5,
+        "sample_count": 507,
+        "rank": 3,
+        "singular_values": [
+          54.66690423960969,
+          53.823078572586965,
+          13.264298064861677
+        ],
+        "condition_number": 4.1213567406500955,
+        "dt_ms": {
+          "mean": 5.94600835770751,
+          "median": 4.941784500000046,
+          "p95": 13.460527750000011,
+          "p99": 20.444048999999985,
+          "max": 35.01600900000001
+        }
+      },
+      "j9_1_roll_closed_loop_20260903_162702": {
+        "stem": "j9_1_roll_closed_loop_20260903_162702",
+        "filter_window_samples": 5,
+        "sample_count": 469,
+        "rank": 3,
+        "singular_values": [
+          48.385525522453335,
+          47.113416774922925,
+          15.981428017029062
+        ],
+        "condition_number": 3.0276096398204206,
+        "dt_ms": {
+          "mean": 6.42874557905983,
+          "median": 5.151816500000017,
+          "p95": 16.971075850000226,
+          "p99": 31.40124358,
+          "max": 39.31943199999988
+        }
+      },
+      "j9_1_roll_closed_loop_20260903_172228": {
+        "stem": "j9_1_roll_closed_loop_20260903_172228",
+        "filter_window_samples": 5,
+        "sample_count": 465,
+        "rank": 3,
+        "singular_values": [
+          32.64192330807246,
+          31.95050888306746,
+          9.173951934687189
+        ],
+        "condition_number": 3.558109257652817,
+        "dt_ms": {
+          "mean": 6.568618721982758,
+          "median": 5.073319999999826,
+          "p95": 16.380674300000006,
+          "p99": 28.703367789999835,
+          "max": 60.86540100000004
+        }
+      },
+      "j9_1_yaw_closed_loop_20260903_174906": {
+        "stem": "j9_1_yaw_closed_loop_20260903_174906",
+        "filter_window_samples": 5,
+        "sample_count": 495,
+        "rank": 3,
+        "singular_values": [
+          14.425964567107187,
+          14.354857569762418,
+          5.043068019958201
+        ],
+        "condition_number": 2.8605532406098213,
+        "dt_ms": {
+          "mean": 6.072184386639676,
+          "median": 5.149660499999792,
+          "p95": 13.089198500000018,
+          "p99": 20.66104301,
+          "max": 31.505692000000085
+        }
+      },
+      "j9_1_yaw_closed_loop_20260903_182631": {
+        "stem": "j9_1_yaw_closed_loop_20260903_182631",
+        "filter_window_samples": 5,
+        "sample_count": 507,
+        "rank": 3,
+        "singular_values": [
+          13.799469407839009,
+          13.463016015975928,
+          5.623779679307425
+        ],
+        "condition_number": 2.4537713414723297,
+        "dt_ms": {
+          "mean": 5.918111399209486,
+          "median": 4.750241499999975,
+          "p95": 14.067147249999982,
+          "p99": 29.490375699999998,
+          "max": 40.74946499999976
+        }
+      }
+    },
+    "11": {
+      "j9_1_open_loop_attitude_20260903_152326": {
+        "stem": "j9_1_open_loop_attitude_20260903_152326",
+        "filter_window_samples": 11,
+        "sample_count": 1008,
+        "rank": 3,
+        "singular_values": [
+          29.14378045334865,
+          26.869999558136733,
+          12.379064520206379
+        ],
+        "condition_number": 2.354279711990933,
+        "dt_ms": {
+          "mean": 8.96252147368421,
+          "median": 4.937052000000053,
+          "p95": 14.738404000000298,
+          "p99": 22.02737968000005,
+          "max": 3029.471665
+        }
+      },
+      "j9_1_open_loop_attitude_20260903_152450": {
+        "stem": "j9_1_open_loop_attitude_20260903_152450",
+        "filter_window_samples": 11,
+        "sample_count": 2965,
+        "rank": 3,
+        "singular_values": [
+          25.125441099563417,
+          24.64459512707657,
+          10.797077365787425
+        ],
+        "condition_number": 2.327059466960764,
+        "dt_ms": {
+          "mean": 11.203960758097164,
+          "median": 4.8519005000002835,
+          "p95": 15.147264449998053,
+          "p99": 28.43408346999967,
+          "max": 3073.6804540000016
+        }
+      },
+      "j9_1_open_loop_attitude_20260903_161349": {
+        "stem": "j9_1_open_loop_attitude_20260903_161349",
+        "filter_window_samples": 11,
+        "sample_count": 957,
+        "rank": 3,
+        "singular_values": [
+          15.36756520554052,
+          14.976684458826934,
+          4.421388247403507
+        ],
+        "condition_number": 3.47573303804868,
+        "dt_ms": {
+          "mean": 9.44466346966527,
+          "median": 5.061103500000108,
+          "p95": 15.62156750000021,
+          "p99": 25.16837144999991,
+          "max": 3011.7487169999995
+        }
+      },
+      "j9_1_3dof_orientation_servo_20260903_183743": {
+        "stem": "j9_1_3dof_orientation_servo_20260903_183743",
+        "filter_window_samples": 11,
+        "sample_count": 491,
+        "rank": 3,
+        "singular_values": [
+          11.229030125471992,
+          10.130602968542444,
+          5.586446220371061
+        ],
+        "condition_number": 2.0100489081099826,
+        "dt_ms": {
+          "mean": 6.1135345265306125,
+          "median": 4.998294000000014,
+          "p95": 15.612946299999933,
+          "p99": 23.854531730000115,
+          "max": 34.47266000000005
+        }
+      },
+      "j9_1_3dof_orientation_servo_20260903_184719": {
+        "stem": "j9_1_3dof_orientation_servo_20260903_184719",
+        "filter_window_samples": 11,
+        "sample_count": 523,
+        "rank": 3,
+        "singular_values": [
+          22.689148362136205,
+          19.521919093596146,
+          13.11524897324183
+        ],
+        "condition_number": 1.729982283098656,
+        "dt_ms": {
+          "mean": 5.746982670498085,
+          "median": 5.0085760000000015,
+          "p95": 12.73399950000008,
+          "p99": 22.939200379999992,
+          "max": 40.022411999999896
+        }
+      },
+      "j9_1_3dof_orientation_servo_20260903_185428": {
+        "stem": "j9_1_3dof_orientation_servo_20260903_185428",
+        "filter_window_samples": 11,
+        "sample_count": 501,
+        "rank": 3,
+        "singular_values": [
+          10.700942174871285,
+          10.568430115723674,
+          2.3947019443151385
+        ],
+        "condition_number": 4.468590423236011,
+        "dt_ms": {
+          "mean": 6.034517,
+          "median": 4.984374499999777,
+          "p95": 13.770822350000198,
+          "p99": 26.59411013999981,
+          "max": 45.64033699999959
+        }
+      },
+      "j9_1_pitch_closed_loop_20260903_172948": {
+        "stem": "j9_1_pitch_closed_loop_20260903_172948",
+        "filter_window_samples": 11,
+        "sample_count": 516,
+        "rank": 3,
+        "singular_values": [
+          18.213770947605664,
+          17.399549744752004,
+          8.60651487855884
+        ],
+        "condition_number": 2.1162771696335643,
+        "dt_ms": {
+          "mean": 5.851101524271844,
+          "median": 4.896384000000031,
+          "p95": 13.59273339999971,
+          "p99": 22.480666740000107,
+          "max": 35.93508600000006
+        }
+      },
+      "j9_1_pitch_closed_loop_20260903_173709": {
+        "stem": "j9_1_pitch_closed_loop_20260903_173709",
+        "filter_window_samples": 11,
+        "sample_count": 507,
+        "rank": 3,
+        "singular_values": [
+          30.09900113712911,
+          28.97626681281485,
+          8.764497889741282
+        ],
+        "condition_number": 3.4341957195699204,
+        "dt_ms": {
+          "mean": 5.94600835770751,
+          "median": 4.941784500000046,
+          "p95": 13.460527750000011,
+          "p99": 20.444048999999985,
+          "max": 35.01600900000001
+        }
+      },
+      "j9_1_roll_closed_loop_20260903_162702": {
+        "stem": "j9_1_roll_closed_loop_20260903_162702",
+        "filter_window_samples": 11,
+        "sample_count": 469,
+        "rank": 3,
+        "singular_values": [
+          29.330978532092285,
+          28.49397750477737,
+          8.253665028465237
+        ],
+        "condition_number": 3.5536914123526477,
+        "dt_ms": {
+          "mean": 6.42874557905983,
+          "median": 5.151816500000017,
+          "p95": 16.971075850000226,
+          "p99": 31.40124358,
+          "max": 39.31943199999988
+        }
+      },
+      "j9_1_roll_closed_loop_20260903_172228": {
+        "stem": "j9_1_roll_closed_loop_20260903_172228",
+        "filter_window_samples": 11,
+        "sample_count": 465,
+        "rank": 3,
+        "singular_values": [
+          13.287722777103081,
+          12.592714676740103,
+          5.579697980579311
+        ],
+        "condition_number": 2.381441221971567,
+        "dt_ms": {
+          "mean": 6.568618721982758,
+          "median": 5.073319999999826,
+          "p95": 16.380674300000006,
+          "p99": 28.703367789999835,
+          "max": 60.86540100000004
+        }
+      },
+      "j9_1_yaw_closed_loop_20260903_174906": {
+        "stem": "j9_1_yaw_closed_loop_20260903_174906",
+        "filter_window_samples": 11,
+        "sample_count": 495,
+        "rank": 3,
+        "singular_values": [
+          10.931365513486377,
+          10.666378811753136,
+          3.3176618498857833
+        ],
+        "condition_number": 3.294900447392705,
+        "dt_ms": {
+          "mean": 6.072184386639676,
+          "median": 5.149660499999792,
+          "p95": 13.089198500000018,
+          "p99": 20.66104301,
+          "max": 31.505692000000085
+        }
+      },
+      "j9_1_yaw_closed_loop_20260903_182631": {
+        "stem": "j9_1_yaw_closed_loop_20260903_182631",
+        "filter_window_samples": 11,
+        "sample_count": 507,
+        "rank": 3,
+        "singular_values": [
+          12.611042209345644,
+          12.536314348109551,
+          2.7751350779124593
+        ],
+        "condition_number": 4.544298513509495,
+        "dt_ms": {
+          "mean": 5.918111399209486,
+          "median": 4.750241499999975,
+          "p95": 14.067147249999982,
+          "p99": 29.490375699999998,
+          "max": 40.74946499999976
+        }
+      }
+    },
+    "21": {
+      "j9_1_open_loop_attitude_20260903_152326": {
+        "stem": "j9_1_open_loop_attitude_20260903_152326",
+        "filter_window_samples": 21,
+        "sample_count": 1008,
+        "rank": 3,
+        "singular_values": [
+          17.023921941102014,
+          15.184640557463766,
+          8.192821693656855
+        ],
+        "condition_number": 2.077907048103156,
+        "dt_ms": {
+          "mean": 8.96252147368421,
+          "median": 4.937052000000053,
+          "p95": 14.738404000000298,
+          "p99": 22.02737968000005,
+          "max": 3029.471665
+        }
+      },
+      "j9_1_open_loop_attitude_20260903_152450": {
+        "stem": "j9_1_open_loop_attitude_20260903_152450",
+        "filter_window_samples": 21,
+        "sample_count": 2965,
+        "rank": 3,
+        "singular_values": [
+          19.170625151710468,
+          18.531072621014964,
+          8.715373550830675
+        ],
+        "condition_number": 2.1996332159375185,
+        "dt_ms": {
+          "mean": 11.203960758097164,
+          "median": 4.8519005000002835,
+          "p95": 15.147264449998053,
+          "p99": 28.43408346999967,
+          "max": 3073.6804540000016
+        }
+      },
+      "j9_1_open_loop_attitude_20260903_161349": {
+        "stem": "j9_1_open_loop_attitude_20260903_161349",
+        "filter_window_samples": 21,
+        "sample_count": 957,
+        "rank": 3,
+        "singular_values": [
+          12.720964862394954,
+          12.580141935009477,
+          2.4290114652832697
+        ],
+        "condition_number": 5.237095437469021,
+        "dt_ms": {
+          "mean": 9.44466346966527,
+          "median": 5.061103500000108,
+          "p95": 15.62156750000021,
+          "p99": 25.16837144999991,
+          "max": 3011.7487169999995
+        }
+      },
+      "j9_1_3dof_orientation_servo_20260903_183743": {
+        "stem": "j9_1_3dof_orientation_servo_20260903_183743",
+        "filter_window_samples": 21,
+        "sample_count": 491,
+        "rank": 3,
+        "singular_values": [
+          8.963575481765574,
+          7.879380009429752,
+          4.568519608490945
+        ],
+        "condition_number": 1.9620306466685793,
+        "dt_ms": {
+          "mean": 6.1135345265306125,
+          "median": 4.998294000000014,
+          "p95": 15.612946299999933,
+          "p99": 23.854531730000115,
+          "max": 34.47266000000005
+        }
+      },
+      "j9_1_3dof_orientation_servo_20260903_184719": {
+        "stem": "j9_1_3dof_orientation_servo_20260903_184719",
+        "filter_window_samples": 21,
+        "sample_count": 523,
+        "rank": 3,
+        "singular_values": [
+          16.57433975250152,
+          12.751696128742195,
+          10.910328089821114
+        ],
+        "condition_number": 1.5191421940798182,
+        "dt_ms": {
+          "mean": 5.746982670498085,
+          "median": 5.0085760000000015,
+          "p95": 12.73399950000008,
+          "p99": 22.939200379999992,
+          "max": 40.022411999999896
+        }
+      },
+      "j9_1_3dof_orientation_servo_20260903_185428": {
+        "stem": "j9_1_3dof_orientation_servo_20260903_185428",
+        "filter_window_samples": 21,
+        "sample_count": 501,
+        "rank": 3,
+        "singular_values": [
+          7.993809684327097,
+          7.943745143264537,
+          1.4169213553454116
+        ],
+        "condition_number": 5.641674927242802,
+        "dt_ms": {
+          "mean": 6.034517,
+          "median": 4.984374499999777,
+          "p95": 13.770822350000198,
+          "p99": 26.59411013999981,
+          "max": 45.64033699999959
+        }
+      },
+      "j9_1_pitch_closed_loop_20260903_172948": {
+        "stem": "j9_1_pitch_closed_loop_20260903_172948",
+        "filter_window_samples": 21,
+        "sample_count": 516,
+        "rank": 3,
+        "singular_values": [
+          11.568968475641185,
+          10.544254497236357,
+          7.008946894657046
+        ],
+        "condition_number": 1.6506001043409624,
+        "dt_ms": {
+          "mean": 5.851101524271844,
+          "median": 4.896384000000031,
+          "p95": 13.59273339999971,
+          "p99": 22.480666740000107,
+          "max": 35.93508600000006
+        }
+      },
+      "j9_1_pitch_closed_loop_20260903_173709": {
+        "stem": "j9_1_pitch_closed_loop_20260903_173709",
+        "filter_window_samples": 21,
+        "sample_count": 507,
+        "rank": 3,
+        "singular_values": [
+          19.908478352706453,
+          19.169788028089126,
+          5.646714986485647
+        ],
+        "condition_number": 3.5256743788828833,
+        "dt_ms": {
+          "mean": 5.94600835770751,
+          "median": 4.941784500000046,
+          "p95": 13.460527750000011,
+          "p99": 20.444048999999985,
+          "max": 35.01600900000001
+        }
+      },
+      "j9_1_roll_closed_loop_20260903_162702": {
+        "stem": "j9_1_roll_closed_loop_20260903_162702",
+        "filter_window_samples": 21,
+        "sample_count": 469,
+        "rank": 3,
+        "singular_values": [
+          17.00353548297407,
+          15.786386983799936,
+          6.756685468608251
+        ],
+        "condition_number": 2.5165498027062188,
+        "dt_ms": {
+          "mean": 6.42874557905983,
+          "median": 5.151816500000017,
+          "p95": 16.971075850000226,
+          "p99": 31.40124358,
+          "max": 39.31943199999988
+        }
+      },
+      "j9_1_roll_closed_loop_20260903_172228": {
+        "stem": "j9_1_roll_closed_loop_20260903_172228",
+        "filter_window_samples": 21,
+        "sample_count": 465,
+        "rank": 3,
+        "singular_values": [
+          8.531732368237739,
+          7.955723810796001,
+          3.8115589484413652
+        ],
+        "condition_number": 2.2383839483124253,
+        "dt_ms": {
+          "mean": 6.568618721982758,
+          "median": 5.073319999999826,
+          "p95": 16.380674300000006,
+          "p99": 28.703367789999835,
+          "max": 60.86540100000004
+        }
+      },
+      "j9_1_yaw_closed_loop_20260903_174906": {
+        "stem": "j9_1_yaw_closed_loop_20260903_174906",
+        "filter_window_samples": 21,
+        "sample_count": 495,
+        "rank": 3,
+        "singular_values": [
+          7.963791233702362,
+          7.867931369033458,
+          1.8181940234418026
+        ],
+        "condition_number": 4.380055775690581,
+        "dt_ms": {
+          "mean": 6.072184386639676,
+          "median": 5.149660499999792,
+          "p95": 13.089198500000018,
+          "p99": 20.66104301,
+          "max": 31.505692000000085
+        }
+      },
+      "j9_1_yaw_closed_loop_20260903_182631": {
+        "stem": "j9_1_yaw_closed_loop_20260903_182631",
+        "filter_window_samples": 21,
+        "sample_count": 507,
+        "rank": 3,
+        "singular_values": [
+          19.321673678270397,
+          19.29440426417507,
+          1.482191325670247
+        ],
+        "condition_number": 13.035883656607648,
+        "dt_ms": {
+          "mean": 5.918111399209486,
+          "median": 4.750241499999975,
+          "p95": 14.067147249999982,
+          "p99": 29.490375699999998,
+          "max": 40.74946499999976
+        }
+      }
+    }
+  },
+  "lever_arm_estimates_mm": {
+    "roll_mm": null,
+    "pitch_mm": null,
+    "yaw_mm": null,
+    "combined_mm": null,
+    "reason": "No accepted estimate: frozen attitude artifacts do not include Platform acceleration telemetry, so b = a_I - a_P cannot be formed. FK origin acceleration is also unavailable as reliable second-derivative evidence."
+  },
+  "filter_and_window_sensitivity": {
+    "result": "Only A-matrix rank/conditioning sensitivity can be audited. Lever-arm estimate sensitivity is unavailable because no b vector exists.",
+    "filter_windows_samples": [
+      5,
+      11,
+      21
+    ]
+  },
+  "residual_reduction_test": {
+    "attitude_residual_reduction_available": false,
+    "xyz_m_accel_center_candidate_available": false,
+    "reason": "No reliable candidate r_P_IP was identified; lever-arm correction was not applied to frozen XYZ artifacts."
+  },
+  "xyz_m_accel_correction_test": {
+    "attitude_residual_reduction_available": false,
+    "xyz_m_accel_center_candidate_available": false,
+    "reason": "No reliable candidate r_P_IP was identified; lever-arm correction was not applied to frozen XYZ artifacts."
+  },
+  "decision": {
+    "verdict": "NOT_RELIABLY_IDENTIFIABLE",
+    "summary": "Current frozen attitude datasets cannot separate Platform IMU lever-arm acceleration from Platform-origin translation because they lack acceleration telemetry. Candidate r_P_IP is not reliable and was not used to correct XYZ M_accel.",
+    "allowed_interpretation": "Large XYZ cross-axis acceleration may be partly consistent with measurement-point rotational contamination, but existing data do not identify the lever arm or prove causality."
+  },
+  "next_step": {
+    "recommendation": "Run a minimal dedicated pure-rotation characterization only after explicit hardware authorization: Roll +/-0.5 deg, Pitch +/-0.5 deg, Yaw +/-2 deg, logging Platform quaternion, gyro, raw accel, gravity-removed accel, stages, joint feedback, and FK. Then repeat identifiability before Platform-center acceleration reconstruction.",
+    "do_not_do_now": [
+      "controller",
+      "PID tuning",
+      "MIMO",
+      "Kalman/ESKF",
+      "acceleration integration",
+      "Base disturbance experiment"
+    ]
+  },
+  "prohibited_interpretations": [
+    "No accepted r_P_IP calibration is produced.",
+    "No lever-arm effect is proven as the cause of XYZ cross-axis acceleration.",
+    "No Platform-center acceleration reconstruction is validated."
+  ]
+}
