@@ -1,0 +1,125 @@
+{
+  "start_time": "2026-09-03 19:55:06",
+  "duration_s": 15.0,
+  "hardware_write_count": 0,
+  "preflight_motor_steps": [
+    1000,
+    1000,
+    1000,
+    1000,
+    1000,
+    1000
+  ],
+  "fk_relative_pose": {
+    "p_BP_m": [
+      0.0,
+      0.0,
+      0.13261226796206452
+    ],
+    "rpy_BP_deg": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "base_imu_stats": {
+    "sample_count": 3000,
+    "duration_s": 14.994033383,
+    "effective_rate_hz": 200.01289335531422,
+    "timestamp_monotonic": true,
+    "accel_sensor_mean_m_s2": [
+      -0.806499862,
+      0.286103776,
+      9.746744571666666
+    ],
+    "accel_sensor_std_m_s2": [
+      0.005225175400080831,
+      0.004791719782289165,
+      0.007010828026422377
+    ],
+    "accel_norm_mean_m_s2": 9.784241260836756,
+    "accel_norm_std_m_s2": 0.00703499861767474,
+    "gyro_sensor_mean_rad_s": [
+      0.00017726150895659498,
+      0.00010385330386579972,
+      0.0003012170962678449
+    ],
+    "gyro_sensor_std_rad_s": [
+      0.001006304388568852,
+      0.0009370018304516908,
+      0.0007735945636414526
+    ],
+    "linear_accel_world_mean_m_s2": [
+      0.0009981233953150108,
+      -0.00034147875196132343,
+      -0.0224114813600363
+    ],
+    "linear_accel_world_std_m_s2": [
+      0.004992269617984982,
+      0.005257627798134851,
+      0.007034990103528613
+    ],
+    "linear_accel_world_rms_m_s2": [
+      0.005090255265270909,
+      0.0052678310133368435,
+      0.02348933982638538
+    ],
+    "linear_accel_world_total_rms_m_s2": 0.02460507727543456
+  },
+  "platform_imu_stats": {
+    "sample_count": 3000,
+    "duration_s": 14.994151258,
+    "effective_rate_hz": 200.0113209742305,
+    "timestamp_monotonic": true,
+    "accel_sensor_mean_m_s2": [
+      -0.29923530633333334,
+      0.09716327733333333,
+      9.805779076
+    ],
+    "accel_sensor_std_m_s2": [
+      0.004981080572832656,
+      0.004775765421605939,
+      0.00682880514254012
+    ],
+    "accel_norm_mean_m_s2": 9.810827354920159,
+    "accel_norm_std_m_s2": 0.006826864956126204,
+    "gyro_sensor_mean_rad_s": [
+      0.0010950462820565618,
+      -0.0009342643638835152,
+      0.001241392221284985
+    ],
+    "gyro_sensor_std_rad_s": [
+      0.0010316237921751217,
+      0.0009052158668403982,
+      0.0007615473132261406
+    ],
+    "linear_accel_world_mean_m_s2": [
+      -0.0003804312896881808,
+      0.000669421954972189,
+      0.00417477857600207
+    ],
+    "linear_accel_world_std_m_s2": [
+      0.004944120114272157,
+      0.005052911600447958,
+      0.006826842575768874
+    ],
+    "linear_accel_world_rms_m_s2": [
+      0.004957913226612875,
+      0.005096227110048474,
+      0.008001188690008817
+    ],
+    "linear_accel_world_total_rms_m_s2": 0.01070380562103689
+  },
+  "timestamp_pairing_stats": {
+    "paired_sample_count": 3000,
+    "mean_pairing_offset_ms": 0.16642516166666665,
+    "median_pairing_offset_ms": 0.15389,
+    "min_pairing_offset_ms": 2.8e-05,
+    "max_pairing_offset_ms": 2.309867,
+    "std_pairing_offset_ms": 0.13688572130317633,
+    "p95_pairing_offset_ms": 0.2649649,
+    "p99_pairing_offset_ms": 0.39279006999999977
+  },
+  "csv_path": "/home/lyapunov/bone_drill/results/j9_1/dual_imu_baseline/j9_1_dual_imu_baseline_20260903_195448.csv",
+  "status": "PASS"
+}
