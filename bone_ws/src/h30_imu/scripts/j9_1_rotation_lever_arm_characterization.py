@@ -7,7 +7,7 @@ telemetry missing from prior J9.1 attitude artifacts. It uses the frozen J8 ROS2
 motion chain and does not implement a new controller or modify frozen runners.
 
 Default motion:
-  HOME -> Roll +/-0.5 deg -> HOME
+  HOME -> Roll/Pitch/Yaw +/-0.5 deg -> HOME
 
 Recorded telemetry follows the J9.1 translation characterization schema:
 Platform/Base H30 quaternion, gyro, raw sensor-frame acceleration,
@@ -79,6 +79,16 @@ def steps_for_attitude(kin: Analytical6PusKinematics, roll_deg: float, pitch_deg
     q = kin.inverse_kinematics(pose)
     continuous = [1000.0 + (value - 0.05) * 40000.0 for value in q]
     return continuous, [round(value) for value in continuous]
+
+
+def axis_angle_to_rpy(axis: str, angle_deg: float) -> Tuple[float, float, float]:
+    if axis == "roll":
+        return (float(angle_deg), 0.0, 0.0)
+    if axis == "pitch":
+        return (0.0, float(angle_deg), 0.0)
+    if axis == "yaw":
+        return (0.0, 0.0, float(angle_deg))
+    raise ValueError(f"Unsupported rotation axis: {axis}")
 
 
 class RotationLeverArmHarness(z4d.ZTranslationCharacterizationHarness):
@@ -270,10 +280,16 @@ def analyze_rotation_lever_arm_measurement(csv_path: Path, axis: str = "roll", a
         "platform_stamp_strict": _monotonic_strict(rows, "p_stamp_ns"),
     }
 
+    primary_delta_key = {
+        "roll": "droll_deg",
+        "pitch": "dpitch_deg",
+        "yaw": "dyaw_deg",
+    }[axis]
+
     qualified = bool(
         action_rows
         and all(completeness.values())
-        and abs(fk_delta["droll_deg"]) > 0.05
+        and abs(fk_delta[primary_delta_key]) > 0.05
         and not faults
     )
 
@@ -355,10 +371,10 @@ def run_rotation_lever_arm_experiment(
     baud_motor: int = 921600,
     baud_imu: int = 460800,
 ) -> Dict[str, Any]:
-    if axis != "roll":
-        raise ValueError("J9.1-4G first run is constrained to roll only")
+    if axis not in ("roll", "pitch", "yaw"):
+        raise ValueError("J9.1-4G rotation measurement axis must be roll, pitch, or yaw")
     if angle_deg == 0.0:
-        raise ValueError("J9.1-4G rotation measurement requires a nonzero roll angle")
+        raise ValueError("J9.1-4G rotation measurement requires a nonzero angle")
 
     output_dir.mkdir(parents=True, exist_ok=True)
     stamp_str = time.strftime("%Y%m%d_%H%M%S")
@@ -368,14 +384,15 @@ def run_rotation_lever_arm_experiment(
 
     kin = Analytical6PusKinematics()
     z0 = kin.nominal_height
-    continuous, quantized = steps_for_attitude(kin, angle_deg, 0.0, 0.0)
+    roll_deg, pitch_deg, yaw_deg = axis_angle_to_rpy(axis, angle_deg)
+    continuous, quantized = steps_for_attitude(kin, roll_deg, pitch_deg, yaw_deg)
 
     print("\n" + "=" * 90)
-    print(f"      J9.1-4G DEDICATED ROTATION MEASUREMENT: Roll {angle_deg:+.3f} deg")
+    print(f"      J9.1-4G DEDICATED ROTATION MEASUREMENT: {axis.capitalize()} {angle_deg:+.3f} deg")
     print("=" * 90)
     print(f"Output CSV: {csv_path}")
     print(f"Frozen IK nominal command: {quantized}")
-    print("Motion: HOME -> Roll +/-0.5 deg -> HOME; X/Y/Z fixed at OPERATING_HOME")
+    print(f"Motion: HOME -> {axis.capitalize()} {angle_deg:+.3f} deg -> HOME; X/Y/Z fixed at OPERATING_HOME")
     print("=" * 90 + "\n")
 
     print("[PREFLIGHT] Checking motor online status via non-intrusive 0x30 scan...")
@@ -384,7 +401,7 @@ def run_rotation_lever_arm_experiment(
     if not ok:
         raise RuntimeError(f"Motor preflight audit failed: {audit_msg}")
     if max(abs(int(s) - 1000) for s in home_steps) > 20:
-        raise RuntimeError(f"Startup is not in OPERATING_HOME band for 4G Roll run: {home_steps}")
+        raise RuntimeError(f"Startup is not in OPERATING_HOME band for 4G rotation run: {home_steps}")
 
     print("[SPAWNING] Starting Base H30 node (/pus6/imu_base/data)...")
     cmd_base = [
@@ -442,12 +459,12 @@ def run_rotation_lever_arm_experiment(
             harness.publish_rotation_target(0.0, 0.0, 0.0)
             time.sleep(0.020)
 
-        action_stage = "action_roll_pos" if angle_deg >= 0.0 else "action_roll_neg"
-        print(f"\n>>> [Stage 2: {action_stage}] Roll {angle_deg:+.3f} deg for {hold_s:.1f} s <<<")
-        harness.set_rotation_stage(action_stage, angle_deg, 0.0, 0.0)
+        action_stage = f"action_{axis}_{'pos' if angle_deg >= 0.0 else 'neg'}"
+        print(f"\n>>> [Stage 2: {action_stage}] {axis.capitalize()} {angle_deg:+.3f} deg for {hold_s:.1f} s <<<")
+        harness.set_rotation_stage(action_stage, roll_deg, pitch_deg, yaw_deg)
         t_end = time.monotonic() + hold_s
         while time.monotonic() < t_end:
-            harness.publish_rotation_target(angle_deg, 0.0, 0.0)
+            harness.publish_rotation_target(roll_deg, pitch_deg, yaw_deg)
             time.sleep(0.020)
             if any(f != 0 for f in harness.latest_fault_codes):
                 raise RuntimeError(f"Motor fault detected during action: {harness.latest_fault_codes}")
@@ -521,8 +538,8 @@ def run_rotation_lever_arm_experiment(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="J9.1-4G dedicated rotation measurement for Platform IMU lever-arm analysis")
-    parser.add_argument("--axis", default="roll", choices=["roll"], help="Constrained to roll for J9.1-4G first run")
-    parser.add_argument("--angle-deg", type=float, default=0.5, help="Constrained to +0.5 deg for first run")
+    parser.add_argument("--axis", default="roll", choices=["roll", "pitch", "yaw"])
+    parser.add_argument("--angle-deg", type=float, default=0.5)
     parser.add_argument("--hold-s", type=float, default=8.0)
     parser.add_argument("--quiet-s", type=float, default=5.0)
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))

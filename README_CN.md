@@ -20,10 +20,10 @@
 
 ## 2. 当前阶段状态 (Project Status)
 
-**当前冻结里程碑**：$\mathbf{J8\ ACTIVE\ SERVO\ HARDWARE\ QUALIFIED\ v1.0}$  
-*(官方 Release Tag: `v1.0-j8-active-servo-hardware-qualified`)*
+**当前冻结里程碑**：$\mathbf{J9\ IMU\ Integration\ \&\ Measurement\ Qualification\ COMPLETE}$  
+*(冻结运行基线：`v1.0-j8-active-servo-hardware-qualified`；收口文档：[`J9_FINAL_SUMMARY.md`](./J9_FINAL_SUMMARY.md)、[`J9_TO_J10_HANDOFF.md`](./J9_TO_J10_HANDOFF.md))*
 
-六轴 50Hz 连续笛卡尔伺服与 Design-B 伴随反馈控制闭环已全部通过实机严格考核并正式冻结：
+六轴 50Hz 连续笛卡尔伺服与 Design-B 伴随反馈控制闭环仍作为冻结运行基线保留：
 * **J8 准入结论**：`J8 functional hardware qualification: PASS`
 * **Design-B 伴随反馈机制**：ACTIVE 运行模式直接复用 50Hz 0x29 目标写入伴随返回的 `StatusFeedback`，将常规 0x30 阻塞轮询彻底移出 50Hz 关键控制路径；
 * **两级安全看门狗**：
@@ -36,6 +36,7 @@
 * **三轮自治硬件准入**：连续 3 轮完整 PARK $\to$ HOME $\to$ 20s 保持 $\to$ PARK 循环 100% PASS（56,754 / 56,754 帧反馈，0 故障，0 超时，0 停机）；
 * **最终 9 阶段实机视频演示考核**：137.128s，6898 周期，实测持续刷新率 50.30 Hz，41,388 / 41,388 响应（100.0% 完整率），0 丢帧，0 故障，0 STOP，各轴单向与 6 自由度复合运动全部平滑就位；
 * **全工作空间回归测试**：349 项单元与集成测试 **100% PASS**。
+* **J9 收口**：IMU 集成与测量资格已完成；J9_FINAL_SUMMARY.md 与 J9_TO_J10_HANDOFF.md 为新的规范入口。
 
 ---
 

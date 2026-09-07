@@ -1,14 +1,14 @@
 # 6PUS 当前开发阶段状态卡 (Current Stage State Sheet)
 
-**最后更新时间**: 2026-08-28  
-**当前冻结状态**: $\mathbf{J8\ ACTIVE\ SERVO\ HARDWARE\ QUALIFIED\ v1.0}$  
+**最后更新时间**: 2026-09-07  
+**当前冻结状态**: $\mathbf{J9\ IMU\ Integration\ \&\ Measurement\ Qualification\ COMPLETE}$  
 *(官方 Release Tag: `v1.0-j8-active-servo-hardware-qualified`)*
 
 ---
 
 ## 1. 阶段导航 (Stage Status)
 
-* **当前推进阶段**: **$\mathbf{J8\ 连续笛卡尔伺服与伴随反馈闭环硬件准入正式收尾并全面冻结}$；下一阶段 (J9) 为 Dual-IMU / FK 融合滤波与高频主动抑振**
+* **当前推进阶段**: **$\mathbf{J9\ IMU\ Integration\ \&\ Measurement\ Qualification\ COMPLETE}$；下一阶段 (J10) 为 Task-Space Operational Safe Workspace Measurement**
 * **已正式 PASS & 冻结的 Gates (Frozen Milestones)**:
   * **J1 (单总线半双工 921600 8N1 底层驱动协议)**: $\mathbf{PASS\ /\ FROZEN}$
   * **J2 (六轴同步通信、0x29 伴随反馈与基准性能)**: $\mathbf{PASS\ /\ FROZEN}$
@@ -36,7 +36,7 @@
 ## 2. 权威依据文档 (Authoritative References)
 
 1. **J8 最终硬件准入报告**: [`agent_docs/decisions/J8_FINAL_HARDWARE_QUALIFICATION.md`](file:///home/lyapunov/bone_drill/agent_docs/decisions/J8_FINAL_HARDWARE_QUALIFICATION.md)
-2. **统一文档地图**: [`agent_docs/README.md`](file:///home/lyapunov/bone_drill/agent_docs/README.md)
+2. **J9 收口文档**: [`J9_FINAL_SUMMARY.md`](file:///home/lyapunov/bone_drill/J9_FINAL_SUMMARY.md) / [`J9_TO_J10_HANDOFF.md`](file:///home/lyapunov/bone_drill/J9_TO_J10_HANDOFF.md)
 3. **唯一日常实机操作指南**: [`6PUS_SERVO_OPERATION_GUIDE.md`](file:///home/lyapunov/bone_drill/6PUS_SERVO_OPERATION_GUIDE.md)
 4. **ROS 2 架构与教学教程**: [`6PUS_ROS2_CODE_LEARNING_TUTORIAL.md`](file:///home/lyapunov/bone_drill/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md)
 5. **J7 基线设计与决策**: [`agent_docs/decisions/J7_C0_SERVO_ARCHITECTURE_DESIGN.md`](file:///home/lyapunov/bone_drill/agent_docs/decisions/J7_C0_SERVO_ARCHITECTURE_DESIGN.md)

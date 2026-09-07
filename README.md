@@ -20,10 +20,10 @@ Key capabilities include:
 
 ## Project Status
 
-**Current Milestone**: $\mathbf{J8\ ACTIVE\ SERVO\ HARDWARE\ QUALIFIED\ v1.0}$  
-*(Tag: `v1.0-j8-active-servo-hardware-qualified`)*
+**Current Milestone**: $\mathbf{J9\ IMU\ Integration\ \&\ Measurement\ Qualification\ COMPLETE}$  
+*(Frozen runtime baseline: `v1.0-j8-active-servo-hardware-qualified`; closure docs: [`J9_FINAL_SUMMARY.md`](./J9_FINAL_SUMMARY.md), [`J9_TO_J10_HANDOFF.md`](./J9_TO_J10_HANDOFF.md))*
 
-The continuous Cartesian 50Hz Servo motion control and Design-B accompanying feedback pipeline are verified and frozen on real hardware:
+The continuous Cartesian 50Hz Servo motion control and Design-B accompanying feedback pipeline remain the frozen runtime baseline on real hardware:
 * **J8 Status**: `J8 functional hardware qualification: PASS`
 * **Design-B Accompanying Feedback**: ACTIVE mode utilizes 50Hz 0x29 write-response frames (`StatusFeedback`) as primary runtime feedback, excluding routine 0x30 queries from the 50Hz critical control path.
 * **Two-Tier Watchdog**:
@@ -37,6 +37,7 @@ The continuous Cartesian 50Hz Servo motion control and Design-B accompanying fee
   * 3 consecutive autonomous PARK $\leftrightarrow$ HOME validation rounds passed (56,754 / 56,754 responses, 0 faults/timeouts/stops).
   * 9-Phase Cartesian Video Demonstration completed: 137.128s, 6898 cycles @ 50.30 Hz sustained rate, 41,388 / 41,388 feedback responses (100.0% completeness), 0 faults, 0 STOPs.
 * **Full Workspace Regression**: 349 / 349 tests passed (100% PASS across all 5 packages).
+* **J9 Closure**: IMU integration and measurement qualification are complete; J9 final summary and J9->J10 handoff are the canonical closure entry points.
 
 ---
 

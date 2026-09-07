@@ -1,0 +1,464 @@
+{
+  "experiment_name": "J9.1-4G_Rotation_Lever_Arm_Characterization",
+  "timestamp": "20260907_115030",
+  "csv_path": "/home/lyapunov/bone_drill/results/j9_1/rotation_lever_arm_characterization/j9_1_rotation_lever_arm_pitch_pos05deg_20260907_115030.csv",
+  "axis": "pitch",
+  "angle_deg": 0.5,
+  "z0_m": 0.13261226796206452,
+  "frozen_ik_nominal_continuous_steps": [
+    1004.7987333902083,
+    1009.6048358243416,
+    1004.8032790446217,
+    995.2040899964112,
+    990.4064577279183,
+    995.1995443419978
+  ],
+  "frozen_ik_nominal_command_steps": [
+    1005,
+    1010,
+    1005,
+    995,
+    990,
+    995
+  ],
+  "frame_contract": {
+    "raw_accel_frame": "Platform H30 sensor frame I_P, fields p_ax_raw/p_ay_raw/p_az_raw, units m/s^2 specific force",
+    "gyro_frame": "Platform H30 sensor frame I_P, fields p_gx_rad_s/p_gy_rad_s/p_gz_rad_s, units rad/s",
+    "gravity_removed_accel_frame": "H30 quaternion-derived world/navigation representation from existing translation harness, fields p_aw_x/p_aw_y/p_aw_z, units m/s^2",
+    "platform_transform": "R_P_IP = Rz(+90 deg); vector transform v_P = R_P_IP * v_IP",
+    "quaternion_convention": "sensor_msgs/Imu orientation xyzw"
+  },
+  "metrics": {
+    "status": "PASS",
+    "axis": "pitch",
+    "angle_deg": 0.5,
+    "action_stage": "action_pitch_pos",
+    "frame_contract": {
+      "raw_accel_frame": "Platform H30 sensor frame I_P, fields p_ax_raw/p_ay_raw/p_az_raw, units m/s^2 specific force",
+      "gyro_frame": "Platform H30 sensor frame I_P, fields p_gx_rad_s/p_gy_rad_s/p_gz_rad_s, units rad/s",
+      "gravity_removed_accel_frame": "H30 quaternion-derived world/navigation representation from existing translation harness, fields p_aw_x/p_aw_y/p_aw_z, units m/s^2",
+      "platform_transform": "R_P_IP = Rz(+90 deg); vector transform v_P = R_P_IP * v_IP",
+      "quaternion_convention": "sensor_msgs/Imu orientation xyzw"
+    },
+    "sample_counts": {
+      "total": 2898,
+      "pre_home": 681,
+      "action": 1095,
+      "return_home": 507,
+      "post_home": 615
+    },
+    "telemetry_completeness": {
+      "platform_quaternion_complete": true,
+      "platform_gyro_complete": true,
+      "platform_raw_accel_complete": true,
+      "platform_gravity_removed_accel_complete": true,
+      "joint_feedback_complete": true,
+      "fk_complete": true,
+      "host_monotonic_strict": true,
+      "platform_stamp_strict": true
+    },
+    "timing": {
+      "platform_dt": {
+        "count": 2898,
+        "mean_ms": 7.604436398688298,
+        "median_ms": 5.983314,
+        "p95_ms": 20.0200742,
+        "p99_ms": 35.87916756,
+        "max_ms": 153.794239,
+        "effective_rate_hz": 131.5021847210783
+      },
+      "base_dt": {
+        "count": 2837,
+        "mean_ms": 7.768008464033851,
+        "median_ms": 5.986898,
+        "p95_ms": 20.029539999999997,
+        "p99_ms": 36.0043973,
+        "max_ms": 156.017662,
+        "effective_rate_hz": 128.73312440763095
+      },
+      "host_dt": {
+        "count": 2898,
+        "mean_ms": 7.610541449430445,
+        "median_ms": 5.340515,
+        "p95_ms": 22.43629679999998,
+        "p99_ms": 36.20121751999997,
+        "max_ms": 154.310695,
+        "effective_rate_hz": 131.39669583887985
+      },
+      "online_latest_base_offset_ms": {
+        "mean": 1.262513472394755,
+        "std": 1.9514771045599513,
+        "rms": 2.324264003421288,
+        "min": 1e-06,
+        "max": 10.089527
+      }
+    },
+    "joint_state": {
+      "cmd_steps": [
+        1005,
+        1010,
+        1005,
+        995,
+        990,
+        995
+      ],
+      "fb_steps": [
+        1004,
+        1008,
+        1003,
+        996,
+        990,
+        995
+      ]
+    },
+    "fk_local_displacement": {
+      "dx_mm": -0.040904415084820206,
+      "dy_mm": -0.030741811904906356,
+      "dz_mm": 0.025932447983223028,
+      "droll_deg": -0.003808858002570562,
+      "dpitch_deg": 0.4684019038542155,
+      "dyaw_deg": -0.049218764357008254
+    },
+    "platform_attitude_response": {
+      "roll_deg": {
+        "mean": 0.023078512950980103,
+        "std": 0.0163630966149767,
+        "rms": 0.028290788091879276,
+        "min": -0.0033908115531889414,
+        "max": 0.07360554050054079
+      },
+      "pitch_deg": {
+        "mean": 0.2229634196549749,
+        "std": 0.1922632886040293,
+        "rms": 0.2944110369009231,
+        "min": -0.01182413383293963,
+        "max": 0.398348830093616
+      },
+      "yaw_deg": {
+        "mean": -0.26077889072502136,
+        "std": 0.22059059572921777,
+        "rms": 0.34156381654376655,
+        "min": -0.5083798031487236,
+        "max": 0.010217713523335463
+      }
+    },
+    "platform_gyro_peaks": {
+      "gx_peak_deg_s": 3.794497,
+      "gy_peak_deg_s": 2.071478,
+      "gz_peak_deg_s": 7.182905999999999
+    },
+    "base_gyro_peaks": {
+      "gx_peak_deg_s": 0.329364,
+      "gy_peak_deg_s": 0.49282299999999996,
+      "gz_peak_deg_s": 0.18621199999999996
+    },
+    "platform_raw_accel": {
+      "pre_home": {
+        "x": {
+          "mean": -0.2985723098384728,
+          "std": 0.005523818420324009,
+          "rms": 0.29862340292117384,
+          "min": -0.324157,
+          "max": -0.27194
+        },
+        "y": {
+          "mean": 0.10088045521292217,
+          "std": 0.007869544440546645,
+          "rms": 0.10118693578554562,
+          "min": 0.043524,
+          "max": 0.148423
+        },
+        "z": {
+          "mean": 9.809999923641703,
+          "std": 0.0062202252611623645,
+          "rms": 9.81000189567018,
+          "min": 9.791743,
+          "max": 9.830103
+        }
+      },
+      "action": {
+        "x": {
+          "mean": -0.29467324383561644,
+          "std": 0.0368223342958005,
+          "rms": 0.29696498941053023,
+          "min": -0.662671,
+          "max": 0.087342
+        },
+        "y": {
+          "mean": 0.16215696621004563,
+          "std": 0.0313623830976417,
+          "rms": 0.16516198341025434,
+          "min": -0.13819099999999998,
+          "max": 0.43688499999999997
+        },
+        "z": {
+          "mean": 9.809512136986301,
+          "std": 0.007784832613929287,
+          "rms": 9.809515226008896,
+          "min": 9.776026,
+          "max": 9.858991
+        }
+      },
+      "post_home": {
+        "x": {
+          "mean": -0.2922958569105691,
+          "std": 0.005495862392717635,
+          "rms": 0.2923475200348441,
+          "min": -0.309956,
+          "max": -0.276515
+        },
+        "y": {
+          "mean": 0.11088405365853658,
+          "std": 0.005136117134081635,
+          "rms": 0.11100294165004919,
+          "min": 0.095811,
+          "max": 0.127144
+        },
+        "z": {
+          "mean": 9.810712617886178,
+          "std": 0.00818003505957891,
+          "rms": 9.810716028085038,
+          "min": 9.779634,
+          "max": 9.834646
+        }
+      }
+    },
+    "platform_gravity_removed_accel": {
+      "pre_home": {
+        "x": {
+          "mean": -0.0010230264557888034,
+          "std": 0.007834099724737068,
+          "rms": 0.007900614003124643,
+          "min": -0.057824514900406014,
+          "max": 0.04407668299188133
+        },
+        "y": {
+          "mean": 0.0013430139814310331,
+          "std": 0.00564753449404849,
+          "rms": 0.005805026478474217,
+          "min": -0.027518226325536015,
+          "max": 0.028955273159309756
+        },
+        "z": {
+          "mean": 0.008410732280717856,
+          "std": 0.006215255866934121,
+          "rms": 0.010458002820298356,
+          "min": -0.009734979807966226,
+          "max": 0.028418781001439797
+        }
+      },
+      "action": {
+        "x": {
+          "mean": -0.0006280726739683649,
+          "std": 0.02683538537114028,
+          "rms": 0.02684273427394079,
+          "min": -0.3035830835652428,
+          "max": 0.2586816440958792
+        },
+        "y": {
+          "mean": 0.001814127178591351,
+          "std": 0.037262282351350186,
+          "rms": 0.0373064169205761,
+          "min": -0.36655933614016567,
+          "max": 0.38144216635456046
+        },
+        "z": {
+          "mean": 0.008637842810272302,
+          "std": 0.008241156115595429,
+          "rms": 0.011938550269466927,
+          "min": -0.02735672439775172,
+          "max": 0.06763585284060092
+        }
+      },
+      "post_home": {
+        "x": {
+          "mean": -0.0002804174422671631,
+          "std": 0.005210277582641593,
+          "rms": 0.005217818167596987,
+          "min": -0.014781251635656079,
+          "max": 0.016329689386846064
+        },
+        "y": {
+          "mean": -0.001797973362434769,
+          "std": 0.005472545788033083,
+          "rms": 0.005760335547009708,
+          "min": -0.017639240297945898,
+          "max": 0.015206677418056532
+        },
+        "z": {
+          "mean": 0.009042036895883935,
+          "std": 0.008193837736504847,
+          "rms": 0.01220235256328456,
+          "min": -0.022148426645118846,
+          "max": 0.03306176100486269
+        }
+      }
+    },
+    "base_monitor": {
+      "raw_accel": {
+        "pre_home": {
+          "x": {
+            "mean": -0.808974543318649,
+            "std": 0.005073158965847976,
+            "rms": 0.8089904503018002,
+            "min": -0.82573,
+            "max": -0.791549
+          },
+          "y": {
+            "mean": 0.29098783847283405,
+            "std": 0.005016517181740926,
+            "rms": 0.291031076663175,
+            "min": 0.27368899999999996,
+            "max": 0.308398
+          },
+          "z": {
+            "mean": 9.74755155212922,
+            "std": 0.0062499872348063005,
+            "rms": 9.747553555829136,
+            "min": 9.728786999999999,
+            "max": 9.769999
+          }
+        },
+        "action": {
+          "x": {
+            "mean": -0.8091690438356164,
+            "std": 0.016035854860206915,
+            "rms": 0.8093279249741376,
+            "min": -1.090914,
+            "max": -0.62022
+          },
+          "y": {
+            "mean": 0.2906002931506849,
+            "std": 0.010069754945660835,
+            "rms": 0.2907747071942979,
+            "min": 0.19089199999999998,
+            "max": 0.377418
+          },
+          "z": {
+            "mean": 9.747403980821916,
+            "std": 0.007120360398797575,
+            "rms": 9.747406581490031,
+            "min": 9.714929,
+            "max": 9.778429
+          }
+        },
+        "post_home": {
+          "x": {
+            "mean": -0.8092902650406504,
+            "std": 0.005118784324013827,
+            "rms": 0.8093064531081671,
+            "min": -0.823008,
+            "max": -0.793101
+          },
+          "y": {
+            "mean": 0.2904294406504065,
+            "std": 0.004621539401010825,
+            "rms": 0.29046620908970305,
+            "min": 0.273124,
+            "max": 0.30386399999999997
+          },
+          "z": {
+            "mean": 9.747250336585367,
+            "std": 0.008103886385062112,
+            "rms": 9.747253705379688,
+            "min": 9.720608,
+            "max": 9.781399
+          }
+        }
+      },
+      "gravity_removed_accel": {
+        "pre_home": {
+          "x": {
+            "mean": 0.000930796183908025,
+            "std": 0.005067125608192532,
+            "rms": 0.005151906779550488,
+            "min": -0.018857426169792135,
+            "max": 0.018358916896144106
+          },
+          "y": {
+            "mean": 0.0019040783263023972,
+            "std": 0.005156628821103975,
+            "rms": 0.005496938699979717,
+            "min": -0.015612543759670187,
+            "max": 0.01899159905109241
+          },
+          "z": {
+            "mean": -0.02125938437530138,
+            "std": 0.006221027731449484,
+            "rms": 0.02215090540028267,
+            "min": -0.04052795866575032,
+            "max": 0.001481124679211021
+          }
+        },
+        "action": {
+          "x": {
+            "mean": 0.0011503499545744394,
+            "std": 0.01032335945768012,
+            "rms": 0.010387254474136224,
+            "min": -0.10270070143352258,
+            "max": 0.09144657709243392
+          },
+          "y": {
+            "mean": 0.00046892378697076785,
+            "std": 0.01566409026971179,
+            "rms": 0.01567110760270845,
+            "min": -0.18565854071594942,
+            "max": 0.2777997862234749
+          },
+          "z": {
+            "mean": -0.021401534000629007,
+            "std": 0.007460921526444952,
+            "rms": 0.022664752537891276,
+            "min": -0.05708682136480547,
+            "max": 0.015166282316625868
+          }
+        },
+        "post_home": {
+          "x": {
+            "mean": -0.0006817712566307733,
+            "std": 0.004608304377991815,
+            "rms": 0.00465846340401923,
+            "min": -0.018319157947816522,
+            "max": 0.012568011602827944
+          },
+          "y": {
+            "mean": 3.8076080694757475e-05,
+            "std": 0.005143125783058756,
+            "rms": 0.005143266725368694,
+            "min": -0.015822828889277097,
+            "max": 0.014503805778823278
+          },
+          "z": {
+            "mean": -0.02154966980837711,
+            "std": 0.008107053315047835,
+            "rms": 0.023024173867982927,
+            "min": -0.04770097562554554,
+            "max": 0.012605835495985929
+          }
+        }
+      },
+      "gyro_peaks": {
+        "gx_peak_deg_s": 0.329364,
+        "gy_peak_deg_s": 0.49282299999999996,
+        "gz_peak_deg_s": 0.18621199999999996
+      }
+    },
+    "fault_observations": [],
+    "qualified_for_lever_arm_identification": true
+  },
+  "hardware_write_count": 486,
+  "final_fault_codes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "status": "PASS",
+  "notes": [
+    "This run collects acceleration telemetry for future lever-arm identification.",
+    "No r_P_IP estimate is accepted in J9.1-4G first-run acquisition.",
+    "Base IMU is recorded only as background monitor; no a_platform - a_base physical subtraction is used."
+  ]
+}

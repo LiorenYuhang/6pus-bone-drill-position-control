@@ -24,15 +24,28 @@ def test_roll_positive_reference_and_ik_budget_is_finite():
     assert max(abs(step - 1000.0) for step in continuous) < 80.0
 
 
-def test_translation_reference_remains_zero_and_pitch_yaw_zero():
+def test_pitch_positive_reference_and_axis_mapping_are_finite():
+    kin = mod.Analytical6PusKinematics()
+    roll_deg, pitch_deg, yaw_deg = mod.axis_angle_to_rpy("pitch", 0.5)
+    continuous, quantized = mod.steps_for_attitude(kin, roll_deg, pitch_deg, yaw_deg)
+
+    assert (roll_deg, pitch_deg, yaw_deg) == (0.0, 0.5, 0.0)
+    assert len(continuous) == 6
+    assert len(quantized) == 6
+    assert all(math.isfinite(step) for step in continuous)
+    assert max(abs(step - 1000.0) for step in continuous) > 1.0
+    assert max(abs(step - 1000.0) for step in continuous) < 80.0
+
+
+def test_translation_reference_remains_zero_and_inactive_axes_zero():
     source = SCRIPT.read_text(encoding="utf-8")
 
     assert "msg.pose.position.x = 0.0" in source
     assert "msg.pose.position.y = 0.0" in source
     assert "msg.pose.position.z = float(self.z0)" in source
-    assert "harness.publish_rotation_target(angle_deg, 0.0, 0.0)" in source
-    assert "J9.1-4G rotation measurement requires a nonzero roll angle" in source
-    assert "action_roll_neg" in source
+    assert "harness.publish_rotation_target(roll_deg, pitch_deg, yaw_deg)" in source
+    assert "J9.1-4G rotation measurement requires a nonzero angle" in source
+    assert "action_{axis}_{" in source
 
 
 def test_output_schema_preserves_acceleration_and_timestamps():
@@ -63,7 +76,7 @@ def test_stage_labels_and_artifact_naming_contract():
     source = SCRIPT.read_text(encoding="utf-8")
 
     assert "pre_home" in source
-    assert "action_roll_pos" in source
+    assert "action_{axis}_{" in source
     assert "return_home" in source
     assert "post_home" in source
     assert "j9_1_rotation_lever_arm_{axis}_{dir_tag}_{stamp_str}.csv" in source
@@ -78,7 +91,8 @@ def test_hardware_mode_guard_and_no_negative_first_run():
     assert "hardware_mode=\"active\"" in source
     assert "use_j7_servo=True" in source
     assert "if angle_deg == 0.0" in source
-    assert "nonzero roll angle" in source
+    assert "choices=[\"roll\", \"pitch\", \"yaw\"]" in source
+    assert "nonzero angle" in source
 
 
 def test_analysis_synthetic_rotation_csv(tmp_path: Path):
