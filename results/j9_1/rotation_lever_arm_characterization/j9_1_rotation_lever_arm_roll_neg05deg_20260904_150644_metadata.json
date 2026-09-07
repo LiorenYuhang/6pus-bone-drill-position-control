@@ -1,0 +1,464 @@
+{
+  "experiment_name": "J9.1-4G_Rotation_Lever_Arm_Characterization",
+  "timestamp": "20260904_150644",
+  "csv_path": "/home/lyapunov/bone_drill/results/j9_1/rotation_lever_arm_characterization/j9_1_rotation_lever_arm_roll_neg05deg_20260904_150644.csv",
+  "axis": "roll",
+  "angle_deg": -0.5,
+  "z0_m": 0.13261226796206452,
+  "frozen_ik_nominal_continuous_steps": [
+    991.6933663460567,
+    1000.0000000018524,
+    1008.3151038148399,
+    1008.3151038148399,
+    1000.0000000018524,
+    991.6933663460567
+  ],
+  "frozen_ik_nominal_command_steps": [
+    992,
+    1000,
+    1008,
+    1008,
+    1000,
+    992
+  ],
+  "frame_contract": {
+    "raw_accel_frame": "Platform H30 sensor frame I_P, fields p_ax_raw/p_ay_raw/p_az_raw, units m/s^2 specific force",
+    "gyro_frame": "Platform H30 sensor frame I_P, fields p_gx_rad_s/p_gy_rad_s/p_gz_rad_s, units rad/s",
+    "gravity_removed_accel_frame": "H30 quaternion-derived world/navigation representation from existing translation harness, fields p_aw_x/p_aw_y/p_aw_z, units m/s^2",
+    "platform_transform": "R_P_IP = Rz(+90 deg); vector transform v_P = R_P_IP * v_IP",
+    "quaternion_convention": "sensor_msgs/Imu orientation xyzw"
+  },
+  "metrics": {
+    "status": "PASS",
+    "axis": "roll",
+    "angle_deg": -0.5,
+    "action_stage": "action_roll_neg",
+    "frame_contract": {
+      "raw_accel_frame": "Platform H30 sensor frame I_P, fields p_ax_raw/p_ay_raw/p_az_raw, units m/s^2 specific force",
+      "gyro_frame": "Platform H30 sensor frame I_P, fields p_gx_rad_s/p_gy_rad_s/p_gz_rad_s, units rad/s",
+      "gravity_removed_accel_frame": "H30 quaternion-derived world/navigation representation from existing translation harness, fields p_aw_x/p_aw_y/p_aw_z, units m/s^2",
+      "platform_transform": "R_P_IP = Rz(+90 deg); vector transform v_P = R_P_IP * v_IP",
+      "quaternion_convention": "sensor_msgs/Imu orientation xyzw"
+    },
+    "sample_counts": {
+      "total": 3357,
+      "pre_home": 825,
+      "action": 1174,
+      "return_home": 577,
+      "post_home": 780
+    },
+    "telemetry_completeness": {
+      "platform_quaternion_complete": true,
+      "platform_gyro_complete": true,
+      "platform_raw_accel_complete": true,
+      "platform_gravity_removed_accel_complete": true,
+      "joint_feedback_complete": true,
+      "fk_complete": true,
+      "host_monotonic_strict": true,
+      "platform_stamp_strict": true
+    },
+    "timing": {
+      "platform_dt": {
+        "count": 3357,
+        "mean_ms": 6.565582292014303,
+        "median_ms": 5.966236,
+        "p95_ms": 15.98218475,
+        "p99_ms": 30.001170249999998,
+        "max_ms": 69.988102,
+        "effective_rate_hz": 152.30941529988846
+      },
+      "base_dt": {
+        "count": 3273,
+        "mean_ms": 6.73413418306846,
+        "median_ms": 5.972414499999999,
+        "p95_ms": 15.964775,
+        "p99_ms": 30.024043799999998,
+        "max_ms": 79.994946,
+        "effective_rate_hz": 148.49718951462032
+      },
+      "host_dt": {
+        "count": 3357,
+        "mean_ms": 6.569872570023837,
+        "median_ms": 4.8788725,
+        "p95_ms": 18.063886500000002,
+        "p99_ms": 33.10838764999991,
+        "max_ms": 74.824718,
+        "effective_rate_hz": 152.20995374593267
+      },
+      "online_latest_base_offset_ms": {
+        "mean": 1.257171144474233,
+        "std": 2.064990938800309,
+        "rms": 2.417574582887989,
+        "min": 1e-06,
+        "max": 16.003862
+      }
+    },
+    "joint_state": {
+      "cmd_steps": [
+        992,
+        1000,
+        1008,
+        1008,
+        1000,
+        992
+      ],
+      "fb_steps": [
+        992,
+        998,
+        1006,
+        1007,
+        998,
+        992
+      ]
+    },
+    "fk_local_displacement": {
+      "dx_mm": -0.07607187843737716,
+      "dy_mm": 0.04637690888019663,
+      "dz_mm": -0.004752490241344276,
+      "droll_deg": -0.4594276554263887,
+      "dpitch_deg": 0.015175650411372902,
+      "dyaw_deg": -0.06659198497870723
+    },
+    "platform_attitude_response": {
+      "roll_deg": {
+        "mean": -0.2322134059584995,
+        "std": 0.20559562111940757,
+        "rms": 0.3101493597129001,
+        "min": -0.4234072799303123,
+        "max": 0.013987638886567958
+      },
+      "pitch_deg": {
+        "mean": -0.04455151756040503,
+        "std": 0.037949408691539045,
+        "rms": 0.05852345971465236,
+        "min": -0.09447003168923135,
+        "max": 0.01019802744327793
+      },
+      "yaw_deg": {
+        "mean": -0.16974712184728394,
+        "std": 0.15653071642300426,
+        "rms": 0.2309024697991246,
+        "min": -0.4598250835450076,
+        "max": 0.02758262274545661
+      }
+    },
+    "platform_gyro_peaks": {
+      "gx_peak_deg_s": 1.171015,
+      "gy_peak_deg_s": 3.110967,
+      "gz_peak_deg_s": 4.656098
+    },
+    "base_gyro_peaks": {
+      "gx_peak_deg_s": 0.30568700000000004,
+      "gy_peak_deg_s": 0.276717,
+      "gz_peak_deg_s": 0.152327
+    },
+    "platform_raw_accel": {
+      "pre_home": {
+        "x": {
+          "mean": -0.2977094290909091,
+          "std": 0.005059177094913675,
+          "rms": 0.29775241299192307,
+          "min": -0.311654,
+          "max": -0.283051
+        },
+        "y": {
+          "mean": 0.0993917309090909,
+          "std": 0.007398833909128033,
+          "rms": 0.0996667392680226,
+          "min": 0.072008,
+          "max": 0.12428299999999999
+        },
+        "z": {
+          "mean": 9.805911955151515,
+          "std": 0.005928831466178818,
+          "rms": 9.805913747490642,
+          "min": 9.786947,
+          "max": 9.822989
+        }
+      },
+      "action": {
+        "x": {
+          "mean": -0.3660784744463373,
+          "std": 0.01982617428181985,
+          "rms": 0.36661495692294216,
+          "min": -0.5501889999999999,
+          "max": -0.226816
+        },
+        "y": {
+          "mean": 0.0893856482112436,
+          "std": 0.022539127091439168,
+          "rms": 0.09218354710135776,
+          "min": -0.105776,
+          "max": 0.27955199999999997
+        },
+        "z": {
+          "mean": 9.80286075298126,
+          "std": 0.007005312600858346,
+          "rms": 9.802863256046416,
+          "min": 9.775064,
+          "max": 9.860192999999999
+        }
+      },
+      "post_home": {
+        "x": {
+          "mean": -0.3068590217948718,
+          "std": 0.004761359721844908,
+          "rms": 0.3068959592489064,
+          "min": -0.32205,
+          "max": -0.290914
+        },
+        "y": {
+          "mean": 0.09724344102564103,
+          "std": 0.004733140697184327,
+          "rms": 0.09735856122276389,
+          "min": 0.083046,
+          "max": 0.110413
+        },
+        "z": {
+          "mean": 9.804943721794873,
+          "std": 0.005648342637858746,
+          "rms": 9.804945348717617,
+          "min": 9.787086,
+          "max": 9.823091
+        }
+      }
+    },
+    "platform_gravity_removed_accel": {
+      "pre_home": {
+        "x": {
+          "mean": -0.0026102617689805077,
+          "std": 0.007465458112661435,
+          "rms": 0.007908636502868474,
+          "min": -0.028118736198457492,
+          "max": 0.024682874730392934
+        },
+        "y": {
+          "mean": 0.0014588954971310494,
+          "std": 0.005147982201154186,
+          "rms": 0.005350709935601962,
+          "min": -0.013989552984502433,
+          "max": 0.016936766481101904
+        },
+        "z": {
+          "mean": 0.004283096771857365,
+          "std": 0.005914019211922694,
+          "rms": 0.007302091563112976,
+          "min": -0.014674401039528107,
+          "max": 0.021282737106346872
+        }
+      },
+      "action": {
+        "x": {
+          "mean": 0.0013823034801628317,
+          "std": 0.022417576641317192,
+          "rms": 0.02246015372566716,
+          "min": -0.2009778669240831,
+          "max": 0.19021240640595238
+        },
+        "y": {
+          "mean": 0.0008762790824531467,
+          "std": 0.014822489712256678,
+          "rms": 0.014848369146148677,
+          "min": -0.1281407259154875,
+          "max": 0.17788168127492843
+        },
+        "z": {
+          "mean": 0.0034599426688664754,
+          "std": 0.00709435821976694,
+          "rms": 0.007893105968008893,
+          "min": -0.025318024793318017,
+          "max": 0.06203212689688975
+        }
+      },
+      "post_home": {
+        "x": {
+          "mean": 0.0010869763555798936,
+          "std": 0.004828529546872283,
+          "rms": 0.004949365129247226,
+          "min": -0.013747148069223364,
+          "max": 0.014909557422631795
+        },
+        "y": {
+          "mean": 0.004135349037162162,
+          "std": 0.004744137275196726,
+          "rms": 0.006293484737811718,
+          "min": -0.012491670769995387,
+          "max": 0.018501449131276312
+        },
+        "z": {
+          "mean": 0.0035753370533948047,
+          "std": 0.005642929753025815,
+          "rms": 0.006680246345978705,
+          "min": -0.014365887412031597,
+          "max": 0.02180200605800664
+        }
+      }
+    },
+    "base_monitor": {
+      "raw_accel": {
+        "pre_home": {
+          "x": {
+            "mean": -0.8054013830303031,
+            "std": 0.005096688972140864,
+            "rms": 0.8054175091377165,
+            "min": -0.8251999999999999,
+            "max": -0.791462
+          },
+          "y": {
+            "mean": 0.28189582424242426,
+            "std": 0.005096400299619111,
+            "rms": 0.2819418894405897,
+            "min": 0.263304,
+            "max": 0.294616
+          },
+          "z": {
+            "mean": 9.748681238787878,
+            "std": 0.006165800339404798,
+            "rms": 9.748683188645971,
+            "min": 9.728707,
+            "max": 9.774431
+          }
+        },
+        "action": {
+          "x": {
+            "mean": -0.805873247870528,
+            "std": 0.007637886753570387,
+            "rms": 0.8059094421505768,
+            "min": -0.8541839999999999,
+            "max": -0.741062
+          },
+          "y": {
+            "mean": 0.2819699838160136,
+            "std": 0.009117950102525243,
+            "rms": 0.2821173670430006,
+            "min": 0.143795,
+            "max": 0.346897
+          },
+          "z": {
+            "mean": 9.748650189948892,
+            "std": 0.006964138806587068,
+            "rms": 9.748652677432911,
+            "min": 9.716268,
+            "max": 9.780362
+          }
+        },
+        "post_home": {
+          "x": {
+            "mean": -0.805226591025641,
+            "std": 0.005023147045854663,
+            "rms": 0.8052422585166648,
+            "min": -0.8203429999999999,
+            "max": -0.788411
+          },
+          "y": {
+            "mean": 0.28212861410256407,
+            "std": 0.0045993958001811705,
+            "rms": 0.2821661023885758,
+            "min": 0.268308,
+            "max": 0.299288
+          },
+          "z": {
+            "mean": 9.749072614102564,
+            "std": 0.0059061995219761455,
+            "rms": 9.74907440315425,
+            "min": 9.728958,
+            "max": 9.768709999999999
+          }
+        }
+      },
+      "gravity_removed_accel": {
+        "pre_home": {
+          "x": {
+            "mean": -0.000507891249161083,
+            "std": 0.005208545775336945,
+            "rms": 0.005233249718363796,
+            "min": -0.020116598887190085,
+            "max": 0.015247764325448221
+          },
+          "y": {
+            "mean": 6.833814933043537e-05,
+            "std": 0.005149339193511729,
+            "rms": 0.005149792639756472,
+            "min": -0.014583022628276543,
+            "max": 0.018368556518823763
+          },
+          "z": {
+            "mean": -0.02069471674325935,
+            "std": 0.006147557904447154,
+            "rms": 0.0215885101216427,
+            "min": -0.040214865664689015,
+            "max": 0.0051674571321171925
+          }
+        },
+        "action": {
+          "x": {
+            "mean": -0.0003589188467062841,
+            "std": 0.009515437977299002,
+            "rms": 0.009522204715208822,
+            "min": -0.15131613260931728,
+            "max": 0.06392470814386192
+          },
+          "y": {
+            "mean": -0.0001267672121025131,
+            "std": 0.0071282207332574446,
+            "rms": 0.007129347848724001,
+            "min": -0.03544684104342888,
+            "max": 0.056320740908477857
+          },
+          "z": {
+            "mean": -0.02068459045975628,
+            "std": 0.006983283834284174,
+            "rms": 0.021831594893594358,
+            "min": -0.05132887638295891,
+            "max": 0.005609206115424925
+          }
+        },
+        "post_home": {
+          "x": {
+            "mean": -0.0004024275616930169,
+            "std": 0.00457662061504879,
+            "rms": 0.004594279507877133,
+            "min": -0.014206715863948338,
+            "max": 0.016343350971569637
+          },
+          "y": {
+            "mean": -0.0005335554104836133,
+            "std": 0.005063895993736632,
+            "rms": 0.0050919273376039305,
+            "min": -0.018539461946003782,
+            "max": 0.015623266560765507
+          },
+          "z": {
+            "mean": -0.020312465562903868,
+            "std": 0.005928694210780506,
+            "rms": 0.021160001708154418,
+            "min": -0.040772891629368146,
+            "max": -0.0007594821217153935
+          }
+        }
+      },
+      "gyro_peaks": {
+        "gx_peak_deg_s": 0.30568700000000004,
+        "gy_peak_deg_s": 0.276717,
+        "gz_peak_deg_s": 0.152327
+      }
+    },
+    "fault_observations": [],
+    "qualified_for_lever_arm_identification": true
+  },
+  "hardware_write_count": 568,
+  "final_fault_codes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "status": "PASS",
+  "notes": [
+    "This run collects acceleration telemetry for future lever-arm identification.",
+    "No r_P_IP estimate is accepted in J9.1-4G first-run acquisition.",
+    "Base IMU is recorded only as background monitor; no a_platform - a_base physical subtraction is used."
+  ]
+}
