@@ -1,6 +1,6 @@
 # 6PUS 骨科并联机器人防抖控制与感知框架
 
-> [English](README.md) | [中文]  
+> [English](README.md) | [中文]
 > **面向 6-PUS 并联骨科手术机器人的 ROS 2 实时感知与主动防抖控制系统**
 
 ---
@@ -20,8 +20,8 @@
 
 ## 2. 当前阶段状态 (Project Status)
 
-**当前冻结里程碑**：$\mathbf{J9\ IMU\ Integration\ \&\ Measurement\ Qualification\ COMPLETE}$  
-*(冻结运行基线：`v1.0-j8-active-servo-hardware-qualified`；收口文档：[`J9_FINAL_SUMMARY.md`](./J9_FINAL_SUMMARY.md)、[`J9_TO_J10_HANDOFF.md`](./J9_TO_J10_HANDOFF.md))*
+**当前冻结里程碑**：$\mathbf{J10\ 6DOF\ Axis\text{-}Wise\ Operational\ Safe\ Workspace\ Measurement\ COMPLETE}$
+*(冻结运行基线：`v1.0-j8-active-servo-hardware-qualified`；收口文档：[`agent_docs/stages/J10/J10_FINAL_SUMMARY.md`](./agent_docs/stages/J10/J10_FINAL_SUMMARY.md)、[`agent_docs/stages/J10/J10_TO_J11_HANDOFF.md`](./agent_docs/stages/J10/J10_TO_J11_HANDOFF.md))*
 
 六轴 50Hz 连续笛卡尔伺服与 Design-B 伴随反馈控制闭环仍作为冻结运行基线保留：
 * **J8 准入结论**：`J8 functional hardware qualification: PASS`
@@ -36,7 +36,8 @@
 * **三轮自治硬件准入**：连续 3 轮完整 PARK $\to$ HOME $\to$ 20s 保持 $\to$ PARK 循环 100% PASS（56,754 / 56,754 帧反馈，0 故障，0 超时，0 停机）；
 * **最终 9 阶段实机视频演示考核**：137.128s，6898 周期，实测持续刷新率 50.30 Hz，41,388 / 41,388 响应（100.0% 完整率），0 丢帧，0 故障，0 STOP，各轴单向与 6 自由度复合运动全部平滑就位；
 * **全工作空间回归测试**：349 项单元与集成测试 **100% PASS**。
-* **J9 收口**：IMU 集成与测量资格已完成；J9_FINAL_SUMMARY.md 与 J9_TO_J10_HANDOFF.md 为新的规范入口。
+* **J9 收口**：双 H30 IMU 传感集成与姿态解算闭环已完成（[`agent_docs/stages/J9/J9_FINAL_SUMMARY.md`](./agent_docs/stages/J9/J9_FINAL_SUMMARY.md)）。
+* **J10 收口**：HOME 单轴 6 自由度实机安全运行工作空间完成全量实测（X `[-45.75, +45.75] mm`、Y `[-45.50, +49.00] mm`、Z `[-20.0, +24.5] mm` 笛卡尔直接位移 / `[-24.983, +24.5] mm` 含 PARK 停泊点、Roll `[-35.0, +37.5] deg`、Pitch `[-30.0, +35.0] deg`、Yaw `[-90.0, +90.0] deg`）；正式交接至 J11 执行器与运动学参数标定（Actuator & Kinematic Parameter Calibration）。
 
 ---
 

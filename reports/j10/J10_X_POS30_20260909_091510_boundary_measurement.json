@@ -1,0 +1,200 @@
+{
+  "experiment": "J10 X+ boundary measurement",
+  "timestamp": "20260909_091510",
+  "evidence_class": "real_hardware",
+  "candidate": {
+    "axis": "x",
+    "direction": "positive",
+    "amplitude_mm": 30.0
+  },
+  "runner": "/home/lyapunov/bone_drill/bone_ws/src/h30_imu/scripts/j10_a1_single_candidate_workspace_measurement.py",
+  "preflight": {
+    "qualification": "PASS",
+    "ik_valid": true,
+    "task_space_gate_passed": true,
+    "j10_extended_task_space_gate": true,
+    "default_task_space_limit_x_mm": 15.0,
+    "active_task_space_limit_x_positive_mm": 40.0,
+    "predicted_steps": [
+      1173,
+      1404,
+      1461,
+      1007,
+      1057,
+      1279
+    ],
+    "requested_steps": [
+      1173,
+      1404,
+      1461,
+      1007,
+      1057,
+      1279
+    ],
+    "actuator_margin_steps": [
+      727,
+      496,
+      439,
+      893,
+      843,
+      621
+    ],
+    "limiting_actuator": "ID3",
+    "historical_envelope_exceeded": false,
+    "maintenance_mode_required": false,
+    "maintenance_mode": false,
+    "home_band_steps": [
+      995,
+      1005
+    ],
+    "home_timeout_s": 6.0,
+    "home_consecutive_new_feedback_samples": 5,
+    "hardware_write_count": 0,
+    "hardware_write_count_scope": "dry-run preflight only"
+  },
+  "stages": [
+    "pre_home",
+    "candidate_transition",
+    "candidate_settle",
+    "candidate_measurement",
+    "return_home",
+    "post_home",
+    "teardown"
+  ],
+  "command_feedback_steps": {
+    "candidate_predicted": [
+      1173,
+      1404,
+      1461,
+      1007,
+      1057,
+      1279
+    ],
+    "candidate_last_command": [
+      1173,
+      1404,
+      1461,
+      1007,
+      1057,
+      1279
+    ],
+    "candidate_last_feedback": [
+      1152,
+      1310,
+      1342,
+      1005,
+      1043,
+      1221
+    ],
+    "candidate_measurement_feedback_median": [
+      1147,
+      1282,
+      1305,
+      1005,
+      1043,
+      1211
+    ]
+  },
+  "candidate_measurement": {
+    "established": true,
+    "row_count": 187,
+    "window_s_configured": 1.0,
+    "window_duration_s": 1.010650926,
+    "stage": "candidate_measurement"
+  },
+  "measurement_window": {
+    "baseline": "pre_home median FK",
+    "fk_median_absolute": {
+      "x": 19.90776586674553,
+      "y": -0.7434027872633113,
+      "z": 134.20356398866116,
+      "roll": 0.6315662899781498,
+      "pitch": 0.2690318934491626,
+      "yaw": -0.125110085407245
+    },
+    "fk_delta_from_pre_home_median": {
+      "x": 19.73622721446836,
+      "y": -0.7434027872633113,
+      "z": 1.5964511085281003,
+      "roll": 0.6016922803376435,
+      "pitch": 0.2784097035477291,
+      "yaw": 0.013435657236105097
+    },
+    "fk_delta_from_nominal_home": {
+      "x": 19.90776586674553,
+      "y": -0.7434027872633113,
+      "z": 1.5912960265966376,
+      "roll": 0.6315662899781498,
+      "pitch": 0.2690318934491626,
+      "yaw": -0.125110085407245
+    },
+    "units": {
+      "x": "mm",
+      "y": "mm",
+      "z": "mm",
+      "roll": "deg",
+      "pitch": "deg",
+      "yaw": "deg"
+    },
+    "sample_count": 187
+  },
+  "fault_timeout": {
+    "fault_codes_seen": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "fault": false,
+    "timeout": true,
+    "home_timeout": true,
+    "failure_reason": "feedback_band_timeout"
+  },
+  "home": {
+    "home_return_result": "not_confirmed",
+    "home_return_confirmed": false,
+    "home_return_duration_s": 6.009715354000036,
+    "final_feedback_steps": [
+      1011,
+      1036,
+      1039,
+      1002,
+      1006,
+      1020
+    ],
+    "max_error_steps": 39,
+    "failure_reason": "feedback_band_timeout",
+    "confirmation_band_steps": [
+      995,
+      1005
+    ],
+    "consecutive_new_feedback_samples_required": 5
+  },
+  "uart_cycle_count": 218,
+  "six_axis_0x29_frame_count": 1308,
+  "teardown": {
+    "teardown_completed": true,
+    "motion_stop": false,
+    "fault_stop": false,
+    "post_run_teardown_warning": true,
+    "warning": "After timeout and data collection, node shutdown logged J7 worker publish context-invalid STOP latch; runner metadata records motion_stop=false and fault_stop=false."
+  },
+  "artifacts": {
+    "csv": "/home/lyapunov/bone_drill/results/J10/J10_workspace_x_pos300mm_20260909_091510.csv",
+    "metadata": "/home/lyapunov/bone_drill/results/J10/J10_workspace_x_pos300mm_20260909_091510_metadata.json",
+    "runtime_log": "/home/lyapunov/bone_drill/results/J10/J10_x30_runtime_20260909_0915.log",
+    "preflight_csv": "/home/lyapunov/bone_drill/results/J10/J10_workspace_x_pos300mm_20260909_091457.csv",
+    "preflight_metadata": "/home/lyapunov/bone_drill/results/J10/J10_workspace_x_pos300mm_20260909_091457_metadata.json"
+  },
+  "production_diff": {
+    "status": "none introduced by this run",
+    "scope": "bone_ws/src, up, STM32",
+    "commit_performed": false,
+    "note": "Runner source was not edited; no further amplitude was executed."
+  },
+  "verdict": "X+30 recovery qualification failure: candidate_measurement was established, but feedback-confirmed HOME timed out at 6 s. Stop here; do not infer actuator or mechanical limit from this timeout."
+}

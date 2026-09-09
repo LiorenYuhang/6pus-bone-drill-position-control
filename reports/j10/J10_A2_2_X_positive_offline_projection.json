@@ -1,0 +1,119 @@
+{
+  "experiment": "J10-A2.2",
+  "mode": "offline_only",
+  "gate_bypassed": true,
+  "rows": [
+    {
+      "x_target_mm": 15,
+      "predicted_steps": [
+        1030,
+        1138,
+        1164,
+        949,
+        974,
+        1080
+      ],
+      "min_margin_to_100_1900": 736,
+      "limiting_actuator": "ID3",
+      "historical_200_1800_exceeded": false,
+      "absolute_0_2000_exceeded": false,
+      "ik_status": "PASS"
+    },
+    {
+      "x_target_mm": 20,
+      "predicted_steps": [
+        1065,
+        1211,
+        1247,
+        956,
+        989,
+        1132
+      ],
+      "min_margin_to_100_1900": 653,
+      "limiting_actuator": "ID3",
+      "historical_200_1800_exceeded": false,
+      "absolute_0_2000_exceeded": false,
+      "ik_status": "PASS"
+    },
+    {
+      "x_target_mm": 25,
+      "predicted_steps": [
+        1112,
+        1300,
+        1345,
+        975,
+        1017,
+        1198
+      ],
+      "min_margin_to_100_1900": 555,
+      "limiting_actuator": "ID3",
+      "historical_200_1800_exceeded": false,
+      "absolute_0_2000_exceeded": false,
+      "ik_status": "PASS"
+    },
+    {
+      "x_target_mm": 30,
+      "predicted_steps": [
+        1173,
+        1404,
+        1461,
+        1007,
+        1057,
+        1279
+      ],
+      "min_margin_to_100_1900": 439,
+      "limiting_actuator": "ID3",
+      "historical_200_1800_exceeded": false,
+      "absolute_0_2000_exceeded": false,
+      "ik_status": "PASS"
+    },
+    {
+      "x_target_mm": 35,
+      "predicted_steps": [
+        1248,
+        1527,
+        1597,
+        1051,
+        1110,
+        1375
+      ],
+      "min_margin_to_100_1900": 303,
+      "limiting_actuator": "ID3",
+      "historical_200_1800_exceeded": false,
+      "absolute_0_2000_exceeded": false,
+      "ik_status": "PASS"
+    },
+    {
+      "x_target_mm": 40,
+      "predicted_steps": [
+        1339,
+        1671,
+        1755,
+        1108,
+        1176,
+        1489
+      ],
+      "min_margin_to_100_1900": 145,
+      "limiting_actuator": "ID3",
+      "historical_200_1800_exceeded": false,
+      "absolute_0_2000_exceeded": false,
+      "ik_status": "PASS"
+    },
+    {
+      "x_target_mm": 45,
+      "predicted_steps": [
+        1446,
+        1840,
+        1941,
+        1178,
+        1258,
+        1623
+      ],
+      "min_margin_to_100_1900": -41,
+      "limiting_actuator": "ID3",
+      "historical_200_1800_exceeded": true,
+      "absolute_0_2000_exceeded": false,
+      "ik_status": "PASS"
+    }
+  ]
+}

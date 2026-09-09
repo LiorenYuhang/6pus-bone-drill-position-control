@@ -1,0 +1,205 @@
+{
+  "candidate": {
+    "axis": "x",
+    "direction": "positive",
+    "amplitude_mm": 10.0
+  },
+  "evidence_class": "real_hardware",
+  "verdict": "PASS",
+  "verdict_scope": "Single 10 mm operational candidate completed and HOME independently verified; not precision acceptance or a complete boundary determination.",
+  "preflight": {
+    "predicted_steps": [
+      1008,
+      1079,
+      1096,
+      954,
+      970,
+      1041
+    ],
+    "qualification": "PASS",
+    "minimum_margin_exploratory_100_1900_steps": 804,
+    "minimum_margin_historical_200_1800_steps": 704,
+    "limiting_actuator": "ID3",
+    "historical_envelope_exceeded": false,
+    "maintenance_mode_required": false,
+    "maintenance_mode": false,
+    "hardware_write_count": 0
+  },
+  "candidate_last_command_steps": [
+    1008,
+    1079,
+    1096,
+    954,
+    970,
+    1041
+  ],
+  "candidate_last_feedback_steps": [
+    1007,
+    1077,
+    1094,
+    954,
+    970,
+    1039
+  ],
+  "fk_fields_units": [
+    "fk_x_mm",
+    "fk_y_mm",
+    "fk_z_mm",
+    "fk_roll_deg",
+    "fk_pitch_deg",
+    "fk_yaw_deg"
+  ],
+  "pre_home_median_fk": [
+    0.11518145402107505,
+    0.028120211985615966,
+    132.59985012461098,
+    0.033810600435118444,
+    -0.02965087247538113,
+    -0.23590245858387188
+  ],
+  "candidate_full_stage_delta": [
+    6.668073067192114,
+    -0.10037745933659807,
+    0.02970614653659709,
+    0.0015850390267939454,
+    0.04165147769831393,
+    0.01669895878710076
+  ],
+  "candidate_last_0p5s_delta": [
+    9.655350912179456,
+    -0.11351836143686288,
+    0.0182805700027302,
+    -0.09934518014534513,
+    0.029677877663538854,
+    0.20283978958949656
+  ],
+  "candidate_last_0p5s_samples": 69,
+  "candidate_last_row_delta": [
+    9.77425974375214,
+    -0.055673203087621775,
+    0.0004886667388745991,
+    -0.03693585858095186,
+    0.02110641571999699,
+    0.22287668301007854
+  ],
+  "post_home_full_stage_delta": [
+    -0.057580859444623496,
+    0.005543432789698478,
+    0.004075045873179306,
+    0.038327343666070136,
+    0.05685146550682678,
+    0.15399804333746586
+  ],
+  "post_home_last_0p5s_delta": [
+    0.05759062036484708,
+    0.07160693804822786,
+    -0.0035890465904628854,
+    0.032520163757989516,
+    0.006752254668595487,
+    0.028069907798483062
+  ],
+  "final_home_readonly_steps": [
+    999,
+    1000,
+    999,
+    998,
+    999,
+    1001
+  ],
+  "final_home_fault_codes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "final_home_timeout_count": 0,
+  "final_home_readonly_hardware_write_count": 0,
+  "stage_counts": {
+    "pre_home": 249,
+    "candidate": 414,
+    "return_home": 276,
+    "post_home": 306
+  },
+  "final_csv_row_count": 1245,
+  "csv_complete_rows": true,
+  "final_csv_motion_executed": "True",
+  "final_csv_home_return_result": "completed",
+  "fault_codes_seen": [
+    "[0, 0, 0, 0, 0, 0]"
+  ],
+  "hardware_write_count": 153,
+  "hardware_write_count_semantics": "Legacy CSV field is the last observed uart_cycle_sequence (153), not the count of all hardware write frames. Total session write count is not fully instrumented, including the initial failed runner startup and shutdown.",
+  "uart_audit_snapshot": {
+    "completed_six_axis_cycles": 151,
+    "motion_0x29_frame_count": 906,
+    "motion_retry_count": 0,
+    "delivery_uncertain": false,
+    "transport_stopped": false,
+    "stop_reason": null,
+    "feedback_timeout_count": 0,
+    "feedback_malformed_count": 0,
+    "feedback_mismatch_count": 0,
+    "stale_target_timeout_count": 0,
+    "driver_timeout_events": [],
+    "driver_fault_latched": false,
+    "driver_fault_reason": null,
+    "last_dispatched_steps": [
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000
+    ]
+  },
+  "uart_audit_scope": "151 completed six-axis cycles / 906 motion 0x29 frames at pre-shutdown snapshot; not a final total. motion_retry_count=0, feedback_timeout_count=0, driver fault not latched at snapshot.",
+  "imu": {
+    "b": {
+      "rows_with_valid_timestamp": 1245,
+      "unique_timestamps": 1194
+    },
+    "p": {
+      "rows_with_valid_timestamp": 1245,
+      "unique_timestamps": 1245
+    }
+  },
+  "warnings": [
+    "Initial unpatched live runner executor failed during pre_home with AttributeError. Its PASS/motion_executed flags and zero hardware write count are invalid evidence; subsequent read-only scan confirmed HOME and zero fault. Preserved separately as 150435 artifacts.",
+    "Existing runtime wrapper adapted in memory to 10 mm; no source files edited.",
+    "Transient QoS discovery warnings occurred; replacement BEST_EFFORT subscriptions supplied command, feedback and FK telemetry.",
+    "Vector slew recovery was active during movement. Full candidate median includes the approach; last 0.5 s and endpoint statistics are reported separately.",
+    "Post-run STOP latched on node destruction after completed HOME/data collection. Classified as teardown warning; independent final read-only scan found zero hardware faults.",
+    "Original metadata summary was captured before CSV closure (1221 rows, count149). Closed CSV has 1245 rows, count153. Original metadata preserved unchanged."
+  ],
+  "production_diff": "none; git diff HEAD -- bone_ws/src up STM32 empty; runner and existing runtime wrapper SHA256 unchanged",
+  "commit_performed": false,
+  "automatic_sweep": false,
+  "further_amplitude_executed": false,
+  "artifacts": {
+    "csv": "/home/lyapunov/bone_drill/results/j10_a2/j10_a2_workspace_x_pos100mm_20260908_151149.csv",
+    "original_metadata": "/home/lyapunov/bone_drill/results/j10_a2/j10_a2_workspace_x_pos100mm_20260908_151149_metadata.json",
+    "uart_audit": "/home/lyapunov/bone_drill/results/j10_a2/j10_a2_workspace_x_pos100mm_20260908_151149_uart_audit.json",
+    "final_home_readonly": "/home/lyapunov/bone_drill/results/j10_a2/j10_x10_final_home_readonly_20260908_151149.json",
+    "runtime_log": "/home/lyapunov/bone_drill/results/j10_a2/j10_x10_runtime_20260908_1513.log",
+    "dry_preflight": "/home/lyapunov/bone_drill/results/j10_a2/j10_a1_workspace_x_pos100mm_20260908_150328_metadata.json"
+  },
+  "yaw_comparison": [
+    {
+      "amplitude_mm": 2,
+      "yaw_delta_full_stage_deg": 0.22143292766738792,
+      "yaw_delta_last_0p5s_deg": 0.20776880595007255
+    },
+    {
+      "amplitude_mm": 5,
+      "yaw_delta_full_stage_deg": 0.48403157951523723,
+      "yaw_delta_last_0p5s_deg": 0.4150028584060756
+    },
+    {
+      "amplitude_mm": 10,
+      "yaw_delta_full_stage_deg": 0.01669895878710076,
+      "yaw_delta_last_0p5s_deg": 0.20283978958949656
+    }
+  ]
+}

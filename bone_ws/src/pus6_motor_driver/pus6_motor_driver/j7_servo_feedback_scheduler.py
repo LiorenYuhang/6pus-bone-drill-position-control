@@ -1,10 +1,11 @@
 """Isolated J7 Servo feedback scheduler.
 
-Feedback is deliberately subordinate to the six-axis Servo writer: it uses
-the writer's shared UART lock, acquires it without blocking, and defers when a
-Servo deadline is imminent.  Motion response frames are never used as
-feedback; runtime feedback uses status ``0x30`` only and validates the
-requested ID and command.
+Design-B uses two feedback paths. The primary runtime path is the
+``StatusFeedback`` returned with each 50 Hz ``0x29`` motion write and ingested
+through :meth:`ingest_cycle_feedback`. The retained ``0x30`` status path is an
+auxiliary explicit poll used for safety scans and diagnostics. Both paths share
+the writer's UART lock and validate the expected ID and command; polling is
+non-blocking with respect to an imminent Servo deadline.
 """
 
 from __future__ import annotations

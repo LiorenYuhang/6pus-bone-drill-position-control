@@ -1,0 +1,20 @@
+{
+  "experiment": "J10-A6.1 Actuator-Limit Policy Cleanup",
+  "hardware_motion_count": 0,
+  "production_diff": "none",
+  "commit_performed": false,
+  "absolute_range": [0, 2000],
+  "historical_metadata_range": [200, 1800],
+  "deprecated_exploratory_metadata_range": [100, 1900],
+  "regression": [
+    {"target_step": 1790, "qualification": "PASS", "limit_reason": "", "absolute_margin": 210, "historical_envelope_exceeded": false, "maintenance_mode_required": false},
+    {"target_step": 1850, "qualification": "PASS", "limit_reason": "", "absolute_margin": 150, "historical_envelope_exceeded": true, "maintenance_mode_required": true},
+    {"target_step": 1901, "qualification": "PASS", "limit_reason": "", "absolute_margin": 99, "historical_envelope_exceeded": true, "maintenance_mode_required": true},
+    {"target_step": 1999, "qualification": "PASS", "limit_reason": "", "absolute_margin": 1, "historical_envelope_exceeded": true, "maintenance_mode_required": true},
+    {"target_step": 2000, "qualification": "PASS", "limit_reason": "", "absolute_margin": 0, "historical_envelope_exceeded": true, "maintenance_mode_required": true},
+    {"target_step": 2001, "qualification": "LIMIT", "limit_reason": "predicted_step_outside_absolute_range", "absolute_margin": -1, "historical_envelope_exceeded": true, "maintenance_mode_required": true},
+    {"target_step": -1, "qualification": "LIMIT", "limit_reason": "predicted_step_outside_absolute_range", "absolute_margin": -1, "historical_envelope_exceeded": true, "maintenance_mode_required": true}
+  ],
+  "tests": "25 passed",
+  "verdict": "J10-A6.1 PASS: absolute [0,2000] is the only J10 actuator qualification gate; historical and deprecated exploratory ranges are metadata/policy only."
+}

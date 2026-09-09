@@ -1,0 +1,203 @@
+{
+  "experiment": "J10-A3.3 X+20 mm recovery revalidation",
+  "timestamp": "20260909_085910",
+  "evidence_class": "real_hardware",
+  "candidate": {
+    "axis": "x",
+    "direction": "positive",
+    "amplitude_mm": 20.0
+  },
+  "runner": "/home/lyapunov/bone_drill/bone_ws/src/h30_imu/scripts/j10_a1_single_candidate_workspace_measurement.py",
+  "preflight": {
+    "task_space_gate": "j10_extended_task_space_gate",
+    "j10_extended_task_space_gate": true,
+    "default_task_space_limit_x_mm": 15.0,
+    "active_task_space_limit_x_positive_mm": 40.0,
+    "ik_valid": true,
+    "task_space_gate_passed": true,
+    "qualification": "PASS",
+    "predicted_steps": [
+      1065,
+      1211,
+      1247,
+      956,
+      989,
+      1132
+    ],
+    "requested_steps": [
+      1065,
+      1211,
+      1247,
+      956,
+      989,
+      1132
+    ],
+    "actuator_margin_steps": [
+      835,
+      689,
+      653,
+      856,
+      889,
+      768
+    ],
+    "limiting_actuator": "ID3",
+    "historical_envelope_exceeded": false,
+    "maintenance_mode_required": false,
+    "maintenance_mode": false,
+    "home_band_steps": [
+      995,
+      1005
+    ],
+    "home_timeout_s": 6.0,
+    "home_consecutive_new_feedback_samples": 5,
+    "hardware_mode": "active",
+    "hardware_write_count_semantics": "motion 0x29 frames are reported; no separate aggregate write counter",
+    "hardware_write_count": 0,
+    "hardware_write_count_scope": "dry-run preflight artifact only"
+  },
+  "stages": [
+    "pre_home",
+    "candidate_transition",
+    "candidate_settle",
+    "candidate_measurement",
+    "return_home",
+    "post_home",
+    "teardown"
+  ],
+  "command_feedback_steps": {
+    "candidate_predicted": [
+      1065,
+      1211,
+      1247,
+      956,
+      989,
+      1132
+    ],
+    "candidate_last_command": [
+      1065,
+      1211,
+      1247,
+      956,
+      989,
+      1132
+    ],
+    "candidate_last_feedback": [
+      1065,
+      1209,
+      1245,
+      956,
+      989,
+      1130
+    ],
+    "candidate_measurement_feedback_median": [
+      1064.5,
+      1209.0,
+      1245.0,
+      956.0,
+      989.0,
+      1130.0
+    ]
+  },
+  "candidate_measurement": {
+    "established": true,
+    "row_count": 116,
+    "window_s_configured": 1.0,
+    "window_duration_s": 1.006756347,
+    "stage": "candidate_measurement"
+  },
+  "measurement_window": {
+    "baseline": "pre_home median FK",
+    "fk_median_absolute": {
+      "x": 19.784001104454802,
+      "y": 0.010970834321038292,
+      "z": 132.6385033490679,
+      "roll": 0.059863232446539814,
+      "pitch": 0.03066556356755667,
+      "yaw": 0.24896386841812404
+    },
+    "fk_delta_from_pre_home_median": {
+      "x": 19.197434017700623,
+      "y": 0.11072591969752772,
+      "z": 0.027578536499618167,
+      "roll": 0.08023660705532043,
+      "pitch": 0.03439834041995784,
+      "yaw": 0.3181029588077484
+    },
+    "fk_delta_from_nominal_home": {
+      "x": 19.784001104454802,
+      "y": 0.010970834321038292,
+      "z": 0.026235387003367805,
+      "roll": 0.059863232446539814,
+      "pitch": 0.03066556356755667,
+      "yaw": 0.24896386841812404
+    },
+    "units": {
+      "x": "mm",
+      "y": "mm",
+      "z": "mm",
+      "roll": "deg",
+      "pitch": "deg",
+      "yaw": "deg"
+    },
+    "sample_count": 116
+  },
+  "fault_timeout": {
+    "fault_codes_seen": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "fault": false,
+    "timeout": false,
+    "home_timeout": false,
+    "failure_reason": ""
+  },
+  "home": {
+    "home_return_result": "confirmed",
+    "home_return_confirmed": true,
+    "home_return_duration_s": 3.8591499080000062,
+    "final_feedback_steps": [
+      997,
+      1001,
+      999,
+      999,
+      999,
+      1002
+    ],
+    "max_error_steps": 3,
+    "failure_reason": "",
+    "confirmation_band_steps": [
+      995,
+      1005
+    ],
+    "consecutive_new_feedback_samples": 5
+  },
+  "uart_cycle_count": 203,
+  "six_axis_0x29_frame_count": 1218,
+  "teardown": {
+    "teardown_completed": true,
+    "motion_stop": false,
+    "fault_stop": false,
+    "post_run_teardown_warning": true,
+    "warning": "After successful HOME/data collection, node shutdown logged J7 worker publish context-invalid STOP latch; runner metadata records motion_stop=false and fault_stop=false."
+  },
+  "artifacts": {
+    "csv": "/home/lyapunov/bone_drill/results/J10/J10_workspace_x_pos200mm_20260909_085910.csv",
+    "metadata": "/home/lyapunov/bone_drill/results/J10/J10_workspace_x_pos200mm_20260909_085910_metadata.json",
+    "runtime_log": "/home/lyapunov/bone_drill/results/J10/J10_x20_revalidation_runtime_20260909_0900.log",
+    "preflight_csv": "/home/lyapunov/bone_drill/results/J10/J10_workspace_x_pos200mm_20260909_085823.csv",
+    "preflight_metadata": "/home/lyapunov/bone_drill/results/J10/J10_workspace_x_pos200mm_20260909_085823_metadata.json"
+  },
+  "production_diff": {
+    "status": "none introduced by this run",
+    "scope": "bone_ws/src, up, STM32",
+    "commit_performed": false,
+    "note": "Repository had pre-existing workspace/document changes; runner source was not edited."
+  },
+  "verdict": "X+20 operational PASS: candidate measurement established and feedback-confirmed HOME completed. No +30 mm test executed."
+}

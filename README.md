@@ -1,6 +1,6 @@
 # 6PUS-Anti-Vibration
 
-> [English] | [中文](README_CN.md)  
+> [English] | [中文](README_CN.md)
 > **A ROS 2 based real-time sensing and control framework for a 6PUS parallel platform with active vibration suppression.**
 
 ---
@@ -20,8 +20,8 @@ Key capabilities include:
 
 ## Project Status
 
-**Current Milestone**: $\mathbf{J9\ IMU\ Integration\ \&\ Measurement\ Qualification\ COMPLETE}$  
-*(Frozen runtime baseline: `v1.0-j8-active-servo-hardware-qualified`; closure docs: [`J9_FINAL_SUMMARY.md`](./J9_FINAL_SUMMARY.md), [`J9_TO_J10_HANDOFF.md`](./J9_TO_J10_HANDOFF.md))*
+**Current Milestone**: $\mathbf{J10\ 6DOF\ Axis\text{-}Wise\ Operational\ Safe\ Workspace\ Measurement\ COMPLETE}$
+*(Frozen runtime baseline: `v1.0-j8-active-servo-hardware-qualified`; closure docs: [`agent_docs/stages/J10/J10_FINAL_SUMMARY.md`](./agent_docs/stages/J10/J10_FINAL_SUMMARY.md), [`agent_docs/stages/J10/J10_TO_J11_HANDOFF.md`](./agent_docs/stages/J10/J10_TO_J11_HANDOFF.md))*
 
 The continuous Cartesian 50Hz Servo motion control and Design-B accompanying feedback pipeline remain the frozen runtime baseline on real hardware:
 * **J8 Status**: `J8 functional hardware qualification: PASS`
@@ -37,7 +37,8 @@ The continuous Cartesian 50Hz Servo motion control and Design-B accompanying fee
   * 3 consecutive autonomous PARK $\leftrightarrow$ HOME validation rounds passed (56,754 / 56,754 responses, 0 faults/timeouts/stops).
   * 9-Phase Cartesian Video Demonstration completed: 137.128s, 6898 cycles @ 50.30 Hz sustained rate, 41,388 / 41,388 feedback responses (100.0% completeness), 0 faults, 0 STOPs.
 * **Full Workspace Regression**: 349 / 349 tests passed (100% PASS across all 5 packages).
-* **J9 Closure**: IMU integration and measurement qualification are complete; J9 final summary and J9->J10 handoff are the canonical closure entry points.
+* **J9 Closure**: Dual H30 IMU sensing integration and attitude qualification completed ([`agent_docs/stages/J9/J9_FINAL_SUMMARY.md`](./agent_docs/stages/J9/J9_FINAL_SUMMARY.md)).
+* **J10 Closure**: Single-DOF axis-wise operational workspace characterization completed on real hardware (X `[-45.75, +45.75] mm`, Y `[-45.50, +49.00] mm`, Z `[-20.0, +24.5] mm` Cartesian / `[-24.983, +24.5] mm` incl. PARK, Roll `[-35.0, +37.5] deg`, Pitch `[-30.0, +35.0] deg`, Yaw `[-90.0, +90.0] deg`). Handed off to J11 Actuator & Kinematic Parameter Calibration.
 
 ---
 

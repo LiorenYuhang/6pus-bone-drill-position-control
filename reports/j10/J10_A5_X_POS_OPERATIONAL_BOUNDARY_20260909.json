@@ -1,0 +1,50 @@
+{
+  "experiment": "J10-A5 X+ Operational Boundary Closure",
+  "evidence_class": "real_hardware",
+  "tested_points_mm": [25, 30, 35, 40],
+  "maximum_fully_qualified_observed_x_positive_mm": 40,
+  "boundary_classification": "still not reached; result censored by J10 +40 mm task-space gate / exploratory policy",
+  "maintenance_mode": false,
+  "fault_or_timeout": false,
+  "production_diff": "none",
+  "commit_performed": false,
+  "no_test_above_40mm": true,
+  "points": {
+    "35": {
+      "predicted_steps": [1248, 1527, 1597, 1051, 1110, 1375],
+      "actuator_margin": [652, 373, 303, 849, 790, 525],
+      "limiting_actuator": "ID3",
+      "candidate_reached": true,
+      "candidate_reach_duration_s": 7.657953826001176,
+      "candidate_timeout_s": 11.45,
+      "measurement_valid": true,
+      "measurement_samples": 181,
+      "fk_delta_from_pre_home": [34.873733753629324, -0.035837948993107376, -0.02311101392788828, -0.024695135838097373, 0.048385973106336626, 0.15396427958009617],
+      "home_confirmed": true,
+      "home_return_duration_s": 8.256500081000922,
+      "home_final_feedback": [996, 1000, 1000, 1000, 1001, 1001],
+      "uart_cycles": 372,
+      "six_axis_0x29_frames": 2232,
+      "fault_timeout": "none"
+    },
+    "40": {
+      "predicted_steps": [1339, 1671, 1755, 1108, 1176, 1489],
+      "actuator_margin": [561, 229, 145, 792, 724, 411],
+      "limiting_actuator": "ID3",
+      "candidate_reached": true,
+      "candidate_reach_duration_s": 10.107237301999703,
+      "candidate_timeout_s": 14.083333333333334,
+      "measurement_valid": true,
+      "measurement_samples": 132,
+      "fk_delta_from_pre_home": [39.91870219843526, -0.0919365626431218, -0.05471092572994962, -0.004504848260645521, 0.05115680049319463, 0.1887889190307001],
+      "home_confirmed": true,
+      "home_return_duration_s": 10.253184265999153,
+      "home_final_feedback": [1000, 1000, 999, 1000, 1001, 1001],
+      "uart_cycles": 429,
+      "six_axis_0x29_frames": 2574,
+      "fault_timeout": "none"
+    }
+  },
+  "teardown_warning": "Known J7 worker context-invalid shutdown warning after completed data collection; candidate and HOME criteria remained valid.",
+  "verdict": "X+40 mm maximum observed operational PASS, but true X+ operational boundary has not been measured; current result is censored by the J10 +40 mm task-space gate / exploratory policy."
+}
