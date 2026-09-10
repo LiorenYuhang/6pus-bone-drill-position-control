@@ -876,7 +876,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
     parser.add_argument("--dry-run", action="store_true", default=False)
     parser.add_argument("--execute-motion", action="store_true", help="Opt-in live motion path using the frozen J8 stack")
-    parser.add_argument("--j10-extended-task-space-gate", action="store_true", help="J10-only X/Y gate extension")
+    parser.add_argument("--j10-extended-task-space-gate", action="store_true", help="J10-only six-axis task-space gate extension")
     parser.add_argument("--maintenance-mode", action="store_true", help="Opt-in extended envelope execution via existing maintenance_mode=true")
     parser.add_argument("--hold-s", type=float, default=3.0)
     parser.add_argument("--settle-s", type=float, default=0.5)
@@ -1529,6 +1529,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             settle_s=args.settle_s,
             measurement_window_s=args.measurement_window_s,
             candidate_timeout_s=args.candidate_timeout_s,
+            home_timeout_s=args.home_timeout_s,
             init_quiet_s=args.init_quiet_s,
             motor_port=args.motor_port,
             base_imu_port=args.base_imu_port,

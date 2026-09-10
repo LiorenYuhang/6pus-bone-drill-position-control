@@ -432,7 +432,7 @@ def test_build_arg_parser_has_expected_cli():
 
 
 def test_yaw_105_prohibited_from_motion_execution(tmp_path: Path):
-    """Verify that Yaw +105 deg (exceeding J10 Yaw safe gate of 100 deg) is strictly prohibited from executing motion."""
+    """Verify that Yaw +105 deg exceeds the +97.5 deg J10 gate and cannot execute motion."""
     report = mod.run_workspace_measurement_experiment(
         axis="yaw",
         direction="positive",

@@ -62,7 +62,7 @@
 
 ## 3. 分类维护规则 (Maintenance Principles)
 
-1. **Current / Operator-facing**：保持与最新硬件基线严格一致（当前为 J9 IMU Integration & Measurement Qualification，运行基线仍为 J8 冻结伺服）。
+1. **Current / Operator-facing**：保持与最新硬件基线严格一致（J10 已 CLOSED / FROZEN；J11 为下一计划阶段，尚未开始；运行基线仍为 J8 冻结伺服）。
 2. **Frozen Historical Baseline**：`agent_docs/frozen/` 中的历史文档原则上保持内容不变。
 3. **Stage-Specific & Decisions**：`decisions/` 与 `stages/` 记录开发演进与技术方案，新增决策直接按 `Jn_` 规范归档。
 4. **统一参数真值源**：所有运动学与物理参数唯一来源于 [`bone_ws/src/pus6_kinematics/config/6pus_geometry.yaml`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/config/6pus_geometry.yaml)。

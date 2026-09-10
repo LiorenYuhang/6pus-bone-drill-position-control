@@ -1066,7 +1066,8 @@ executor.spin()
 | **J5** | **PASS / FROZEN** | 纳秒统一时间轴 (Host `CLOCK_MONOTONIC`)、Fixed-Lag 零外推状态重构、解析雅可比 LM 正解与双 H30 微秒同步已冻结 |
 | **J6** | **PASS / FROZEN** | 总装调试与定位模式 (mode=0, 10Hz, speed=50) HOME/PARK 基线已冻结，作为可靠 fallback |
 | **J8 / J9 (当前已冻结/完成)** | **PASS / COMPLETE** | **六轴 50Hz Servo 基线已冻结，J9 IMU 集成与测量资格已完成**（J8 运行基线 + J9 收口文档） |
-| **未来规划** | **PLANNED** | 动平台与基座 Dual-IMU / FK 误差状态卡尔曼滤波 (ESKF) 融合与主动振动抑制控制，随后进入 J10/J11/J12 |
+| **J10** | **CLOSED / FROZEN** | HOME-centered、single-DOF axis-wise operational workspace 已完成；耦合 6D workspace 不属于 J10 |
+| **J11** | **NEXT PLANNED / NOT STARTED** | Actuator & Kinematic Parameter Calibration；完成后再进入 J10B calibrated workspace re-validation |
 
 ---
 
