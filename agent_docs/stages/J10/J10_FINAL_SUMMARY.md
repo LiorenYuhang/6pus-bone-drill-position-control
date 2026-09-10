@@ -44,18 +44,33 @@ each degree of freedom (\(X, Y, Z, \text{Roll}, \text{Pitch}, \text{Yaw}\)) was 
 
 ---
 
-## 3. Comprehensive Axis-Wise Operational Workspace Table
+## 3. Final Axis-Wise Operational Workspace Summary
+
+These are the authoritative HOME-centered, single-DOF axis-wise operational ranges. They are not a complete coupled 6D geometric workspace.
+
+| DOF | Qualified / Operational Range |
+|:---|:---:|
+| **X** | `[-45.75, +45.75] mm` |
+| **Y** | `[-45.50, +49.00] mm` |
+| **Z** | `[-25.00, +25.00] mm` — 50.00 mm total common-mode travel (`q_1 = ... = q_6`) |
+| **Roll** | `[-35.0, +37.5] deg` |
+| **Pitch** | `[-30.0, +35.0] deg` |
+| **Yaw** | `[-90.0, +90.0] deg` |
+
+For Z, HOME is approximately `q_i=1000` steps and `Delta Z=0`; the known common-mode endpoints are `q_i=0` at `Delta Z=-25.00 mm` and `q_i=2000` at `Delta Z=+25.00 mm`. J10-A12 Cartesian sampling stopped at +24.50 mm under the endpoint-proximity protocol, while the approximately -24.983 mm STORAGE_PARK observation is experimental coverage evidence. Those conservative sampling limits do not reduce the known full common-mode Z travel capability.
+
+## 4. Detailed Axis-Wise Experimental Evidence
 
 The table below summarizes the audited empirical results established from the primary CSV records, telemetry JSON metadata, and final stage closure reports across all six axes.
 
-| Axis / DOF | Direction | Maximum Fully-Qualified Observed | Observed Feedback Steps | Absolute Margin | Limiting Actuator | First Observed Failure / Stop Point | Boundary Classification |
+| Axis / DOF | Direction | Capability / Experimental Coverage | Observed Feedback Steps | Absolute Margin | Limiting Actuator | First Observed Failure / Stop Point | Boundary Classification |
 |:---|:---:|:---:|:---|:---:|:---:|:---|:---|
 | **X** | **+** | **+45.75 mm** | `[1463, 1865, 1970, 1189, 1270, 1643]` | 29 steps | **ID3** | +46.00 mm (predicted margin 18 steps) | Pre-calibration absolute-endpoint-proximity censored |
 | | **-** | **-45.75 mm** | `[1643, 1269, 1188, 1970, 1866, 1463]` | 29 steps | **ID4** | -46.00 mm (predicted margin 18 steps) | Pre-calibration absolute-endpoint-proximity censored |
 | **Y** | **+** | **+49.00 mm** | `[1237, 1968, 1779, 1779, 1968, 1236]` | 31 steps | **ID2 / ID5** | +49.50 mm (predicted margin 11 steps) | Pre-calibration absolute-endpoint-proximity censored |
 | | **-** | **-45.50 mm** | `[1969, 1283, 1429, 1430, 1283, 1968]` | 30 steps | **ID1 / ID6** | -45.75 mm (predicted margin 19 steps) | Pre-calibration absolute-endpoint-proximity censored |
-| **Z** | **+** | **+24.50 mm**<br>(\(Z_{\text{FK}}=157.08\text{ mm}\)) | `[1980, 1980, 1979, 1980, 1979, 1980]` | 20 steps | **ID1..6** | +25.00 mm (predicted margin 0 steps; dead stop avoided) | Pre-calibration absolute-endpoint-proximity censored |
-| | **-** | **-20.00 mm** *(Cartesian)*<br>(\(Z_{\text{FK}}=112.61\text{ mm}\))<br>**-24.98 mm** *(PARK joint)*<br>(\(Z_{\text{FK}}=107.63\text{ mm}\)) | `[200, 200, 200, 200, 200, 200]` *(Z-20)*<br>`[1, 0, 0, 1, 1, 1]` *(PARK)* | 200 steps<br>*(Cartesian)*<br>0 steps<br>*(PARK)* | **ID1..6** | Lower stroke reached smoothly at `STORAGE_PARK` | Cartesian censored at -20.0 mm; physical lower stroke boundary qualified via J7 PARK routine |
+| **Z** | **+** | **+25.00 mm capability**<br>J10 coverage: +24.50 mm (Z FK = 157.08 mm) | `[1980, 1980, 1979, 1980, 1979, 1980]` *(coverage)* | 20 steps *(coverage)* | **ID1..6** | `q_i=2000` is the upper common-mode endpoint; direct endpoint command was avoided in J10 | Full common-mode range is `[-25.00, +25.00] mm`; +24.50 mm is experimental coverage only |
+| | **-** | **-25.00 mm capability**<br>J10 coverage: -20.00 mm (Cartesian) / -24.98 mm (PARK joint) | `[200, 200, 200, 200, 200, 200]` *(coverage)*<br>`[1, 0, 0, 1, 1, 1]` *(PARK)* | 200 steps *(Z-20)*<br>0 steps *(PARK)* | **ID1..6** | `q_i=0` is the lower common-mode endpoint; J10 observations provide experimental coverage evidence | Full common-mode range is `[-25.00, +25.00] mm`; detailed coverage remains historical evidence |
 | **Roll** | **+** | **+37.50 deg** | `[1620, 1001, 439, 439, 1000, 1620]` | 379 steps | **ID1 / ID6** | +40.00 deg (timeout / `overcurrent_ID4`) | Operational current/load failure before stroke limit |
 | | **-** | **-35.00 deg** | `[489, 1000, 1559, 1560, 1001, 490]` | 440 steps | **ID3 / ID4** | -37.50 deg (timeout / `overcurrent_ID4`) | Operational current/load failure before stroke limit |
 | **Pitch** | **+** | **+35.00 deg** | `[1312, 1663, 1334, 705, 403, 683]` | 336 steps | **ID2** | +40.00 deg (timeout / `overcurrent_ID5`) | Operational current/load failure before stroke limit |
@@ -65,7 +80,7 @@ The table below summarizes the audited empirical results established from the pr
 
 ---
 
-## 4. Resolution of Evidence Contradictions & Audit Findings
+## 5. Resolution of Evidence Contradictions & Audit Findings
 
 During the J10-FINAL audit, the preliminary handwritten summary table generated at the conclusion of J10-A12 was compared against the primary stage closure reports ([`J10_A6_2`](file:///home/lyapunov/bone_drill/reports/j10/J10_A6_2_X_POS_ABSOLUTE_BOUND_CONTINUATION_20260909.md), [`J10_A7`](file:///home/lyapunov/bone_drill/reports/j10/J10_A7_X_NEGATIVE_COMPLETE_CHARACTERIZATION_20260909.md), [`J10_A8`](file:///home/lyapunov/bone_drill/reports/j10/J10_A8_Y_COMPLETE_CHARACTERIZATION_20260909.md), [`J10_A8_1`](file:///home/lyapunov/bone_drill/reports/j10/J10_A8_1_Y_BOUNDARY_CLOSURE_20260909.md)) and raw JSON metadata:
 
@@ -81,7 +96,7 @@ During the J10-FINAL audit, the preliminary handwritten summary table generated 
 
 ---
 
-## 5. Major Incidents, Lessons & Failure Mechanisms
+## 6. Major Incidents, Lessons & Failure Mechanisms
 
 ### 5.1 Yaw +105° Geometric Entanglement Incident (J10-A11.2)
 - **Incident Description**: At Yaw = +105.0°, adjacent strut rods and spherical rod ends (pairs ID4-ID5, ID6-ID1, ID2-ID3) physically crossed and interlocked in 3D space, mechanically binding the closed kinematic chain.
@@ -103,7 +118,7 @@ During the J10-FINAL audit, the preliminary handwritten summary table generated 
 
 ---
 
-## 6. Software Architecture & Production Integrity
+## 7. Software Architecture & Production Integrity
 
 1. **Production Code Diff Audit**:
    - Diff against frozen baseline `v1.0-j8-active-servo-hardware-qualified`: **ZERO functional lines changed in production packages**.
@@ -121,7 +136,7 @@ During the J10-FINAL audit, the preliminary handwritten summary table generated 
 
 ---
 
-## 7. Provisional Preliminary Engineering Window (Non-Binding)
+## 8. Provisional Preliminary Engineering Window (Non-Binding)
 
 > [!WARNING]
 > **PROVISIONAL / PRELIMINARY NOTICE**:
@@ -138,7 +153,7 @@ During the J10-FINAL audit, the preliminary handwritten summary table generated 
 
 ---
 
-## 8. Definition and Scope of Post-Calibration Stage J10B
+## 9. Definition and Scope of Post-Calibration Stage J10B
 
 Stage J10B is strictly defined as **Post-J11 Calibrated Workspace Re-validation**, to be initiated following the completion of J11. Its scope includes:
 1. **Calibrated Axis-Wise Boundary Re-measurement**: Re-evaluate key single-axis boundaries using the calibrated kinematic model and true parameter set.
@@ -150,7 +165,7 @@ Stage J10B is strictly defined as **Post-J11 Calibrated Workspace Re-validation*
 
 ---
 
-## 9. Final Verdict
+## 10. Final Verdict
 
 ### **J10 Final Verdict: FULL PASS / CLOSED**
 *(Official **FROZEN** status established upon release commit and tag)*

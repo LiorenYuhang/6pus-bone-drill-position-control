@@ -38,7 +38,21 @@ The continuous Cartesian 50Hz Servo motion control and Design-B accompanying fee
   * 9-Phase Cartesian Video Demonstration completed: 137.128s, 6898 cycles @ 50.30 Hz sustained rate, 41,388 / 41,388 feedback responses (100.0% completeness), 0 faults, 0 STOPs.
 * **Full Workspace Regression**: 349 / 349 tests passed (100% PASS across all 5 packages).
 * **J9 Closure**: Dual H30 IMU sensing integration and attitude qualification completed ([`agent_docs/stages/J9/J9_FINAL_SUMMARY.md`](./agent_docs/stages/J9/J9_FINAL_SUMMARY.md)).
-* **J10 Closure**: Single-DOF axis-wise operational workspace characterization completed on real hardware (X `[-45.75, +45.75] mm`, Y `[-45.50, +49.00] mm`, Z `[-20.0, +24.5] mm` Cartesian / `[-24.983, +24.5] mm` incl. PARK, Roll `[-35.0, +37.5] deg`, Pitch `[-30.0, +35.0] deg`, Yaw `[-90.0, +90.0] deg`). Handed off to J11 Actuator & Kinematic Parameter Calibration.
+
+### J10 — Axis-Wise Operational Workspace
+
+These are HOME-centered, single-DOF axis-wise operational ranges. They are not a complete coupled 6D geometric workspace. See the [J10 final summary](./agent_docs/stages/J10/J10_FINAL_SUMMARY.md) for evidence classification and experimental coverage.
+
+| DOF | Qualified / Operational Range |
+| --- | --- |
+| X | `[-45.75, +45.75] mm` |
+| Y | `[-45.50, +49.00] mm` |
+| Z | `[-25.00, +25.00] mm` (50 mm total common-mode travel) |
+| Roll | `[-35.0, +37.5] deg` |
+| Pitch | `[-30.0, +35.0] deg` |
+| Yaw | `[-90.0, +90.0] deg` |
+
+J10 is **CLOSED / FROZEN**. J11, Actuator & Kinematic Parameter Calibration, is the **NEXT PLANNED STAGE / NOT STARTED**.
 
 ---
 
