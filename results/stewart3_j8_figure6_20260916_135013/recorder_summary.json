@@ -1,0 +1,11 @@
+{
+  "capacity": 262144,
+  "written": {
+    "joint_feedback": 6901,
+    "command_steps": 6909,
+    "fk": 6900,
+    "target_pose": 6390
+  },
+  "overflow": {},
+  "errors": 0
+}

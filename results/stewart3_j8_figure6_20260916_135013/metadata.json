@@ -1,0 +1,72 @@
+{
+  "experiment_name": "stewart3_j8_figure6",
+  "date_time": "2026-09-16T13:52:33.623546",
+  "git_commit": "9eec81b89944fae113e5445b3035ee6d77dec191",
+  "runner_path": "/home/lyapunov/bone_drill/bone_ws/scripts/run_j8_final_video_demonstration.py",
+  "command_used": "/usr/bin/python3 -u /home/lyapunov/bone_drill/bone_ws/scripts/run_j8_final_video_demonstration.py",
+  "home_definition": {
+    "nominal_height_z0_m": 0.132612,
+    "nominal_home_steps": [
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000
+    ]
+  },
+  "control_frequency_hz": 50.0,
+  "recorder_version": "1.0.0-pure-bypass",
+  "units": {
+    "target_pose": {
+      "xyz": "meters",
+      "roll_pitch_yaw": "radians",
+      "quaternion": "xyzw"
+    },
+    "command_steps": {
+      "cmd_1..cmd_6": "steps"
+    },
+    "joint_feedback": {
+      "fb_1..fb_6": "steps",
+      "pos_m": "meters",
+      "current": "mA"
+    },
+    "fk": {
+      "xyz": "meters",
+      "roll_pitch_yaw": "radians"
+    },
+    "stage_events": {
+      "elapsed_time": "seconds"
+    }
+  },
+  "runner_duration_s": 139.03,
+  "runner_exit_code": 0,
+  "fault_or_stop_occurred": false,
+  "summary_counts": {
+    "target_pose": 6390,
+    "command_steps": 6909,
+    "joint_feedback": 6901,
+    "fk": 6900,
+    "stage_events": 18
+  },
+  "sample_rates_hz": {
+    "target_pose": 45.96,
+    "command_steps": 49.69,
+    "joint_feedback": 49.64,
+    "fk": 49.63
+  },
+  "stages_recorded": [
+    "6DOF",
+    "HOME_INITIAL",
+    "HOME_RETURN",
+    "PITCH",
+    "ROLL",
+    "X",
+    "Y",
+    "YAW",
+    "Z"
+  ],
+  "all_9_stages_present": true,
+  "timestamps_monotonic": true,
+  "figure6_dataset_verdict": "PASS"
+}
