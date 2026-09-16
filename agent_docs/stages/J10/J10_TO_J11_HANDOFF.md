@@ -40,59 +40,31 @@ All six independent degrees of freedom (\(X, Y, Z, \text{Roll}, \text{Pitch}, \t
 
 ---
 
-## 3. Scope of Stage J11: Actuator & Kinematic Parameter Calibration
+## 3. Scope of Stage J11: PID 3DOF World-Attitude Stabilization / Anti-Vibration
 
-Stage J11 is strictly focused on **identifying and validating the real kinematic and actuator parameters** of the assembled 6PUS parallel manipulator:
+> [!NOTE]
+> **STAGE RE-DEFINITION & DEFERRED CALIBRATION**:
+> Actuator & Kinematic Parameter Calibration has been **DEFERRED** to a later dedicated stage (no current stage number assigned).
+> Stage J11 is authoritatively redefined as:
+> **$\mathbf{PID\ 3DOF\ World\text{-}Attitude\ Stabilization\ /\ Anti\text{-}Vibration}$**.
 
-### 3.1 Core Calibration Objectives
-- **Base Anchor Geometry**: Calibrate base radius \(c\) and base pair angular separation \(\lambda\) across all mounting points.
+Stage J11 is strictly focused on:
+- **Primary Objective**: Base receives manually applied Roll / Pitch / Yaw attitude disturbance; Platform maintains initial world attitude using Platform H30 feedback and 3-axis task-space PID.
+- **Sensor Roles**:
+  - **Platform H30**: Primary feedback sensor (`/pus6/imu_platform/data`).
+  - **Base H30**: Disturbance measurement, logging, OFF/ON performance evaluation only (never enters J11 PID loop).
+- **Control Structure**: Platform H30 -> $R_{WP, \text{meas}}$ -> $\mathrm{SO}(3)$ attitude error -> 3-axis task-space PID -> $\delta\phi_{\text{cmd}}$ -> $\mathrm{SO}(3)$ residual composition -> `/pus6/target_cartesian_pose` -> J8 frozen pipeline.
+- **Translational Scope**: XYZ translation stabilization is explicitly out of scope.
+- **Production Boundary**: J7/J8 production code (`pus6_motor_driver`, `pus6_control`, `pus6_kinematics`) remains strictly frozen (0 diff).
+
+---
+
+## 4. Deferred Actuator & Kinematic Calibration (Post-J11)
+
+The physical identification of link lengths, anchor geometry, and slider zero offsets is deferred:
+- **Base Anchor Geometry**: Calibrate base radius \(c\) and base pair angular separation \(\lambda\).
 - **Platform Anchor Geometry**: Calibrate platform radius \(d\) and platform pair angular separation \(\mu\).
-- **Strut Effective Lengths**: Calibrate individual effective rod lengths \(e_1 \dots e_6\) between spherical bearing centers.
-- **Actuator Zero Offsets**: Calibrate individual prismatic slider zero offsets (\(q_{0,1} \dots q_{0,6}\)) relative to the mechanical bottom stops (`STORAGE_PARK`).
-- **Step-to-Length Mapping & HOME Absolute Geometry**: Reconcile discrete step positions with true Cartesian metrics; determine true physical resting height \(z_0\).
-- **Calibration Validation**: Validate forward kinematics residuals and closed-loop position repeatability against external precision metrology.
+- **Strut Effective Lengths**: Calibrate individual effective rod lengths \(e_1 \dots e_6\).
+- **Actuator Zero Offsets**: Calibrate individual prismatic slider zero offsets (\(q_{0,1} \dots q_{0,6}\)).
+- **Post-Calibration Re-validation (J10B)**: Triggered only after the deferred calibration stage is executed and frozen.
 
-### 3.2 Explicitly Deferred Items (Not in J11 Scope)
-The following tasks are **NOT** bundled into J11 and remain explicitly deferred:
-- Dual-H30 IMU extrinsic mounting rotation calibration (\(R_{P}^{IP}\))
-- Platform IMU 3D lever-arm vector estimation
-- Base IMU coordinate frame alignment
-- Sensor fusion / unified state estimation
-- External disturbance force/torque reconstruction
-
----
-
-## 4. J10 Measurements Requiring Re-Verification Post-Calibration
-
-Following parameter updates in J11, the following empirical findings from J10 must be re-evaluated:
-1. **Nominal HOME Resting Height**:
-   Re-measure true resting height \(z_0\) (currently \(132.612\text{ mm}\) in nominal model).
-2. **True Cartesian Endpoints**:
-   Map the audited motor step endpoints (e.g. X+ ID3=1970 steps, Y+ ID2/5=1968 steps, Z+ ID1..6=1980 steps) through the **calibrated forward kinematics** to obtain true physical Cartesian limits in SI millimeters.
-3. **Spatial Clearance Models**:
-   Recompute 3D strut-to-strut minimum clearance profiles using calibrated anchor positions and true physical link outer envelopes.
-
----
-
-## 5. Post-Calibration Stage J10B: Definition & Scope
-
-### 5.1 Definition & Trigger Criteria
-Stage J10B is strictly defined as **Post-J11 Calibrated Workspace Re-validation**. It will be initiated **only** after:
-- Stage J11 actuator and kinematic parameter calibration is complete, validated, and frozen.
-
-### 5.2 Scope of Stage J10B
-1. **Calibrated Axis-Wise Boundary Re-measurement**:
-   - Re-evaluate key single-axis boundaries using the calibrated kinematic model and true parameter set.
-2. **Re-confirmation of Endpoint-Adjacent Results**:
-   - Re-confirm X, Y, and Z endpoint-adjacent limits with true link lengths and anchor geometry.
-3. **Calibrated Task-Space Attitude Validation**:
-   - Re-confirm Roll, Pitch, and Yaw calibrated task-space values against external ground truth.
-4. **Targeted Coupled Workspace Slices**:
-   - Measure a small, targeted number of coupled-workspace slices (e.g. tilt envelopes at varying vertical elevations \(Z_{\text{low}}, Z_{\text{mid}}, Z_{\text{high}}\)).
-
-### 5.3 Explicit Non-Scope Exclusions for J10B
-The following activities are **NOT** part of J10B:
-- Dynamics parameter identification
-- Trajectory acceleration profiling / optimization
-- Anti-overcurrent controller development or current-limit tuning
-- Clinical certification or clinical-grade operational gate definitions

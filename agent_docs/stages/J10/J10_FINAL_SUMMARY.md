@@ -19,11 +19,11 @@ each degree of freedom (\(X, Y, Z, \text{Roll}, \text{Pitch}, \text{Yaw}\)) was 
 ### 1.2 Explicit Exclusions & Non-Claims
 1. **Not a Coupled 6D Geometric Workspace**:
    - J10 did **not** measure or characterize coupled multidimensional workspace boundaries (e.g., maximum tilt achievable at extreme \(Z\) heights, or permissible \(XY\) planar excursions under non-zero roll/pitch/yaw).
-   - Multi-axis coupled workspace mapping is explicitly deferred to **J10B** (to be executed after Stage J11 calibration).
+   - Multi-axis coupled workspace mapping is explicitly deferred to **J10B** (to be executed after future calibration stage).
 2. **Not a Clinical Envelope**:
    - J10 results represent raw physical and algorithmic measurement facts under test-harness conditions. They do not constitute a certified medical or surgical operational envelope.
 3. **Uncalibrated Baseline**:
-   - Kinematic transformations rely on nominal geometric constants (`Kinematics/params.m`). True structural link lengths, joint spherical offsets, and IMU frame extrinsic lever-arms remain uncalibrated pending J11.
+   - Kinematic transformations rely on nominal geometric constants (`Kinematics/params.m`). True structural link lengths, joint spherical offsets, and IMU frame extrinsic lever-arms remain uncalibrated pending future dedicated calibration.
 
 ---
 
@@ -140,7 +140,7 @@ During the J10-FINAL audit, the preliminary handwritten summary table generated 
 
 > [!WARNING]
 > **PROVISIONAL / PRELIMINARY NOTICE**:
-> The values below are provided solely as an interim engineering operational reference. They do **NOT** constitute certified clinical boundaries, final software safety gates, or approved surgical operational limits. Final gates will be synthesized in **J10B** following full kinematic and sensor calibration in **J11**.
+> The values below are provided solely as an interim engineering operational reference. They do **NOT** constitute certified clinical boundaries, final software safety gates, or approved surgical operational limits. Final gates will be synthesized in **J10B** following full kinematic and sensor calibration (deferred to a later dedicated stage).
 
 | DOF | Preliminary Engineering Operating Window | Basis & Safety Rationale |
 |:---|:---:|:---|
@@ -155,7 +155,7 @@ During the J10-FINAL audit, the preliminary handwritten summary table generated 
 
 ## 9. Definition and Scope of Post-Calibration Stage J10B
 
-Stage J10B is strictly defined as **Post-J11 Calibrated Workspace Re-validation**, to be initiated following the completion of J11. Its scope includes:
+Stage J10B is strictly defined as **Post-Calibration Workspace Re-validation**, to be initiated following the completion of the deferred calibration stage. Its scope includes:
 1. **Calibrated Axis-Wise Boundary Re-measurement**: Re-evaluate key single-axis boundaries using the calibrated kinematic model and true parameter set.
 2. **Re-confirmation of Endpoint-Adjacent Results**: Re-evaluate X, Y, and Z endpoint-adjacent limits with true link lengths and anchor geometry.
 3. **Calibrated Task-Space Attitude Validation**: Re-confirm Roll, Pitch, and Yaw calibrated task-space values against external ground truth.
@@ -180,4 +180,4 @@ Stage J10B is strictly defined as **Post-J11 Calibrated Workspace Re-validation*
 3. **Software & Architecture Isolation**:
    Zero modifications to production packages (`pus6_motor_driver`, `pus6_kinematics`, `pus6_control`). All test scaffolding was confined to the experiment harness.
 4. **Stage Transition**:
-   J10 is formally closed. Handoff proceeds to **J11: Actuator & Kinematic Parameter Calibration**.
+   J10 is formally closed. Handoff proceeds to **J11: PID 3DOF World-Attitude Stabilization / Anti-Vibration** (Actuator & Kinematic Calibration is deferred to a later dedicated stage).

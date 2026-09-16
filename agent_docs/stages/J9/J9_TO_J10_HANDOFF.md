@@ -77,12 +77,11 @@ Expected outputs:
 
 ## 9. What Comes After J10
 
-Likely sequence:
-- J11A: Actuator Calibration
-- J11B: Kinematic Geometry Calibration
-- J11C: Independent Validation
-- J10B: Calibrated Workspace Re-validation
-- J12: Actuator Control Architecture Audit
+Updated stage roadmap:
+- J11: PID 3DOF World-Attitude Stabilization / Anti-Vibration
+- J12: Platform IMU Feedback ADRC
+- J13: Base IMU Feedforward + Platform IMU Residual Feedback
+- Note: Actuator & kinematic parameter calibration is deferred to a later dedicated stage (no current stage number assigned).
 
 ## 10. Important Control Architecture Boundary
 

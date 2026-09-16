@@ -52,7 +52,7 @@ These are HOME-centered, single-DOF axis-wise operational ranges. They are not a
 | Pitch | `[-30.0, +35.0] deg` |
 | Yaw | `[-90.0, +90.0] deg` |
 
-J10 is **CLOSED / FROZEN**. J11, Actuator & Kinematic Parameter Calibration, is the **NEXT PLANNED STAGE / NOT STARTED**.
+J10 is **CLOSED / FROZEN**. J11, PID 3DOF World-Attitude Stabilization / Anti-Vibration, is **IN PROGRESS** (hardware_write_count = 0; kinematic calibration deferred).
 
 ---
 

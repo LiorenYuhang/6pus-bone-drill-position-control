@@ -8,7 +8,13 @@
 
 ## 1. 阶段导航 (Stage Status)
 
-* **当前推进阶段**: **$\mathbf{J10\ 6DOF\ Axis\text{-}Wise\ Operational\ Safe\ Workspace\ Measurement\ COMPLETE}$；下一阶段 (J11) 为 Actuator & Kinematic Parameter Calibration**
+* **当前推进阶段**: **$\mathbf{J11\ PID\ 3DOF\ World\text{-}Attitude\ Stabilization\ /\ Anti\text{-}Vibration}$ (J11-1 推进中，物理标定 Calibration 暂缓并移出 J11)**
+  - **核心目标**: Base 承受人工施加的 Roll/Pitch/Yaw 姿态扰动时，利用 Platform H30 姿态反馈与任务空间 PID 控制器，使 Platform 尽可能保持世界坐标系初始参考姿态；
+  - **传感器职责**: Platform H30 为主反馈传感器；Base H30 仅用于扰动输入记录、日志及防抖性能对比评定（OFF vs ON），不进入 J11 PID 控制律；
+  - **范围边界**: 仅处理 3DOF 姿态，XYZ 平动防抖不在本阶段范围内；
+  - **执行底座**: 严格复用 J8 冻结生产链路（Cartesian -> IK -> Shaper -> 50Hz Servo Driver），零修改底层核心；
+  - **标定说明**: 原计划的执行器与运动学参数标定（Actuator & Kinematic Calibration）正式延后（DEFERRED），移至后续独立阶段，不再占用 J11 编号；
+  - **当前安全红线**: J11-1 期间 $\mathbf{hardware\_write\_count = 0}$，禁止真实电机运动。
 * **已正式 PASS & 冻结的 Gates (Frozen Milestones)**:
   * **J1 (单总线半双工 921600 8N1 底层驱动协议)**: $\mathbf{PASS\ /\ FROZEN}$
   * **J2 (六轴同步通信、0x29 伴随反馈与基准性能)**: $\mathbf{PASS\ /\ FROZEN}$
@@ -34,9 +40,10 @@
 
 ## 2. 权威依据文档 (Authoritative References)
 
-1. **J10 收口与交接文档**: [`agent_docs/stages/J10/J10_FINAL_SUMMARY.md`](file:///home/lyapunov/bone_drill/agent_docs/stages/J10/J10_FINAL_SUMMARY.md) / [`agent_docs/stages/J10/J10_TO_J11_HANDOFF.md`](file:///home/lyapunov/bone_drill/agent_docs/stages/J10/J10_TO_J11_HANDOFF.md)
-2. **J9 收口与交接文档**: [`agent_docs/stages/J9/J9_FINAL_SUMMARY.md`](file:///home/lyapunov/bone_drill/agent_docs/stages/J9/J9_FINAL_SUMMARY.md) / [`agent_docs/stages/J9/J9_TO_J10_HANDOFF.md`](file:///home/lyapunov/bone_drill/agent_docs/stages/J9/J9_TO_J10_HANDOFF.md)
-3. **J8 最终硬件准入报告**: [`agent_docs/decisions/J8_FINAL_HARDWARE_QUALIFICATION.md`](file:///home/lyapunov/bone_drill/agent_docs/decisions/J8_FINAL_HARDWARE_QUALIFICATION.md)
-4. **唯一日常实机操作指南**: [`6PUS_SERVO_OPERATION_GUIDE.md`](file:///home/lyapunov/bone_drill/6PUS_SERVO_OPERATION_GUIDE.md)
-5. **ROS 2 架构与教学教程**: [`6PUS_ROS2_CODE_LEARNING_TUTORIAL.md`](file:///home/lyapunov/bone_drill/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md)
-6. **J7 基线设计与决策**: [`agent_docs/decisions/J7_C0_SERVO_ARCHITECTURE_DESIGN.md`](file:///home/lyapunov/bone_drill/agent_docs/decisions/J7_C0_SERVO_ARCHITECTURE_DESIGN.md)
+1. **J11 阶段设计与基线文档**: [`agent_docs/stages/J11/README.md`](file:///home/lyapunov/bone_drill/agent_docs/stages/J11/README.md)
+2. **J10 收口与交接文档**: [`agent_docs/stages/J10/J10_FINAL_SUMMARY.md`](file:///home/lyapunov/bone_drill/agent_docs/stages/J10/J10_FINAL_SUMMARY.md) / [`agent_docs/stages/J10/J10_TO_J11_HANDOFF.md`](file:///home/lyapunov/bone_drill/agent_docs/stages/J10/J10_TO_J11_HANDOFF.md)
+3. **J9 收口与交接文档**: [`agent_docs/stages/J9/J9_FINAL_SUMMARY.md`](file:///home/lyapunov/bone_drill/agent_docs/stages/J9/J9_FINAL_SUMMARY.md) / [`agent_docs/stages/J9/J9_TO_J10_HANDOFF.md`](file:///home/lyapunov/bone_drill/agent_docs/stages/J9/J9_TO_J10_HANDOFF.md)
+4. **J8 最终硬件准入报告**: [`agent_docs/decisions/J8_FINAL_HARDWARE_QUALIFICATION.md`](file:///home/lyapunov/bone_drill/agent_docs/decisions/J8_FINAL_HARDWARE_QUALIFICATION.md)
+5. **唯一日常实机操作指南**: [`6PUS_SERVO_OPERATION_GUIDE.md`](file:///home/lyapunov/bone_drill/6PUS_SERVO_OPERATION_GUIDE.md)
+6. **ROS 2 架构与教学教程**: [`6PUS_ROS2_CODE_LEARNING_TUTORIAL.md`](file:///home/lyapunov/bone_drill/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md)
+7. **J7 基线设计与决策**: [`agent_docs/decisions/J7_C0_SERVO_ARCHITECTURE_DESIGN.md`](file:///home/lyapunov/bone_drill/agent_docs/decisions/J7_C0_SERVO_ARCHITECTURE_DESIGN.md)

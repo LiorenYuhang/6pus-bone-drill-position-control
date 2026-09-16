@@ -1067,7 +1067,7 @@ executor.spin()
 | **J6** | **PASS / FROZEN** | 总装调试与定位模式 (mode=0, 10Hz, speed=50) HOME/PARK 基线已冻结，作为可靠 fallback |
 | **J8 / J9 (当前已冻结/完成)** | **PASS / COMPLETE** | **六轴 50Hz Servo 基线已冻结，J9 IMU 集成与测量资格已完成**（J8 运行基线 + J9 收口文档） |
 | **J10** | **CLOSED / FROZEN** | HOME-centered、single-DOF axis-wise operational workspace 已完成；耦合 6D workspace 不属于 J10 |
-| **J11** | **NEXT PLANNED / NOT STARTED** | Actuator & Kinematic Parameter Calibration；完成后再进入 J10B calibrated workspace re-validation |
+| **J11** | **IN PROGRESS** | PID 3DOF World-Attitude Stabilization / Anti-Vibration；物理执行器与运动学参数标定已暂缓延后（DEFERRED） |
 
 ---
 

@@ -1,0 +1,32 @@
+{
+  "status": "PASS",
+  "csv_path": "/home/lyapunov/bone_drill/results/j11/passive_dry_run/j11_passive_dry_run_20260916_101616.csv",
+  "metadata_path": "/home/lyapunov/bone_drill/results/j11/passive_dry_run/j11_passive_dry_run_20260916_101616_metadata.json",
+  "hardware_write_count": 0,
+  "duration_s": 4.0,
+  "kp": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "ki": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "kd": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "loop_cycles_executed": 215,
+  "platform_samples_received": 1261,
+  "base_samples_received": 1261,
+  "q0_platform": [
+    0.02269686547929001,
+    0.012917442512224571,
+    -0.6816392641256894,
+    0.7312221998671449
+  ],
+  "final_write_count": 0
+}

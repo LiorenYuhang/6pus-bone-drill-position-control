@@ -1,0 +1,34 @@
+{
+  "runner_stats": {
+    "total_cycles": 300,
+    "hardware_write_count": 0,
+    "target_pose_pub_count": 0,
+    "dt_nominal_ms": 20.0,
+    "dt_mean_ms": 20.001296622073582,
+    "dt_min_ms": 11.265322,
+    "dt_max_ms": 27.643491,
+    "dt_p95_ms": 20.9330316,
+    "dt_p99_ms": 21.68930944,
+    "missed_cycles": 0,
+    "platform_imu_age_mean_ms": 0.8334930939597316,
+    "platform_imu_age_max_ms": 28.533713,
+    "platform_imu_age_p95_ms": 1.2210513499999993
+  },
+  "execute_motion": false,
+  "dry_run": true,
+  "hardware_write_count": 0,
+  "state": "READY",
+  "fault_reason": "",
+  "q0_platform": [
+    0.02263849669316172,
+    0.012940849542165865,
+    -0.6825043232658656,
+    0.7304162385955035
+  ],
+  "q0_base": [
+    0.04918200507231258,
+    0.02172300224036937,
+    -0.7382380761370806,
+    0.6723940693463574
+  ]
+}

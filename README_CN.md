@@ -51,7 +51,7 @@
 | Pitch | `[-30.0, +35.0] deg` |
 | Yaw | `[-90.0, +90.0] deg` |
 
-J10：**CLOSED / FROZEN**。J11（执行器与运动学参数标定）：**NEXT PLANNED STAGE / NOT STARTED**。
+J10：**CLOSED / FROZEN**。J11（PID 三轴姿态防抖 / Anti-Vibration）：**IN PROGRESS**（hardware_write_count = 0；物理运动学标定已暂缓延后）。
 
 ---
 

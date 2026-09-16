@@ -1,0 +1,232 @@
+{
+  "stage": "J11-1C",
+  "description": "Production ROS Shadow Integration Qualification Report",
+  "hardware_write_count": 0,
+  "operating_home_raw_steps": [
+    1000,
+    1000,
+    1000,
+    1000,
+    1000,
+    1000
+  ],
+  "total_cases": 5,
+  "all_cases_match": true,
+  "cases": [
+    {
+      "case": "HOME",
+      "target_rpy_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "offline_delta_steps": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ros_kinematics_delta_steps": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "offline_predicted_raw": [
+        1000,
+        1000,
+        1000,
+        1000,
+        1000,
+        1000
+      ],
+      "ros_control_final_raw": [
+        1000,
+        1000,
+        1000,
+        1000,
+        1000,
+        1000
+      ],
+      "delta_steps_match": true,
+      "raw_steps_match": true,
+      "status": "MATCH_PASS"
+    },
+    {
+      "case": "Roll_+0.25deg",
+      "target_rpy_deg": [
+        0.25,
+        0.0,
+        0.0
+      ],
+      "offline_delta_steps": [
+        4,
+        0,
+        -4,
+        -4,
+        0,
+        4
+      ],
+      "ros_kinematics_delta_steps": [
+        4,
+        0,
+        -4,
+        -4,
+        0,
+        4
+      ],
+      "offline_predicted_raw": [
+        1004,
+        1000,
+        996,
+        996,
+        1000,
+        1004
+      ],
+      "ros_control_final_raw": [
+        1004,
+        1000,
+        996,
+        996,
+        1000,
+        1004
+      ],
+      "delta_steps_match": true,
+      "raw_steps_match": true,
+      "status": "MATCH_PASS"
+    },
+    {
+      "case": "Roll_-0.25deg",
+      "target_rpy_deg": [
+        -0.25,
+        0.0,
+        0.0
+      ],
+      "offline_delta_steps": [
+        -4,
+        0,
+        4,
+        4,
+        0,
+        -4
+      ],
+      "ros_kinematics_delta_steps": [
+        -4,
+        0,
+        4,
+        4,
+        0,
+        -4
+      ],
+      "offline_predicted_raw": [
+        996,
+        1000,
+        1004,
+        1004,
+        1000,
+        996
+      ],
+      "ros_control_final_raw": [
+        996,
+        1000,
+        1004,
+        1004,
+        1000,
+        996
+      ],
+      "delta_steps_match": true,
+      "raw_steps_match": true,
+      "status": "MATCH_PASS"
+    },
+    {
+      "case": "Roll_+0.50deg",
+      "target_rpy_deg": [
+        0.5,
+        0.0,
+        0.0
+      ],
+      "offline_delta_steps": [
+        8,
+        0,
+        -8,
+        -8,
+        0,
+        8
+      ],
+      "ros_kinematics_delta_steps": [
+        8,
+        0,
+        -8,
+        -8,
+        0,
+        8
+      ],
+      "offline_predicted_raw": [
+        1008,
+        1000,
+        992,
+        992,
+        1000,
+        1008
+      ],
+      "ros_control_final_raw": [
+        1008,
+        1000,
+        992,
+        992,
+        1000,
+        1008
+      ],
+      "delta_steps_match": true,
+      "raw_steps_match": true,
+      "status": "MATCH_PASS"
+    },
+    {
+      "case": "Roll_-0.50deg",
+      "target_rpy_deg": [
+        -0.5,
+        0.0,
+        0.0
+      ],
+      "offline_delta_steps": [
+        -8,
+        0,
+        8,
+        8,
+        0,
+        -8
+      ],
+      "ros_kinematics_delta_steps": [
+        -8,
+        0,
+        8,
+        8,
+        0,
+        -8
+      ],
+      "offline_predicted_raw": [
+        992,
+        1000,
+        1008,
+        1008,
+        1000,
+        992
+      ],
+      "ros_control_final_raw": [
+        992,
+        1000,
+        1008,
+        1008,
+        1000,
+        992
+      ],
+      "delta_steps_match": true,
+      "raw_steps_match": true,
+      "status": "MATCH_PASS"
+    }
+  ]
+}
