@@ -3,7 +3,7 @@
 > **Authoritative Baseline**: Frozen J8 (`v1.0-j8-active-servo-hardware-qualified`) + J9 Dual IMU Integration + J10 Axis-Wise Operational Safe Workspace Facts  
 > **Repository Path**: `/home/lyapunov/bone_drill`  
 > **Workspace Path**: `/home/lyapunov/bone_drill/bone_ws`  
-> **Status**: **PRE-MOTION QUALIFIED (J11-1C Production-Mapping Correction + Shadow Integration + Pre-Motion Freeze; hardware_write_count = 0)**
+> **Status**: **ZERO-GAIN POWERED ACTIVE QUALIFIED (J11-2A; ACTIVE 13.98 s, hardware_write_count = 699, verdict = PASS)**
 
 ---
 
@@ -244,3 +244,68 @@ All test cases exhibited exact bit-level step matches between offline differenti
 
 `hardware_write_count = 0` strictly verified throughout.
 Report artifact saved at `results/j11/pre_motion/j11_shadow_integration_report.json`.
+
+---
+
+## 9. Stage J11-2A: Zero-Gain Powered ACTIVE Qualification
+
+### 9.1 Qualification Objective
+Stage J11-2A connects the complete real powered physical hardware chain:
+```text
+J11 Runner
+  ↓ (/pus6/target_cartesian_pose, Reliable depth 10)
+J8 Analytical Inverse Kinematics
+  ↓ (/pus6/desired_joint_deltas)
+J8 50Hz Trajectory Shaper
+  ↓ (/pus6/command_joint_steps, Best Effort depth 1)
+J7/J8 Motor Driver Node
+  ↓ (UART 921600 8N1, INSIM LAF D-type protocol)
+Six Physical Linear Actuators (Stepper electromagnetic holding)
+```
+With PID gains strictly locked to zero:
+$$K_p = [0.0, 0.0, 0.0]^\top, \quad K_i = [0.0, 0.0, 0.0]^\top, \quad K_d = [0.0, 0.0, 0.0]^\top$$
+The controller outputs $\delta\boldsymbol{\phi}_{\text{cmd}} \equiv [0, 0, 0]^\top$, holding nominal Cartesian HOME $[0, 0, z_0, 0, 0, 0]^\top$ and raw step target $[1000]*6$.
+
+### 9.2 Hardware Discovery and Preflight History
+1. **First Attempt (BLOCKED_PRECONDITION)**:
+   - Motor RS485 USB serial adapter was disconnected from the NUC host.
+   - Stage classified as `BLOCKED_PRECONDITION` (`ACTIVE duration = 0 s`, `hardware_write_count = 0`). Evidence preserved in `results/j11/j11_2a/j11_2a_hardware_preflight_audit.json`.
+2. **Physical Reconnection & Preflight Pass**:
+   - User reconnected the CH340 RS485 adapter (`1a86:7523`) at `/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0`.
+   - Read-only preflight verified all 6 motors online with fault code `0x0000`.
+   - Initial raw feedback: `[1000, 1001, 1000, 998, 1000, 1001]` steps (`HOME_GATE = PASS`).
+   - Platform H30 (202 Hz, $\|\boldsymbol{\omega}\| = 0.16^\circ/\text{s}$) and Base H30 (202 Hz, $\|\boldsymbol{\omega}\| = 0.13^\circ/\text{s}$) verified online. Evidence saved in `results/j11/j11_2a/j7_c10_read_only_preflight_live.json`.
+
+### 9.3 Two Powered Executions Post-Mortem
+1. **First Powered Execution (task-793)**:
+   - **Result**: Immediate abort to `FAULT`, `ACTIVE duration = 0 s`, `hardware_write_count = 0`.
+   - **Root Cause Analysis**: The topic ownership check queried `/pus6/target_cartesian_pose` publishers. In ROS 2, `p.node_namespace` was `"/"` and `p.node_name` was `"j11_attitude_stabilization_runner"`, generating `"//j11_attitude_stabilization_runner"`. The runner compared this against its normalized name `"/j11_attitude_stabilization_runner"`. The string mismatch caused the runner to falsely identify **itself** as a competing publisher. The safety gate functioned as designed by tripping to `FAULT` and preventing motion. In addition, the publisher QoS was Best Effort while `pus6_kinematics_node` expected depth 10 Reliable.
+   - **Corrections**: Normalized namespace slashes in `pub_nodes` using `.replace("//", "/")` and matched publisher QoS to depth 10 Reliable.
+2. **Second Powered Execution (task-819)**:
+   - **Result**: **PASS**. Completed 752 total cycles, 699 ACTIVE cycles ($13.98\text{ s}$ active hold).
+   - `hardware_write_count = 699` writes executed to physical motors.
+
+### 9.4 Authoritative Hardware Protocols & Specifications
+- **Motor Serial Interface**: 921600 baud, 8 data bits, no parity, 1 stop bit (**921600 8N1**).
+- **Motor Protocol**: **INSIM LAF D-type UART motor protocol** (PRJ-01-TS-U-007 V2.0.4 / inspire_motor_uart) with command header `0x55 0xAA` and response header `0xAA 0x55`. (Not Modbus).
+- **Holding Mechanism**: Actuators are stepper-driven linear struts without mechanical friction brakes; stationary holding is maintained via **stepper electromagnetic holding current**.
+
+### 9.5 Final Verification Metrics
+| Parameter | Value / Status | Specification Requirement | Result |
+| :--- | :--- | :--- | :--- |
+| **ACTIVE Duration** | $13.98\text{ s}$ (699 cycles) | $10 \sim 15\text{ s}$ | **PASS** |
+| **Gains** | $K_p=0, K_i=0, K_d=0$ | Strictly zero | **PASS** |
+| **$\delta\boldsymbol{\phi}_{\text{cmd}}$** | $[0.0, 0.0, 0.0]^\top\text{ rad}$ | $[0.0, 0.0, 0.0]^\top$ | **PASS** |
+| **Cartesian Target** | $[0, 0, 0.132612, 0, 0, 0]^\top$ | Nominal HOME | **PASS** |
+| **Commanded Steps** | $[1000, 1000, 1000, 1000, 1000, 1000]$ | $[1000]*6$ throughout | **PASS** |
+| **Feedback Steps** | $[1000, 1001, 1000, 998, 1000, 1001]$ | Initial = Final (0 drift) | **PASS** |
+| **Max Tracking Error**| $2\text{ steps}$ ($0.05\text{ mm}$) | $\le 4\text{ steps}$ ($0.10\text{ mm}$) | **PASS** |
+| **Motor Fault Count** | $0$ (0 faulted cycles, 0 faulted motors) | $0$ | **PASS** |
+| **Watchdog Trips** | $0$ | $0$ | **PASS** |
+| **Platform Attitude RMS** | Roll: $0.016^\circ$, Pitch: $0.010^\circ$, Yaw: $0.011^\circ$ | Quiescent stationary | **PASS** |
+| **Unintended Motion** | **NO** | NO | **PASS** |
+| **Oscillation** | **NO** | NO | **PASS** |
+| **Abnormal Noise / Heating**| **NO** | NO | **PASS** |
+| **Production Boundary** | `pus6_motor_driver`, `pus6_control`, `pus6_kinematics`: **0 diff** | 0 diff | **PASS** |
+| **Stage Verdict** | **`J11-2A = PASS (FROZEN)`** | PASS | **PASS** |
+

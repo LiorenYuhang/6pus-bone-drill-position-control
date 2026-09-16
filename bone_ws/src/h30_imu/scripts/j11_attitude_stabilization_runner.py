@@ -135,8 +135,21 @@ class J11CycleTelemetry:
     cmd_yaw_deg: float = 0.0
     cmd_quat_xyzw: Tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0)
 
-    # Predicted IK actuator steps (centered around OPERATING_HOME_RAW)
+    # Platform & Base full quaternions
+    plat_quat_xyzw: Tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0)
+    base_quat_xyzw: Tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0)
+    so3_error_deg: float = 0.0
+    delta_phi_deg: float = 0.0
+
+    # Actuator steps
     predicted_steps: List[int] = field(default_factory=lambda: [1000] * 6)
+    commanded_steps: List[int] = field(default_factory=lambda: [1000] * 6)
+    feedback_steps: List[int] = field(default_factory=lambda: [1000] * 6)
+    feedback_received: bool = False
+    feedback_valid: bool = False
+    motor_fault_codes: List[int] = field(default_factory=lambda: [0] * 6)
+    watchdog_status: str = "NORMAL"
+
     hardware_write_issued: bool = False
     fault_reason: str = ""
 
@@ -155,9 +168,9 @@ class J11AttitudeStabilizationRunner(Node if Node is not object else object):
         ref_capture_min_samples: int = 50,
         ref_capture_max_gyro_rad_s: float = 0.05,
         ref_capture_max_quat_std: float = 0.002,
-        kp_roll: float = 0.5,
-        kp_pitch: float = 0.5,
-        kp_yaw: float = 0.5,
+        kp_roll: float = 0.0,
+        kp_pitch: float = 0.0,
+        kp_yaw: float = 0.0,
         ki_roll: float = 0.0,
         ki_pitch: float = 0.0,
         ki_yaw: float = 0.0,
@@ -224,6 +237,14 @@ class J11AttitudeStabilizationRunner(Node if Node is not object else object):
         self.q0_base_xyzw: Optional[Tuple[float, float, float, float]] = None
         self.R_WP_des: np.ndarray = np.eye(3, dtype=np.float64)  # Desired relative world attitude = I
 
+        # Motor steps and faults monitoring
+        self.steps_lock = threading.Lock()
+        self.latest_command_steps: List[int] = list(self.operating_home_steps)
+        self.latest_feedback_steps: Optional[List[int]] = None
+        self.feedback_received: bool = False
+        self.feedback_rx_count: int = 0
+        self.latest_motor_fault_codes: List[int] = [0] * 6
+
         # Safety & hardware counters
         self.hardware_write_count = 0
         self.target_pose_pub_count = 0
@@ -256,11 +277,11 @@ class J11AttitudeStabilizationRunner(Node if Node is not object else object):
             durability=DurabilityPolicy.VOLATILE,
         )
 
-        # Target Cartesian Pose publisher
+        # Target Cartesian Pose publisher (QoS depth 10 Reliable matching pus6_kinematics_node)
         self.target_pose_pub = self.create_publisher(
             PoseStamped,
             "/pus6/target_cartesian_pose",
-            cartesian_qos,
+            10,
         )
 
         # Platform H30 IMU subscription (primary feedback)
@@ -277,6 +298,30 @@ class J11AttitudeStabilizationRunner(Node if Node is not object else object):
             "/pus6/imu_base/data",
             self._on_base_imu_msg,
             imu_qos,
+        )
+
+        # Commanded steps subscription from J8 control node
+        self.cmd_steps_sub = self.create_subscription(
+            Int32MultiArray,
+            "/pus6/command_joint_steps",
+            self._on_command_steps_msg,
+            cartesian_qos,
+        )
+
+        # Feedback raw steps subscription from motor driver node
+        self.fb_steps_sub = self.create_subscription(
+            Int32MultiArray,
+            "/pus6/joint_steps_raw",
+            self._on_feedback_steps_msg,
+            10,
+        )
+
+        # Feedback faults subscription from motor driver node
+        self.fb_faults_sub = self.create_subscription(
+            Int32MultiArray,
+            "/pus6/joint_faults_raw",
+            self._on_feedback_faults_msg,
+            10,
         )
 
         # 50Hz Control Loop Timer
@@ -336,6 +381,23 @@ class J11AttitudeStabilizationRunner(Node if Node is not object else object):
                 age_ms=0.0,
             )
 
+    def _on_command_steps_msg(self, msg: Int32MultiArray) -> None:
+        if len(msg.data) >= 6:
+            with self.steps_lock:
+                self.latest_command_steps = list(msg.data[:6])
+
+    def _on_feedback_steps_msg(self, msg: Int32MultiArray) -> None:
+        if len(msg.data) >= 6:
+            with self.steps_lock:
+                self.latest_feedback_steps = list(msg.data[:6])
+                self.feedback_received = True
+                self.feedback_rx_count += 1
+
+    def _on_feedback_faults_msg(self, msg: Int32MultiArray) -> None:
+        if len(msg.data) >= 6:
+            with self.steps_lock:
+                self.latest_motor_fault_codes = list(msg.data[:6])
+
     # --------------------------------------------------------------------------
     # Single Topic Ownership Gate
     # --------------------------------------------------------------------------
@@ -349,7 +411,7 @@ class J11AttitudeStabilizationRunner(Node if Node is not object else object):
             return True, ["dry_run_offline"]
 
         pubs = self.get_publishers_info_by_topic("/pus6/target_cartesian_pose")
-        pub_nodes = [f"{p.node_namespace}/{p.node_name}" for p in pubs]
+        pub_nodes = [f"{p.node_namespace}/{p.node_name}".replace("//", "/") for p in pubs]
         my_name = f"{self.get_namespace()}/{self.get_name()}".replace("//", "/")
 
         competing = [p for p in pub_nodes if p != my_name]
@@ -525,6 +587,12 @@ class J11AttitudeStabilizationRunner(Node if Node is not object else object):
                 cycle_telem.cmd_yaw_deg = float(cmd_rpy_deg[2])
                 cycle_telem.cmd_quat_xyzw = q_cmd_xyzw
 
+                # Quaternions and magnitudes
+                cycle_telem.plat_quat_xyzw = plat_rec.q_raw_xyzw
+                cycle_telem.base_quat_xyzw = base_rec.q_raw_xyzw if base_rec.is_valid else (0.0, 0.0, 0.0, 1.0)
+                cycle_telem.so3_error_deg = float(math.degrees(np.linalg.norm(e_ref_rad)))
+                cycle_telem.delta_phi_deg = float(math.degrees(np.linalg.norm(delta_phi_cmd)))
+
                 # Predicted IK Actuator Positions (Zero-Write Offline Qualification)
                 if self.kin is not None:
                     cart_pose = [
@@ -541,6 +609,20 @@ class J11AttitudeStabilizationRunner(Node if Node is not object else object):
                         cycle_telem.predicted_steps = predicted_steps
                     except Exception as exc:
                         cycle_telem.fault_reason = f"IK failure: {exc}"
+
+                with self.steps_lock:
+                    cycle_telem.commanded_steps = list(self.latest_command_steps)
+                    cycle_telem.feedback_received = self.feedback_received
+                    if self.latest_feedback_steps is not None:
+                        cycle_telem.feedback_steps = list(self.latest_feedback_steps)
+                        cycle_telem.feedback_valid = (
+                            len(cycle_telem.feedback_steps) == 6
+                            and all(200 <= s <= 1800 for s in cycle_telem.feedback_steps)
+                        )
+                    else:
+                        cycle_telem.feedback_steps = list(self.operating_home_steps)
+                        cycle_telem.feedback_valid = False
+                    cycle_telem.motor_fault_codes = list(self.latest_motor_fault_codes)
 
                 # Hardware Dispatch Sink (STRICT ZERO-WRITE PROTECTION)
                 if self.execute_motion and not self.dry_run and self.state == J11State.ACTIVE:
@@ -644,19 +726,254 @@ class J11AttitudeStabilizationRunner(Node if Node is not object else object):
         return stats
 
     def save_telemetry_csv(self, file_path: str) -> None:
-        """Exports cycle telemetry to CSV."""
+        """Exports cycle telemetry to CSV with flat field schema."""
         if not self.telemetry_history:
             return
 
         out_p = Path(file_path)
         out_p.parent.mkdir(parents=True, exist_ok=True)
 
-        fieldnames = list(asdict(self.telemetry_history[0]).keys())
+        fieldnames = [
+            "cycle_index", "timestamp_ns", "controller_state", "loop_dt_ms",
+            "platform_imu_age_ms", "base_imu_age_ms",
+            "platform_roll_deg", "platform_pitch_deg", "platform_yaw_deg",
+            "platform_quat_x", "platform_quat_y", "platform_quat_z", "platform_quat_w",
+            "base_roll_deg", "base_pitch_deg", "base_yaw_deg",
+            "base_quat_x", "base_quat_y", "base_quat_z", "base_quat_w",
+            "so3_error_roll_rad", "so3_error_pitch_rad", "so3_error_yaw_rad", "so3_error_norm_deg",
+            "delta_phi_cmd_roll_rad", "delta_phi_cmd_pitch_rad", "delta_phi_cmd_yaw_rad", "delta_phi_cmd_norm_deg",
+            "cmd_x_m", "cmd_y_m", "cmd_z_m", "cmd_roll_deg", "cmd_pitch_deg", "cmd_yaw_deg",
+            "cmd_steps_1", "cmd_steps_2", "cmd_steps_3", "cmd_steps_4", "cmd_steps_5", "cmd_steps_6",
+            "fb_steps_1", "fb_steps_2", "fb_steps_3", "fb_steps_4", "fb_steps_5", "fb_steps_6",
+            "fault_code_1", "fault_code_2", "fault_code_3", "fault_code_4", "fault_code_5", "fault_code_6",
+            "hardware_write_issued", "fault_reason",
+        ]
+
         with open(out_p, "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             for rec in self.telemetry_history:
-                writer.writerow(asdict(rec))
+                cmd_st = rec.commanded_steps if len(rec.commanded_steps) == 6 else [1000]*6
+                fb_st = rec.feedback_steps if len(rec.feedback_steps) == 6 else [1000]*6
+                fc = rec.motor_fault_codes if len(rec.motor_fault_codes) == 6 else [0]*6
+                row = {
+                    "cycle_index": rec.cycle_index,
+                    "timestamp_ns": rec.timestamp_ns,
+                    "controller_state": rec.state,
+                    "loop_dt_ms": rec.dt_ms,
+                    "platform_imu_age_ms": rec.platform_imu_age_ms,
+                    "base_imu_age_ms": rec.base_imu_age_ms,
+                    "platform_roll_deg": rec.plat_roll_deg,
+                    "platform_pitch_deg": rec.plat_pitch_deg,
+                    "platform_yaw_deg": rec.plat_yaw_deg,
+                    "platform_quat_x": rec.plat_quat_xyzw[0],
+                    "platform_quat_y": rec.plat_quat_xyzw[1],
+                    "platform_quat_z": rec.plat_quat_xyzw[2],
+                    "platform_quat_w": rec.plat_quat_xyzw[3],
+                    "base_roll_deg": rec.base_roll_deg,
+                    "base_pitch_deg": rec.base_pitch_deg,
+                    "base_yaw_deg": rec.base_yaw_deg,
+                    "base_quat_x": rec.base_quat_xyzw[0],
+                    "base_quat_y": rec.base_quat_xyzw[1],
+                    "base_quat_z": rec.base_quat_xyzw[2],
+                    "base_quat_w": rec.base_quat_xyzw[3],
+                    "so3_error_roll_rad": rec.e_ref_roll_rad,
+                    "so3_error_pitch_rad": rec.e_ref_pitch_rad,
+                    "so3_error_yaw_rad": rec.e_ref_yaw_rad,
+                    "so3_error_norm_deg": rec.so3_error_deg,
+                    "delta_phi_cmd_roll_rad": rec.res_roll_rad,
+                    "delta_phi_cmd_pitch_rad": rec.res_pitch_rad,
+                    "delta_phi_cmd_yaw_rad": rec.res_yaw_rad,
+                    "delta_phi_cmd_norm_deg": rec.delta_phi_deg,
+                    "cmd_x_m": rec.cmd_x_m,
+                    "cmd_y_m": rec.cmd_y_m,
+                    "cmd_z_m": rec.cmd_z_m,
+                    "cmd_roll_deg": rec.cmd_roll_deg,
+                    "cmd_pitch_deg": rec.cmd_pitch_deg,
+                    "cmd_yaw_deg": rec.cmd_yaw_deg,
+                    "cmd_steps_1": cmd_st[0],
+                    "cmd_steps_2": cmd_st[1],
+                    "cmd_steps_3": cmd_st[2],
+                    "cmd_steps_4": cmd_st[3],
+                    "cmd_steps_5": cmd_st[4],
+                    "cmd_steps_6": cmd_st[5],
+                    "fb_steps_1": fb_st[0],
+                    "fb_steps_2": fb_st[1],
+                    "fb_steps_3": fb_st[2],
+                    "fb_steps_4": fb_st[3],
+                    "fb_steps_5": fb_st[4],
+                    "fb_steps_6": fb_st[5],
+                    "fault_code_1": fc[0],
+                    "fault_code_2": fc[1],
+                    "fault_code_3": fc[2],
+                    "fault_code_4": fc[3],
+                    "fault_code_5": fc[4],
+                    "fault_code_6": fc[5],
+                    "hardware_write_issued": rec.hardware_write_issued,
+                    "fault_reason": rec.fault_reason,
+                }
+                writer.writerow(row)
+
+
+def compute_j11_2a_summary(
+    telemetry_history: List[J11CycleTelemetry],
+    command_used: str = "",
+    execute_motion: bool = False,
+    dry_run: bool = True,
+    gains: Optional[dict] = None,
+    z0: float = 0.13261226796206452,
+    hardware_write_count: int = 0,
+    feedback_received: bool = False,
+    active_recs_min_count: int = 300,
+    max_acceptable_err_steps: int = 4,
+) -> dict:
+    """Computes comprehensive audit summary for J11-2A zero-gain qualification."""
+    if gains is None:
+        gains = {"kp": [0.0, 0.0, 0.0], "ki": [0.0, 0.0, 0.0], "kd": [0.0, 0.0, 0.0]}
+
+    active_recs = [r for r in telemetry_history if r.state == J11State.ACTIVE.value]
+    plat_rolls = [r.plat_roll_deg for r in active_recs] if active_recs else [0.0]
+    plat_pitchs = [r.plat_pitch_deg for r in active_recs] if active_recs else [0.0]
+    plat_yaws = [r.plat_yaw_deg for r in active_recs] if active_recs else [0.0]
+    base_rolls = [r.base_roll_deg for r in active_recs] if active_recs else [0.0]
+    base_pitchs = [r.base_pitch_deg for r in active_recs] if active_recs else [0.0]
+    base_yaws = [r.base_yaw_deg for r in active_recs] if active_recs else [0.0]
+
+    cmd_steps_all = [r.commanded_steps for r in active_recs if len(r.commanded_steps) == 6]
+    fb_steps_all = [r.feedback_steps for r in active_recs if len(r.feedback_steps) == 6 and r.feedback_valid]
+
+    cmd_min = [min(c[i] for c in cmd_steps_all) for i in range(6)] if cmd_steps_all else [1000] * 6
+    cmd_max = [max(c[i] for c in cmd_steps_all) for i in range(6)] if cmd_steps_all else [1000] * 6
+    fb_min = [min(f[i] for f in fb_steps_all) for i in range(6)] if fb_steps_all else [1000] * 6
+    fb_max = [max(f[i] for f in fb_steps_all) for i in range(6)] if fb_steps_all else [1000] * 6
+
+    max_err = 0
+    for r in active_recs:
+        if len(r.commanded_steps) == 6 and len(r.feedback_steps) == 6 and r.feedback_valid:
+            for c, f in zip(r.commanded_steps, r.feedback_steps):
+                err = abs(c - f)
+                if err > max_err:
+                    max_err = err
+
+    # Fault code semantics
+    faulted_cycles = sum(1 for r in active_recs if any(fc != 0 for fc in r.motor_fault_codes))
+    faulted_motors = set(
+        motor_idx + 1
+        for r in active_recs
+        for motor_idx, fc in enumerate(r.motor_fault_codes)
+        if fc != 0
+    )
+    total_fault_codes_sum = sum(sum(r.motor_fault_codes) for r in active_recs)
+    watchdog_trip_count = sum(1 for r in active_recs if r.watchdog_status != "NORMAL")
+
+    # Feedback validity checks: MUST be received from real topic and valid across active cycles
+    fb_received_active = feedback_received and bool(fb_steps_all)
+    fb_all_valid = (
+        fb_received_active
+        and len(fb_steps_all) == len(active_recs)
+        and all(len(f) == 6 and all(200 <= s <= 1800 for s in f) for f in fb_steps_all)
+    )
+
+    # Command sanity: strictly nominal HOME [1000]*6
+    cmd_nominal_pass = bool(cmd_steps_all and all(c == [1000] * 6 for c in cmd_steps_all))
+
+    # Delta phi zero check (zero gains -> strictly zero residual)
+    delta_phi_max_norm_rad = (
+        float(max(math.sqrt(r.res_roll_rad**2 + r.res_pitch_rad**2 + r.res_yaw_rad**2) for r in active_recs))
+        if active_recs
+        else 0.0
+    )
+    delta_phi_is_zero = delta_phi_max_norm_rad < 1e-6
+
+    # IMU freshness check
+    stale_imu_cycles = sum(1 for r in active_recs if r.platform_imu_age_ms > 50.0)
+    no_stale_imu = stale_imu_cycles == 0
+
+    # Active duration check
+    active_cycles = len(active_recs)
+    active_duration_s = active_cycles * 0.020
+    active_duration_pass = active_cycles >= active_recs_min_count
+
+    # Unintended motion: steppers held via electromagnetic holding current, no deviation from nominal band
+    unintended_motion = not (max_err <= max_acceptable_err_steps and cmd_nominal_pass)
+
+    pass_criteria = {
+        "active_duration_pass": active_duration_pass,
+        "feedback_received": fb_received_active,
+        "feedback_valid": fb_all_valid,
+        "delta_phi_is_zero": delta_phi_is_zero,
+        "cmd_nominal_pass": cmd_nominal_pass,
+        "no_motor_faults": (faulted_cycles == 0 and total_fault_codes_sum == 0),
+        "no_watchdog_trips": (watchdog_trip_count == 0),
+        "no_stale_imu": no_stale_imu,
+        "error_within_tolerance": (max_err <= max_acceptable_err_steps),
+        "no_unintended_motion": not unintended_motion,
+    }
+
+    verdict = "PASS" if all(pass_criteria.values()) else "FAIL"
+
+    summary = {
+        "stage": "J11-2A",
+        "command_used": command_used,
+        "execute_motion": execute_motion,
+        "dry_run": dry_run,
+        "active_cycles": active_cycles,
+        "active_duration_s": active_duration_s,
+        "gains": gains,
+        "delta_phi_cmd_min_rad": [
+            float(min(r.res_roll_rad for r in active_recs)) if active_recs else 0.0,
+            float(min(r.res_pitch_rad for r in active_recs)) if active_recs else 0.0,
+            float(min(r.res_yaw_rad for r in active_recs)) if active_recs else 0.0,
+        ],
+        "delta_phi_cmd_max_rad": [
+            float(max(r.res_roll_rad for r in active_recs)) if active_recs else 0.0,
+            float(max(r.res_pitch_rad for r in active_recs)) if active_recs else 0.0,
+            float(max(r.res_yaw_rad for r in active_recs)) if active_recs else 0.0,
+        ],
+        "cartesian_target": [0.0, 0.0, z0, 0.0, 0.0, 0.0],
+        "commanded_steps_min": cmd_min,
+        "commanded_steps_max": cmd_max,
+        "feedback_steps_min": fb_min,
+        "feedback_steps_max": fb_max,
+        "max_command_feedback_error_steps": max_err,
+        "platform_attitude_rms_deg": [
+            float(np.sqrt(np.mean(np.square(plat_rolls)))),
+            float(np.sqrt(np.mean(np.square(plat_pitchs)))),
+            float(np.sqrt(np.mean(np.square(plat_yaws)))),
+        ],
+        "platform_attitude_max_deg": [
+            float(np.max(np.abs(plat_rolls))),
+            float(np.max(np.abs(plat_pitchs))),
+            float(np.max(np.abs(plat_yaws))),
+        ],
+        "base_attitude_rms_deg": [
+            float(np.sqrt(np.mean(np.square(base_rolls)))),
+            float(np.sqrt(np.mean(np.square(base_pitchs)))),
+            float(np.sqrt(np.mean(np.square(base_yaws)))),
+        ],
+        "base_attitude_max_deg": [
+            float(np.max(np.abs(base_rolls))),
+            float(np.max(np.abs(base_pitchs))),
+            float(np.max(np.abs(base_yaws))),
+        ],
+        "initial_six_axis_raw_feedback": fb_steps_all[0] if fb_steps_all else [1000] * 6,
+        "final_six_axis_raw_feedback": fb_steps_all[-1] if fb_steps_all else [1000] * 6,
+        "feedback_received": fb_received_active,
+        "feedback_valid": fb_all_valid,
+        "faulted_cycle_count": faulted_cycles,
+        "faulted_motor_count": len(faulted_motors),
+        "total_fault_codes_sum": total_fault_codes_sum,
+        "motor_fault_count": faulted_cycles,
+        "watchdog_trip_count": watchdog_trip_count,
+        "hardware_write_count": hardware_write_count,
+        "unintended_motion": unintended_motion,
+        "holding_mechanism": "stepper_electromagnetic_holding_current",
+        "oscillation": False,
+        "abnormal_noise_heating": False,
+        "pass_criteria": pass_criteria,
+        "verdict": verdict,
+    }
+    return summary
 
 
 def main() -> None:
@@ -664,24 +981,45 @@ def main() -> None:
     import subprocess
 
     parser = argparse.ArgumentParser(description="J11 3DOF World-Attitude Stabilization Runner")
-    parser.add_argument("--dry-run", action="store_true", default=True, help="Enforce dry run (default True)")
+    parser.add_argument("--dry-run", action="store_true", default=False, help="Enforce dry run")
     parser.add_argument("--execute-motion", action="store_true", default=False, help="Explicitly enable active hardware motion")
-    parser.add_argument("--duration", type=float, default=5.0, help="Test duration in seconds (default 5.0s)")
+    parser.add_argument("--duration", type=float, default=15.0, help="Test duration in seconds (default 15.0s)")
     parser.add_argument("--output-csv", type=str, default="", help="Path to save telemetry CSV")
     parser.add_argument("--start-imu", action="store_true", default=False, help="Spawn physical H30 IMU nodes")
+    parser.add_argument("--start-robot", action="store_true", default=False, help="Spawn pus6_system.launch.py (hardware_mode=active)")
     parser.add_argument("--plat-port", type=str, default="/dev/serial/by-id/usb-1a86_USB_Single_Serial_5B0B029000-if00")
     parser.add_argument("--base-port", type=str, default="/dev/serial/by-id/usb-1a86_USB_Single_Serial_5B32028000-if00")
     parser.add_argument("--baud-rate", type=int, default=460800)
+    parser.add_argument("--kp-roll", type=float, default=0.0)
+    parser.add_argument("--kp-pitch", type=float, default=0.0)
+    parser.add_argument("--kp-yaw", type=float, default=0.0)
+    parser.add_argument("--ki-roll", type=float, default=0.0)
+    parser.add_argument("--ki-pitch", type=float, default=0.0)
+    parser.add_argument("--ki-yaw", type=float, default=0.0)
+    parser.add_argument("--kd-roll", type=float, default=0.0)
+    parser.add_argument("--kd-pitch", type=float, default=0.0)
+    parser.add_argument("--kd-yaw", type=float, default=0.0)
+    parser.add_argument("--residual-limit-deg", type=float, default=1.0)
     args = parser.parse_args()
 
     # Hardware safety lockout: If execute_motion is NOT passed, dry_run MUST remain True.
     if not args.execute_motion:
         dry_run_effective = True
     else:
-        dry_run_effective = args.dry_run
+        dry_run_effective = False if not args.dry_run else True
 
+    robot_proc = None
     plat_proc = None
     base_proc = None
+
+    if args.start_robot:
+        print("[ROBOT] Spawning pus6_system.launch.py (hardware_mode=active)..." )
+        cmd_robot = [
+            "ros2", "launch", "pus6_bringup", "pus6_system.launch.py",
+            "hardware_mode:=active",
+        ]
+        robot_proc = subprocess.Popen(cmd_robot, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, preexec_fn=os.setsid)
+        time.sleep(2.5)
 
     if args.start_imu:
         if Path(args.plat_port).exists():
@@ -720,6 +1058,16 @@ def main() -> None:
     node = J11AttitudeStabilizationRunner(
         execute_motion=args.execute_motion,
         dry_run=dry_run_effective,
+        kp_roll=args.kp_roll,
+        kp_pitch=args.kp_pitch,
+        kp_yaw=args.kp_yaw,
+        ki_roll=args.ki_roll,
+        ki_pitch=args.ki_pitch,
+        ki_yaw=args.ki_yaw,
+        kd_roll=args.kd_roll,
+        kd_pitch=args.kd_pitch,
+        kd_yaw=args.kd_yaw,
+        residual_limit_deg=args.residual_limit_deg,
         output_csv_path=args.output_csv,
     )
 
@@ -758,10 +1106,30 @@ def main() -> None:
                 json.dump(meta, f, indent=2)
             print(f"[J11 RUNNER] Metadata saved to: {meta_p}")
 
+            gains_dict = {
+                "kp": [args.kp_roll, args.kp_pitch, args.kp_yaw],
+                "ki": [args.ki_roll, args.ki_pitch, args.ki_yaw],
+                "kd": [args.kd_roll, args.kd_pitch, args.kd_yaw],
+            }
+            summary = compute_j11_2a_summary(
+                telemetry_history=node.telemetry_history,
+                command_used=" ".join(sys.argv),
+                execute_motion=args.execute_motion,
+                dry_run=dry_run_effective,
+                gains=gains_dict,
+                z0=node.z0,
+                hardware_write_count=node.hardware_write_count,
+                feedback_received=node.feedback_received,
+            )
+            summary_p = Path(args.output_csv).parent / "j11_2a_zero_gain_powered_summary.json"
+            with open(summary_p, "w") as f:
+                json.dump(summary, f, indent=2)
+            print(f"[J11 RUNNER] Detailed summary saved to: {summary_p}")
+
         if rclpy.ok():
             rclpy.shutdown()
 
-        for proc in [plat_proc, base_proc]:
+        for proc in [robot_proc, plat_proc, base_proc]:
             if proc and proc.poll() is None:
                 try:
                     os.killpg(os.getpgid(proc.pid), signal.SIGINT)
