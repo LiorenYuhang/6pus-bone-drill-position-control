@@ -1,69 +1,68 @@
 # 6PUS 并联机器人权威文档导航库 (agent_docs)
 
-> **全局文档索引与维护地图**：本文档为 6PUS 并联机器人研发框架的权威文档索引。用于规范仓库内所有设计决策、阶段记录、历史冻结基线与实验报告的检索与阅读指引。
+> 本文档为 6PUS 并联机器人研发框架的**权威文档体系导航地图**。  
+> 面向开发者与 Agent，提供清晰的目录分类说明、阶段结论快速检索入口与文档维护准则。项目级系统介绍请参阅根目录 [`README.md`](../README.md) 与 [`README_CN.md`](../README_CN.md)。
 
 ---
 
-## 1. 文档体系导航地图 (Document Architecture Map)
+## 1. 目录架构与分类职责
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│                   A. Current Recommended Docs (当前核心入口)            │
-│  • README.md / README_CN.md (项目主页与最新状态)                        │
-│  • 6PUS_SERVO_OPERATION_GUIDE.md (唯一权威日常实机操作指南)             │
-│  • 6PUS_ROS2_CODE_LEARNING_TUTORIAL.md (12 章全栈架构与开发教程)        │
-└─────────────────────────────────────────────────────────────────────────┘
-                                     │
-                                     ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                 B. Current Technical Decisions (当前架构与技术决策)      │
-│  • agent_docs/decisions/CURRENT_STAGE.md (阶段状态跟踪卡)                │
-│  • agent_docs/decisions/J8_FINAL_HARDWARE_QUALIFICATION.md (J8 硬件准入)│
-│  • agent_docs/decisions/J7_C0 ~ J7_C9 (J7 50Hz Servo 架构设计与时序审计)│
-│  • agent_docs/architecture/BONE_WS_ROS2_ARCHITECTURE_PLAN.md (ROS 2)    │
-└─────────────────────────────────────────────────────────────────────────┘
-                                     │
-                                     ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                 C. Frozen Baselines (历史已封顶冻结基线，不可回写)       │
-│  • J8 Frozen Tag: v1.0-j8-active-servo-hardware-qualified (当前基线)    │
-│  • J7 Frozen Tag: v1.0-j7-servo-hardware-frozen (50Hz 伺服驱动基线)     │
-│  • J6 Frozen: agent_docs/j6/ (总装后定位模式 HOME/PARK 基线)            │
-│  • J5 Frozen: agent_docs/frozen/ (装配前软件、时间轴与台架基线)         │
-│  • J4/J3/J2/J1 Frozen: agent_docs/frozen/ & agent_docs/stages/          │
-└─────────────────────────────────────────────────────────────────────────┘
-                                     │
-                                     ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                 D. Stage & Historical Docs (分阶段过程资料与归档)       │
-│  • agent_docs/stages/J2/ ~ J11/ (分阶段计划与测试规程，含 J10 冻结与 J11 姿态防抖)                  │
-│  • hardware/ & up/ (历史独立硬件测试与传感器开发资料)                   │
-└─────────────────────────────────────────────────────────────────────────┘
+agent_docs/
+├── stages/        # 分阶段实施方案、阶段性闭环总结与跨阶段交接规范 (Handoff)
+├── reports/       # 深度实测分析报告、包络闭环分析与物理可辨识性研究
+├── decisions/     # 架构决策记录 (ADR)、底层伺服设计与硬件准入结论
+├── frozen/        # 历史里程碑冻结基线清单与代码/数据指纹 (Frozen Manifests)
+├── archive/       # 历史遗留操作手册与过时参考资料 (保留追溯性，禁止逆向覆盖)
+├── architecture/  # ROS 2 工作空间系统架构图与核心数据流规划
+└── research/      # 算法预研路线、防抖控制选型与文献技术调研
 ```
 
----
-
-## 2. 核心文档分类与状态索引 (Master Document Index)
-
-| 文档路径 | 核心用途与内容 | 所属阶段 | 状态类型 | 推荐阅读顺序 |
-| :--- | :--- | :---: | :---: | :---: |
-| [`README_CN.md`](file:///home/lyapunov/bone_drill/README_CN.md) / [`README.md`](file:///home/lyapunov/bone_drill/README.md) | GitHub 中英文主页，系统概览、架构图、J10 冻结与 J11 姿态防抖推进状态 | J11 (Current) | **Current** | **1** |
-| [`6PUS_SERVO_OPERATION_GUIDE.md`](file:///home/lyapunov/bone_drill/6PUS_SERVO_OPERATION_GUIDE.md) | **唯一权威实机操作指南**：J8 笛卡尔/伺服推荐入口、集中式状态分类器、安全门禁与故障排查 | J8 / J7 | **Current** | **2** |
-| [`agent_docs/decisions/J8_FINAL_HARDWARE_QUALIFICATION.md`](file:///home/lyapunov/bone_drill/agent_docs/decisions/J8_FINAL_HARDWARE_QUALIFICATION.md) | **J8 最终实机准入报告**：Design-B 伴随反馈、两级看门狗、三轮验证与 9 阶段实机展示报告 | J8 | **Current** | **3** |
-| [`6PUS_ROS2_CODE_LEARNING_TUTORIAL.md`](file:///home/lyapunov/bone_drill/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md) | **12 章技术教程**：双链路架构、J7/J8 50Hz 传输、解析逆解、LM 数值正解、时间同步与 TDD 体系 | J8 / J7 / J5 | **Current** | **4** |
-| [`agent_docs/stages/J10/J10_FINAL_SUMMARY.md`](file:///home/lyapunov/bone_drill/agent_docs/stages/J10/J10_FINAL_SUMMARY.md) | **J10 6DOF 工作空间实测总结**：HOME 单轴 6 自由度实测极限、端点截断规则与过流/缠绕机理分层 | J10 | **Current** | **5** |
-| [`agent_docs/stages/J11/README.md`](file:///home/lyapunov/bone_drill/agent_docs/stages/J11/README.md) | **J11 姿态防抖架构规范**：三轴世界姿态防抖目标、控制链路、传感器分工与 J8 冻结黑盒边界 | J11 (Current) | **Current** | **6** |
-| [`agent_docs/stages/J10/J10_TO_J11_HANDOFF.md`](file:///home/lyapunov/bone_drill/agent_docs/stages/J10/J10_TO_J11_HANDOFF.md) | **J10 至 J11 交接文档**：J10 实测事实、J11 姿态防抖目标与标定延后说明 | J10 / J11 | **Current** | **7** |
-| [`agent_docs/decisions/CURRENT_STAGE.md`](file:///home/lyapunov/bone_drill/agent_docs/decisions/CURRENT_STAGE.md) | 全局阶段演化状态跟踪卡，记录已冻结里程碑与 J11 姿态防抖推进状态 | J11 (Current) | **Current** | **8** |
-| [`agent_docs/decisions/J7_C0_SERVO_ARCHITECTURE_DESIGN.md`](file:///home/lyapunov/bone_drill/agent_docs/decisions/J7_C0_SERVO_ARCHITECTURE_DESIGN.md) | J7 50Hz Servo 伺服运动控制架构设计规范 | J7 | **Historical** | 9 |
-| [`agent_docs/j6/J6_FINAL_SUMMARY.md`](file:///home/lyapunov/bone_drill/agent_docs/j6/J6_FINAL_SUMMARY.md) | J6 机械总装调试、零位映射与 HOME/PARK 定位模式 10 循环验收总结 | J6 | **Frozen** | 10 |
-| [`agent_docs/frozen/J5_PRE_ASSEMBLY_FROZEN_v1.0.md`](file:///home/lyapunov/bone_drill/agent_docs/frozen/J5_PRE_ASSEMBLY_FROZEN_v1.0.md) | J5 装配前基线冻结发布归档清单与 SHA256 校验指纹 | J5 | **Frozen** | 11 |
+### 分类用途说明：
+- **`stages/` (阶段实施与交接)**：记录机器人各研发阶段（J1~J11）的详细技术方案、前置安全检查规程、阶段验收总结（`*_FINAL_SUMMARY.md`）以及阶段向后传递的交接清单（`*_TO_*_HANDOFF.md`）。
+- **`reports/` (实测分析报告)**：存放人类与 Agent 撰写的高价值工程实测分析与实验归纳（如 J10 六轴单自由度安全包络闭环报告、J9.1 平台力臂与惯导平移耦合分析）。机读原始数据归入 `results/`。
+- **`decisions/` (架构决策与准入)**：记录不可轻易推翻的关键系统决策（ADR）、底层通信时序审计以及正式里程碑的硬件准入结论（如 `J8_FINAL_HARDWARE_QUALIFICATION.md`）。
+- **`frozen/` (冻结基线清单)**：记录历史封顶里程碑的只读代码与配置清单（如装配前 J5 冻结基线）。
+- **`archive/` (历史归档)**：保存已过时但具有工程追溯价值的旧版操作指南与演进草稿。
 
 ---
 
-## 3. 分类维护规则 (Maintenance Principles)
+## 2. 阶段正式结论与关键入口检索表 (Stage Master Index)
 
-1. **Current / Operator-facing**：保持与最新硬件基线严格一致（J10 已 CLOSED / FROZEN；J11 为当前推进阶段：PID 三轴姿态防抖；物理标定已 DEFERRED；运行基线仍为 J8 冻结伺服）。
-2. **Frozen Historical Baseline**：`agent_docs/frozen/` 中的历史文档原则上保持内容不变。
-3. **Stage-Specific & Decisions**：`decisions/` 与 `stages/` 记录开发演进与技术方案，新增决策直接按 `Jn_` 规范归档。
-4. **统一参数真值源**：所有运动学与物理参数唯一来源于 [`bone_ws/src/pus6_kinematics/config/6pus_geometry.yaml`](file:///home/lyapunov/bone_drill/bone_ws/src/pus6_kinematics/config/6pus_geometry.yaml)。
+当需要查阅某阶段的正式结论、硬件准入状态或交接技术指标时，请通过下表直接检索：
+
+| 阶段代号 | 阶段核心目标 | 关键结论与权威文档入口 | 状态 |
+| :---: | :--- | :--- | :---: |
+| **J1** | 电机只读通信与多机基线 | [`up/motor/uart_multi/AGENTS.md`](../up/motor/uart_multi/AGENTS.md) (ID1~ID6 串口基线) | **FROZEN** |
+| **J2** | 解析几何逆运动学验证 | [`agent_docs/stages/J2/J2_STAGE_PLAN.md`](./stages/J2/J2_STAGE_PLAN.md) (闭式解与几何配置文件) | **FROZEN** |
+| **J3** | FakeBus 调度与单槽覆盖 | [`agent_docs/stages/J3/J3_STAGE_PLAN.md`](./stages/J3/J3_STAGE_PLAN.md) (Latest-Value-Wins 机制) | **FROZEN** |
+| **J4** | 连续轨迹整形与安全门禁 | [`agent_docs/decisions/J4_SAFETY_GATES_AND_RECOVERY_SPEC.md`](./decisions/J4_SAFETY_GATES_AND_RECOVERY_SPEC.md) | **FROZEN** |
+| **J5** | 装配前统一时间轴与数值正解 | [`agent_docs/frozen/J5_PRE_ASSEMBLY_FROZEN_v1.0.md`](./frozen/J5_PRE_ASSEMBLY_FROZEN_v1.0.md) | **FROZEN** |
+| **J6** | 机械总装与零位回归 | [`agent_docs/j6/J6_FINAL_SUMMARY.md`](./j6/J6_FINAL_SUMMARY.md) (HOME/PARK 定位验收) | **FROZEN** |
+| **J7** | 六轴 50Hz 伺服驱动通信 | [`agent_docs/decisions/J7_C0_SERVO_ARCHITECTURE_DESIGN.md`](./decisions/J7_C0_SERVO_ARCHITECTURE_DESIGN.md) | **FROZEN** |
+| **J8** | 笛卡尔空间连续实机运动 | [`agent_docs/decisions/J8_FINAL_HARDWARE_QUALIFICATION.md`](./decisions/J8_FINAL_HARDWARE_QUALIFICATION.md) (9阶段视频演示准入) | **FROZEN** |
+| **J9** | 双 H30 IMU 传感集成与姿态验证 | [`agent_docs/stages/J9/J9_FINAL_SUMMARY.md`](./stages/J9/J9_FINAL_SUMMARY.md)<br>交接：[`agent_docs/stages/J9/J9_TO_J10_HANDOFF.md`](./stages/J9/J9_TO_J10_HANDOFF.md) | **FROZEN** |
+| **J10** | 6DOF 单轴实机安全运行包络 | 总结：[`agent_docs/stages/J10/J10_FINAL_SUMMARY.md`](./stages/J10/J10_FINAL_SUMMARY.md)<br>报告库：[`agent_docs/reports/j10/`](./reports/j10/) (15篇单轴报告)<br>交接：[`agent_docs/stages/J10/J10_TO_J11_HANDOFF.md`](./stages/J10/J10_TO_J11_HANDOFF.md) | **CLOSED** |
+| **J11** | 世界坐标系姿态防抖闭环 | 架构：[`agent_docs/stages/J11/README.md`](./stages/J11/README.md) (PID 防抖目标与路线) | **IN PROGRESS** |
+
+---
+
+## 3. 跨阶段交接规范 (Handoff Navigation)
+
+跨阶段交接文档用于确保上一阶段的物理事实、不可动基线与安全限制完整传递至下一阶段：
+- **J9 $\to$ J10 交接**：[`agent_docs/stages/J9/J9_TO_J10_HANDOFF.md`](./stages/J9/J9_TO_J10_HANDOFF.md)（交付 IMU 静态/动态标定与姿态精度限制）。
+- **J10 $\to$ J11 交接**：[`agent_docs/stages/J10/J10_TO_J11_HANDOFF.md`](./stages/J10/J10_TO_J11_HANDOFF.md)（交付 J10 单轴实测极限，明确 J8 冻结控制黑盒与标定延后约束）。
+
+---
+
+## 4. 文档维护准则
+
+1. **唯一事实源 (Single Source of Truth)**：
+   - 机构几何参数与物理换算系数唯一来源于 [`bone_ws/src/pus6_kinematics/config/6pus_geometry.yaml`](../bone_ws/src/pus6_kinematics/config/6pus_geometry.yaml)。
+   - 坐标系定义、原点位置（`OPERATING_HOME = [1000]*6`）、软件零位属于不可篡改项目级不变量。
+2. **文档与数据隔离**：
+   - 所有人类/Agent 可读的技术文档与报告必须置于 `agent_docs/`；
+   - 自动化测试与实机运行生成的 CSV、JSON、日志等数据资产必须置于 `results/`。
+3. **真实性与证据一致性**：
+   - 严禁将 Mock/仿真测试表述为 50Hz 物理硬件实测结果。
+   - 所有指标与结论必须能在 `results/` 权威数据集中找到对应的实验日志与时间戳。

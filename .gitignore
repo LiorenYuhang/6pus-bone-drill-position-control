@@ -49,3 +49,14 @@ up/sensor/IMU/data/
 hardware/功能模块/*.zip
 hardware/功能模块/**/*.zip
 hardware/功能模块/**/*.apk
+
+# Auto-Generated Project Tree Dumps
+ROS2_PROJECT_TREE.txt
+
+# Local-Only Intermediate Experiment Sweeps & Tuning Runs (Kept Locally, Excluded from Git)
+results/J10*/
+results/j10_a2/
+results/j11/j11_2a/
+results/j9_1/translation_characterization/*20260903_203101*
+results/j9_1/translation_characterization/*20260904_092502*
+

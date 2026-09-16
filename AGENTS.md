@@ -23,7 +23,7 @@
 ### 文档与数据资产存放治理规则 (Documentation & Artifact Location Policy)：
 1. **分类基准**：目录归属以**“资产用途 (Asset Purpose)”**为唯一判定依据，严禁仅凭文件扩展名作机械划分。
 2. **`agent_docs/` (文档与知识唯一根)**：定位为 **human/Agent-readable project knowledge and documentation**。负责系统架构、阶段方案、设计决策、分析与测试报告（如 `agent_docs/reports/`）、Frozen Manifest 与操作交接指南等所有人类或 Agent 撰写与维护的知识沉淀。
-3. **`results/` (运行数据与证据唯一根)**：定位为 **machine-generated / experiment-generated evidence and runtime artifacts**。专门存放程序运行、自动化测试、仿真评测及真实实机实验生成的各类数据证据与运行时产物（包括传感器遥测、电机反馈、轨迹 CSV、运行日志、环境元数据等）。`results/` 专用于存放数据产物，严禁在其中撰写独立的分析文档。
+3. **`results/` (运行数据与证据唯一根)**：定位为 **machine-generated / experiment-generated evidence and runtime artifacts**。专门存放程序运行、自动化测试、仿真评测及真实实机实验生成的各类数据证据与运行时产物（包括传感器遥测、电机反馈、轨迹 CSV、运行日志、环境元数据等）。`results/` 专用于存放数据产物，严禁在其中撰写独立的实验分析文档（`results/README.md` 作为数据集与证据清单的索引导航，为唯一允许的元数据说明例外）。
 4. **根目录整洁与禁令 (Root Hygiene)**：根目录 `reports/` 已正式废弃并移除。严禁 Agent 在根目录新建随意命名的文档或输出目录（例如根目录 `docs/`、`reports/`、`notes/`、`summaries/` 等）。
 5. **资产隔离原则**：避免将知识库文档混入 `results/`，也避免将大体量机读证据/运行时日志倾倒至 `agent_docs/`。
 6. **创建与迁移纪律**：

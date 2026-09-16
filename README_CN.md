@@ -1,115 +1,181 @@
 # 6PUS 骨科并联机器人防抖控制与感知框架
 
-> [English](README.md) | [中文]
+> [English](README.md) | [中文]  
 > **面向 6-PUS 并联骨科手术机器人的 ROS 2 实时感知与主动防抖控制系统**
 
 ---
 
-## 1. 项目简介 (Overview)
+## 1. 项目简介 (Project Overview)
 
-**6PUS-Anti-Vibration** 是专为 6-PUS（移动副-十字万向副-球副）Stewart 并联机构研发的开源高精度实时感知与运动控制框架。项目面向骨科手术机器人领域的高精细操作，旨在通过实时姿态估计、加加速度连续轨迹整形与高速伺服通信，实现平台在受扰动条件下的主动抗扰与振动抑制。
+**6PUS-Anti-Vibration** 是专为 6-PUS（移动副-万向节-球副）Stewart 并联机构研发的开源高精度实时感知与运动控制框架。项目面向骨科手术机器人领域的高精细操作，旨在通过实时位姿解算、加加速度连续轨迹整形与高频伺服通信，实现平台在动基座扰动条件下的主动抗扰与高带宽振动抑制。
 
-核心能力涵盖：
-* **并联机构解析逆解与数值正解**：严格推导的解析几何逆运动学（IK）与基于解析雅可比矩阵的 Levenberg-Marquardt 高频数值正解（FK）；
-* **主动抗扰与振动抑制管线**：连续 $C^2$ 加加速度有界（Jerk-Limited）轨迹整形、低延迟单总线批次下发与高带宽闭环响应；
-* **双链路解耦 ROS 2 架构**：控制下行链路（50Hz 控制指令）与状态观测上行链路（200Hz 遥测解算）在物理与线程级严格解耦；
-* **双 H30 IMU 纳秒/微秒时钟感知**：双路 Yesense H30 惯导模块硬件微秒采样时间戳（0x51/0x52 字段）、软件时钟频偏消除、Session-Start 启动陀螺自适应零偏估计以及李群 $\text{SO}(3)$ 相对姿态双边积分；
-* **高可靠串口通信与观测链**：单总线半双工 RS485 921600 8N1 驱动、Batch-Atomicity 全局总线锁、Host `CLOCK_MONOTONIC` 统一时间轴、Fixed-Lag 严格零外推时钟对齐重构与单线程独立 FK 观测节点。
+### 核心阶段划分：
+- **J1–J10（已完成并冻结）**：构建了坚实的真实物理硬件运动与感知基线，涵盖多电机底层串口通信、微秒级闭式解析逆解、三阶加加速度连续轨迹平滑整形、50Hz 连续流式伺服驱动、双 H30 IMU 微秒级时钟对齐解算、数值正运动学重构，以及在真实物理平台上完成的 6 自由度单轴安全运行包络边界全域测定。
+- **J11+（主动防抖研究路线）**：正式进入动基座扰动下的主动姿态防抖与振动抑制研究阶段（Stage J11 PID 三轴世界姿态闭环控制正在推进中；未来演进路线包括自抗扰控制 ADRC 与自适应控制）。
 
 ---
 
-## 2. 当前阶段状态 (Project Status)
+## 2. 当前工程开发状态 (Current Development Status)
 
-**当前冻结里程碑**：$\mathbf{J10\ 6DOF\ Axis\text{-}Wise\ Operational\ Safe\ Workspace\ Measurement\ COMPLETE}$
-*(冻结运行基线：`v1.0-j8-active-servo-hardware-qualified`；收口文档：[`agent_docs/stages/J10/J10_FINAL_SUMMARY.md`](./agent_docs/stages/J10/J10_FINAL_SUMMARY.md)、[`agent_docs/stages/J10/J10_TO_J11_HANDOFF.md`](./agent_docs/stages/J10/J10_TO_J11_HANDOFF.md))*
-
-六轴 50Hz 连续笛卡尔伺服与 Design-B 伴随反馈控制闭环仍作为冻结运行基线保留：
-* **J8 准入结论**：`J8 functional hardware qualification: PASS`
-* **Design-B 伴随反馈机制**：ACTIVE 运行模式直接复用 50Hz 0x29 目标写入伴随返回的 `StatusFeedback`，将常规 0x30 阻塞轮询彻底移出 50Hz 关键控制路径；
-* **两级安全看门狗**：
-  * Tier 1: 执行周期内 6/6 轴反馈完整性监测，连续 $N=4$ 周期缺轴触发通信安全保护；
-  * Tier 2: 263.324 ms 调度/截止期非实时操作系统安全上限（非反馈超期时间），容忍标准 Linux 调度抖动；
-* **集约化 PARK/HOME 契约**：
-  * `PARK_CMD = 0 step` ($25.000\text{ mm}$)，`HOME_CMD = 1000 step` ($50.000\text{ mm}$)；
-  * 引入暂定 PARK 测量带 $[-5, +5]\text{ steps}$，多样本稳定性校验通过后判定 `VALID_PARK`，规划种子设为 `[0]*6`，指令空间严格 $\ge 0$；
-  * 遥测保留原始未篡改编码器读数，严格拒绝混合/未分类负向异常状态；
-* **三轮自治硬件准入**：连续 3 轮完整 PARK $\to$ HOME $\to$ 20s 保持 $\to$ PARK 循环 100% PASS（56,754 / 56,754 帧反馈，0 故障，0 超时，0 停机）；
-* **最终 9 阶段实机视频演示考核**：137.128s，6898 周期，实测持续刷新率 50.30 Hz，41,388 / 41,388 响应（100.0% 完整率），0 丢帧，0 故障，0 STOP，各轴单向与 6 自由度复合运动全部平滑就位；
-* **全工作空间回归测试**：349 项单元与集成测试 **100% PASS**。
-* **J9 收口**：双 H30 IMU 传感集成与姿态解算闭环已完成（[`agent_docs/stages/J9/J9_FINAL_SUMMARY.md`](./agent_docs/stages/J9/J9_FINAL_SUMMARY.md)）。
-
-### J10 — 单自由度实机运行范围
-
-以下范围均为 HOME 基准下分别激励单一自由度得到的 axis-wise operational range，不是六自由度任意组合下的完整耦合工作空间。详细证据与实验覆盖记录见 [J10 最终总结](./agent_docs/stages/J10/J10_FINAL_SUMMARY.md)。
-
-| 自由度 | HOME 基准单自由度范围 |
-| --- | --- |
-| X | `[-45.75, +45.75] mm` |
-| Y | `[-45.50, +49.00] mm` |
-| Z | `[-25.00, +25.00] mm`（总行程 50.00 mm，共模） |
-| Roll | `[-35.0, +37.5] deg` |
-| Pitch | `[-30.0, +35.0] deg` |
-| Yaw | `[-90.0, +90.0] deg` |
-
-J10：**CLOSED / FROZEN**。J11（PID 三轴姿态防抖 / Anti-Vibration）：**IN PROGRESS**（hardware_write_count = 0；物理运动学标定已暂缓延后）。
-
----
-
-## 3. 系统架构 (Architecture)
+6PUS 并联平台的研发严格划分为两大核心板块：
 
 ```text
-┌───────────────────────────────────────────────────────────────────────┐
-│                       上位规划层 / 笛卡尔目标指令                     │
-└───────────────────────────────────────────────────────────────────────┘
-                                   │
-                                   ▼  (/pus6/target_cartesian_pose)
-┌───────────────────────────────────────────────────────────────────────┐
-│                       运动学与轨迹规划层 (50Hz)                       │
-│  • pus6_kinematics_node : 解析逆运动学计算 (Analytical IK)            │
-│  • pus6_control_node    : 有状态 Jerk-Limited 轨迹整形器              │
-└───────────────────────────────────────────────────────────────────────┘
-                                   │
-                                   ▼  (/pus6/command_joint_steps, LVW)
-┌───────────────────────────────────────────────────────────────────────┐
-│                         电机驱动与底层控制层                          │
-│  • J7/J8 六轴 50Hz Servo 传输驱动 (Design-B 0x29 目标写入与伴随反馈) │
-│  • 两级安全看门狗 (Tier 1: 6/6 反馈完整性; Tier 2: 263.324ms 截止期)  │
-│  • safety.py 集约化启动状态分类器 (VALID_PARK / VALID_HOME)           │
-│  • pus6_motor_driver_node: 六重安全门禁与全局总线锁机制               │
-│  • RS485 半双工单总线硬件 (921600 8N1)                                │
-└───────────────────────────────────────────────────────────────────────┘
-             │                                              │
-             ▼ (0x29 StatusFeedback 伴随遥测)               ▼ (物理执行器)
-┌──────────────────────────────────────┐       ┌────────────────────────┐
-│             状态观测层               │       │        硬件实体        │
-│  • TimedJointFeedback 发布器         │       │  • 6x 高精度伺服电缸   │
-│  • FixedLagJointSynchronizer         │       │  • 基座 Yesense H30 IMU│
-│  • Pus6FkNode (独立线程 FK 观测器)   │       │  • 动平台 H30 IMU      │
-│  • h30_relative_attitude_node (SO3)  │       │  • 6PUS Stewart 机构   │
-└──────────────────────────────────────┘       └────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│              第一部分：物理实机运动与感知基础 (J1–J10)                  │
+│                        [状态：已全面完成并冻结]                         │
+│  • J1: RS485 UART 底层通信基线 (921600 8N1，六电机只读协议在线)         │
+│  • J2: 6PUS 解析几何逆运动学 (闭式代数解，微秒级计算延迟)               │
+│  • J3: 无锁非阻塞调度与 Latest-Value-Wins (LVW) 原子覆盖机制            │
+│  • J4: 有状态加加速度限制轨迹整形器 (Stateful Jerk Shaper, C² 连续)     │
+│  • J5: 纳秒单调时间轴重构与基于解析雅可比矩阵的 LM 高频数值正解         │
+│  • J6: 机械整机总装调试与集约化 HOME/PARK 启动状态分类器                │
+│  • J7: 50Hz 物理实机伺服驱动与 Design-B 0x29 伴随反馈机制               │
+│  • J8: 9 阶段笛卡尔连续实机视频演示验收 (100% 反馈完整率，0 故障)       │
+│  • J9: 双 Yesense H30 IMU 微秒级硬件时间对齐与 SO(3) 相对姿态积分       │
+│  • J10: 6 自由度 HOME 基准单轴实机安全运行包络边界全域实测              │
+└─────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│               第二部分：主动姿态稳定与防抖研究 (J11+)                   │
+│                        [状态：前沿研究路线图]                           │
+│  • J11: 基于 PID 的 3 自由度世界坐标系姿态抗扰闭环控制 [推进中]         │
+│  • 后续前沿研究路线 (Roadmap)：                                         │
+│    - 自抗扰控制 (ADRC) 与扩张状态观测器 (ESO) 总扰动实时估计与补偿      │
+│    - IMU 角加速度前馈与扰动观测器 (DOB) 抑制高频动基座振颤              │
+│    - 强化学习与自适应在线刚度自调优控制                                 │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
+> [!IMPORTANT]
+> **真实性与验证边界**：阶段 J1 至 J10 已全部在真实物理硬件上完成验收并正式冻结（`v1.0-j8-active-servo-hardware-qualified`）。J11 目前处于研发阶段（离线仿真与 Dry-Run 校验已通过，物理闭环运动正在推进）。严禁虚构或提前宣称未经验证的研究结论。
+
+### J10 单自由度实机安全运行包络边界（以 HOME 为基准）
+
+| 自由度 | 实测安全运行范围 | 边界制约机理 |
+| :--- | :--- | :--- |
+| **X** | `[-45.75, +45.75] mm` | 极限行程包络 (ID2 / ID5 电缸限位) |
+| **Y** | `[-45.50, +49.00] mm` | 极限行程包络 (ID1 / ID4 电缸限位) |
+| **Z** | `[-25.00, +25.00] mm` | 50.0 mm 总对称共模垂向行程 |
+| **Roll** | `[-35.0, +37.5] deg` | 机械球铰极限角约束 |
+| **Pitch** | `[-30.0, +35.0] deg` | 电缸单向行程达到极限 |
+| **Yaw** | `[-90.0, +90.0] deg` | 完整测试旋转角包络 |
+
+*(注：上述数据均为在 `OPERATING_HOME = [1000]*6` 步基准下独立单轴运动实测结果，详见 [`agent_docs/stages/J10/J10_FINAL_SUMMARY.md`](./agent_docs/stages/J10/J10_FINAL_SUMMARY.md))*。
+
 ---
 
-## 4. 代码结构导航 (Repository Layout)
+## 3. 代码与文档体系结构 (Repository Layout)
+
+项目严格遵行代码、人读技术知识与机读数据资产三者职责边界隔离：
 
 ```text
-6PUS-Anti-Vibration/
-├── agent_docs/                     # 权威技术文档、决策日志与冻结基线
-│   ├── decisions/                  # J8 最终准入报告与历史架构决策
-│   ├── frozen/                     # 历史冻结清单
-│   └── stages/                     # 分阶段调试指南
-│
-├── bone_ws/                        # ROS 2 核心工作空间
+/home/lyapunov/bone_drill/
+├── bone_ws/                               <-- [ROS 2 工作空间] 源代码、功能包、测试用例与运行脚本
 │   ├── src/
-│   │   ├── pus6_msgs/              # 自定义 ROS 2 接口定义
-│   │   ├── pus6_kinematics/        # 解析逆解、LM 数值正解与 Fixed-Lag 观测器
-│   │   ├── pus6_motor_driver/      # 串口驱动、J7/J8 50Hz Servo 驱动与安全层
-│   │   ├── pus6_control/           # 轨迹整形器与关节控制器
-│   │   ├── pus6_bringup/           # 系统级 Launch 与参数配置
-│   │   └── h30_imu/                # C++ H30 惯导驱动与 SO(3) 姿态解算节点
-│   └── scripts/                    # 调试与实机准入脚本
+│   │   ├── pus6_msgs/                     # 自定义 ROS 2 消息接口 (TimedJointFeedback, FkStateStamped 等)
+│   │   ├── pus6_kinematics/               # 解析逆解、LM 数值正解与 6pus_geometry.yaml 唯一几何真值源
+│   │   ├── pus6_motor_driver/             # RS485 串口驱动、50Hz 伺服传输与两级安全看门狗
+│   │   ├── pus6_control/                  # 有状态加加速度连续轨迹整形器与控制器
+│   │   ├── pus6_bringup/                  # 系统级 Launch 启动编排与参数配置
+│   │   └── h30_imu/                       # Yesense H30 IMU C++ 驱动与 SO(3) 相对姿态解算
+│   └── scripts/                           # 可复现的实机/仿真运行脚本与验收工具链
 │
-├── hardware/                       # 硬件选型表、接线定义与机械 3D 模型
-└── 6PUS_SERVO_OPERATION_GUIDE.md   # 唯一日常实机操作指南
+├── agent_docs/                            <-- [项目知识与文档库] 人类与 Agent 可读的技术方案、架构与报告
+│   ├── stages/                            # 阶段实施方案 (J1..J11)、验收总结与跨阶段交接规范 (Handoff)
+│   ├── reports/                           # 深度实测分析报告 (J10 工作空间分析、J9.1 动平台力臂分析)
+│   ├── decisions/                         # 架构决策记录 (ADR) 与硬件准入测试报告
+│   ├── frozen/                            # 只读冻结基线清单与代码校验指纹
+│   └── archive/                           # 历史遗留操作手册与过时参考资料
+│
+├── results/                               <-- [机读实验与运行数据] 自动化测试与实机运行生成的数据证据
+│   ├── README.md                          # 数据集索引与实验证据导航
+│   ├── stewart3_j8_figure6_20260916_.../  # 权威 J8 笛卡尔九阶段实机运动全量时序 (Stewart-3 图 6)
+│   ├── j7/                                # 权威 J7 预检与 50Hz 伺服基准 JSON
+│   ├── j9_1/                              # 权威 J9.1 双 IMU 姿态与力臂耦合实测数据集
+│   └── j10/                               # 权威 J10 六自由度安全包络实测量测数据
+│
+├── hardware/                              <-- [硬件与几何数据] 电机选型表、电气接线图与 3D 机械结构
+├── up/                                    <-- [UART 底层验证基线] 独立多电机串口测试台与基线驱动
+├── STM32/ / teach/                        <-- [固件与示教器] 下位机工程源码与示教工具
+├── 6PUS_REAL_HARDWARE_OPERATION_GUIDE.md  <-- [实机操作入口] 实机上电、回零、运动与关机速查指南
+└── AGENTS.md                              <-- [全局 Agent 规则] 操作规范、安全红线与工程不变量
 ```
+
+> **职责边界原则**：
+> - `agent_docs/` = 人类与 Agent 可读的架构知识、阶段方案与分析总结。
+> - `results/` = 机器程序运行、测试和实机实验产出的 CSV、遥测 JSON 与运行原始日志。
+
+---
+
+## 4. 推荐阅读与学习路径 (Recommended Reading Order)
+
+对于首次接触本项目的工程师、研究者或智能体，建议按如下次序阅读：
+
+1. **宏观概览与基线**：首先通读本文档 [`README_CN.md`](./README_CN.md)（或 [`README.md`](./README.md)），掌握系统整体架构与阶段进展。
+2. **ROS 2 全栈技术教程**：研读 [`6PUS_ROS2_CODE_LEARNING_TUTORIAL.md`](./6PUS_ROS2_CODE_LEARNING_TUTORIAL.md)，掌握双链路解耦设计、闭式逆解、LM 数值正解及 50Hz 伺服驱动的详细实现。
+3. **权威文档检索地图**：参考 [`agent_docs/README.md`](./agent_docs/README.md)，快速定位具体阶段的技术方案、交接规范与硬件准入报告。
+4. **物理实机操作与安全**：若需操作物理样机，务必在操作前核对 [`6PUS_REAL_HARDWARE_OPERATION_GUIDE.md`](./6PUS_REAL_HARDWARE_OPERATION_GUIDE.md)。
+5. **权威实验证据库**：查阅 [`results/README.md`](./results/README.md)，加载并验证物理样机真实飞行数据（如 J8 连续运动数据集）。
+
+---
+
+## 5. 离线公开复现指南 (Offline Public Reproducibility)
+
+第三方研究人员无需拥有真实 6PUS 样机，即可在纯软件离线环境中构建代码、执行全量单元测试与分析真实硬件数据：
+
+### 1. 环境准备
+- **操作系统**：Ubuntu 24.04 LTS
+- **ROS 2 版本**：Jazzy Jalisco
+- **Python 版本**：$\ge 3.10$
+
+```bash
+# 克隆仓库
+git clone https://github.com/lyapunov/bone_drill.git
+cd bone_drill
+
+# 引入 ROS 2 环境变量
+source /opt/ros/jazzy/setup.bash
+```
+
+### 2. 编译工作空间
+```bash
+cd bone_ws
+colcon build --symlink-install
+source install/setup.bash
+```
+
+### 3. 执行离线单元与集成测试 (Mock 模式)
+全部测试均在 `hardware_mode:=mock` 下运行，且**代码级严格断言 $\mathbf{\text{hardware\_write\_count} = 0}$**：
+```bash
+# 运行 bone_ws 下全部 6 个功能包的 346+ 项单元与集成测试
+colcon test --ctest-args -R test
+colcon test-result --all
+
+# 运行 J8 图 6 纯旁路记录器单元测试
+pytest scripts/test_j8_figure6_recorder.py -v
+```
+
+### 4. 加载与分析真实实机实验数据
+无需真机，直接用 Python 读取跟踪的权威 J8 九阶段 50Hz 实机时序：
+```python
+import pandas as pd
+import json
+
+# 加载 J8 笛卡尔运动实测时序
+dataset_dir = "../results/stewart3_j8_figure6_20260916_135013"
+cmd_df = pd.read_csv(f"{dataset_dir}/command_steps.csv")
+fb_df = pd.read_csv(f"{dataset_dir}/joint_feedback.csv")
+fk_df = pd.read_csv(f"{dataset_dir}/fk.csv")
+
+print(f"J8 实机采样周期数: {len(cmd_df)} 帧 @ 50 Hz (~{len(cmd_df)/50:.1f} 秒)")
+print("前四轴反馈步数:", fb_df[['fb_1', 'fb_2', 'fb_3', 'fb_4']].head())
+```
+
+---
+
+## 6. 核心安全红线与实机操作守则
+
+- **默认零运动**：所有节点与测试脚本默认启动于 Mock / FakeBus 模式。
+- **真机授权原则**：使用 `--real-hardware` 或 `hardware_mode:=active` 驱动物理串口前，必须确认 6 轴处于有效回零位置（`[995, 1005]` 步）、硬件急停可靠，并取得操作人员明确确认。
+- **写指令零自动重试**：RS485 上的运动写指令严禁发生超时自动重试，通信异常时触发单次暂停（0x1A）并安全停机。

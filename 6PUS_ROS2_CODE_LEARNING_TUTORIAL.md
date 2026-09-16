@@ -1,13 +1,17 @@
 # 6PUS 并联手术机器人 ROS 2 项目全栈源码教学与系统解析教程
 
 > **适用对象**：希望通过真实 6PUS 并联骨科手术机器人项目系统掌握 ROS 2 架构设计、多轴电机高频伺服通信驱动、并联机构解析逆解与数值正解、在线轨迹平滑与安全控制全栈技术的工程师与研究生。
-> **当前冻结基线**：$\mathbf{J7\ SIX\text{-}AXIS\ 50Hz\ SERVO\ HARDWARE\ BASELINE\ FROZEN\ v1.0}$ (`v1.0-j7-servo-hardware-frozen`)。
-> **测试回归语境说明**：ROS 2 工作空间核心功能包全量单元测试为 **304 项 PASS**（执行 `pytest /home/lyapunov/bone_drill/bone_ws/src -v`，耗时约 43.75s，覆盖 `pus6_kinematics`, `pus6_motor_driver`, `pus6_control`, `h30_imu`）；整个工程根目录历史用例全量收集数为 **468+ collected**。两者范围不同，严禁混用。
-> **物理装配边界**：完整 6PUS 机构尚未总装，两个 H30 IMU 仍固定在同一块测试板。最终 IMU 外参 (J5-B2)、lever arm、实机机械 FK 验收 (J5-C2-HW)、平动融合与 ESKF 尚未开始。
+> **当前冻结基线**：$\mathbf{J8\ SIX\text{-}AXIS\ 50Hz\ CARTESIAN\ SERVO\ QUALIFIED\ BASELINE\ v1.0}$ (`v1.0-j8-active-servo-hardware-qualified`)，并已完成 J10 六自由度单轴安全运行包络实测。
+> **测试回归语境说明**：ROS 2 工作空间核心功能包全量单元测试为 **346 项 PASS**（执行 `colcon test`，覆盖 `pus6_msgs`, `pus6_kinematics`, `pus6_motor_driver`, `pus6_control`, `pus6_bringup`, `h30_imu`）；运行前严格校验 `hardware_write_count = 0`。
+> **教程结构分期**：
+> - **第一部分：物理实机运动与感知基础 (Part I — Real-Hardware Motion Foundation, J1–J10)**：第 1~12 章，已在真实 6PUS 物理样机上完成整机总装、闭式逆解、50Hz 流式伺服、LM 数值正解与全自由度安全运行包络测定。
+> - **第二部分：主动姿态稳定与防抖研究路线 (Part II — Active Stabilization Research Roadmap, J11+)**：第 13 章，面向动基座扰动环境下的前沿姿态稳定研究路线，明确 J11 PID 防抖现状与未来演进方向（严禁预设未经验证结论）。
 
 ---
 
 ## 目录
+
+### 第一部分：物理实机运动与感知基础 (Part I — Real-Hardware Motion Foundation, J1–J10)
 1. [项目架构全景与双链路设计 (System Architecture & Dual-Pipeline Philosophy)](#1-项目架构全景与双链路设计-system-architecture--dual-pipeline-philosophy)
 2. [底层通信与 UART 协议层实现 (UART Protocol & Serial Reality)](#2-底层通信与-uart-协议层实现-uart-protocol--serial-reality)
 3. [六电机驱动层与 J7 50Hz Servo 伺服架构 (Motor Driver & J7 50Hz Servo Architecture)](#3-六电机驱动节点与高频并发解耦架构-motor-driver--concurrency-architecture)
@@ -19,7 +23,10 @@
 9. [【全链路实战追踪】双数据流端到端生命周期透视 (End-to-End Tracing)](#9-全链路实战追踪双数据流端到端生命周期透视-end-to-end-tracing)
 10. [核心工程问题演进与实机踩坑复盘 (Engineering Lessons & Post-Mortem)](#10-核心工程问题演进与实机踩坑复盘-engineering-lessons--post-mortem)
 11. [测试驱动开发 (TDD) 与回归测试体系 (Testing Architecture)](#11-测试驱动开发-tdd-与回归测试体系-testing-architecture)
-12. [二次开发速查指南、实战练习与装配读点 (Developer Guide, Exercises & Next Steps)](#12-二次开发速查指南实战练习与装配读点-developer-guide-exercises--next-steps)
+12. [二次开发速查指南、实战练习与物理基线 (Developer Guide, Exercises & Physical Baselines)](#12-二次开发速查指南实战练习与物理基线-developer-guide-exercises--physical-baselines)
+
+### 第二部分：主动姿态稳定与防抖研究路线 (Part II — Active Stabilization Research Roadmap, J11+)
+13. [J11+ 主动姿态防抖前沿研究路线图 (Active Attitude Stabilization & Anti-Vibration Roadmap)](#13-j11-主动姿态防抖前沿研究路线图-active-attitude-stabilization--anti-vibration-roadmap)
 
 ---
 
@@ -1079,29 +1086,36 @@ executor.spin()
 
 ---
 
-### 12.4 物理装配边界与装配后 J5-C2-HW 衔接指南
+### 12.4 物理整机总装与实机运动准入总结 (Physical Assembly & Hardware Baseline Qualification)
 
-#### (1) 当前学习与开发停止点 (Stopping Baseline)
-* 当前系统已完成所有装配前的纯软件架构与离线算法闭环（J4 控制与 J5-C2-RT-SW 实时正解观测均已通过并冻结）；
-* **红线要求**：在 6PUS 机构本体完成总装前，**严禁执行任何真实 HOME、PARK 或 J4 动态运动，严禁提前启动 B4 平动融合、ESKF 滤波或 Dual-IMU/FK 融合控制**。
+回顾 J1~J10 的演进路径，系统已完整走通从底层协议到多自由度物理运动的全部阶段：
+1. **机械整机总装 (Stage J6)**：总装调试顺利完成，确立了 `OPERATING_HOME = [1000]*6` 与 `STORAGE_PARK = [0]*6` 的集约化状态分类与安全回零契约。
+2. **底层 50Hz 伺服驱动 (Stage J7)**：攻克单总线半双工 RS485 50Hz 高频连续伺服驱动，确立了 Design-B 伴随反馈机制，消除了 0x30 阻塞轮询。
+3. **连续笛卡尔实机运动验收 (Stage J8)**：通过 137 秒连续笛卡尔 9 阶段实机视频演示考核（100.0% 反馈完整率，0 fault，0 timeout），正式确立并冻结了物理运行基线 `v1.0-j8-active-servo-hardware-qualified`。
+4. **双 IMU 惯导感知集成 (Stage J9)**：实现双 Yesense H30 惯导微秒级采样同步与 $\text{SO}(3)$ 相对姿态解算。
+5. **任务空间安全运行包络 (Stage J10)**：在真实物理样机上完成了六自由度单轴安全运行包络边界全域测定，确立了单轴极限与端点安全规则。
 
-#### (2) 机构总装完成后的标准进阶路径 (Post-Assembly Roadmap)
-当机构总装完成且两个 IMU 完成最终空间固定后，按以下严格顺序开展后续工作：
-```
-1. 机构总装完成
-   │
-   ▼
-2. 机械几何尺寸、杆长、安装角与推杆中位实测核对 ──► 更新 6pus_geometry.yaml 并重新回归测试
-   │
-   ▼
-3. 现场核对零位映射与 HOME (raw=1000) / PARK (raw=0) 安全状态
-   │
-   ▼
-4. 完成 J5-B2 最终双 IMU 空间安装外参与 lever arm 标定 (确定坐标系与旋转约定)
-   │
-   ▼
-5. 启动 J5-C2-HW 实际机构验收 ──► 采集真实 q_actual 验证 TimedJointFeedback → Fixed-Lag → FK → 实际 T_BP
-   │
-   ▼
-6. 经光学跟踪仪核验物理 FK 精度达标后 ──► 才正式开展平动模型、Dual-IMU/FK 融合与 ESKF 姿态滤波开发
-```
+以上 J1~J10 的成果共同构成了本项目**第一部分：物理实机运动与感知基础 (Part I — Real-Hardware Motion Foundation)**。
+
+---
+
+## 13. 第二部分：主动姿态稳定与防抖前沿研究路线 (Part II — Active Stabilization Research Roadmap, J11+)
+
+在 J1~J10 奠定的高带宽、高确定性物理运动与感知基线之上，项目正式迈入面向动基座扰动环境的**主动姿态防抖与振动抑制前沿研究**。
+
+### 13.1 J11 当前研发目标：PID 世界坐标系姿态防抖闭环
+- **核心任务**：基于动平台与基座双 H30 IMU 实时估计的相对姿态 $\mathbf{R}_{BP} \in \text{SO}(3)$，在上层控制器中引入姿态反馈误差闭环，在动基座发生微小俯仰/横滚低频晃动时，驱动 6PUS 机构在反向实时补偿，使末端在世界坐标系下保持姿态恒定。
+- **当前状态**：**IN PROGRESS**（离线逆解仿真、Dry-Run 架构接口与调度测试已通过；真实硬件闭环测试正在按步骤安全推进）。
+- **约束准则**：严格保持 J7/J8 底层驱动与运动学核心为只读黑盒；物理参数在线重标定暂缓（DEFERRED）。
+
+### 13.2 后续前沿算法演进路线图 (Future Research Roadmap)
+1. **自抗扰控制 (ADRC) 与扩张状态观测器 (ESO)**：
+   - 将机械结构装配间隙、电缸死区、导轨摩擦力以及未建模外扰统一视为“总扰动”；
+   - 构建二阶/三阶 ESO 实时估计扰动加速度并在前馈端瞬间消除，突破传统 PID 积分滞后局限。
+2. **IMU 惯导角加速度前馈与扰动观测器 (DOB)**：
+   - 利用基座 IMU 的微秒级高频角速度微分信号，前馈补偿高频扰动能量，提升防抖带宽至 10~20 Hz。
+3. **基于强化学习与模型预测控制 (MPC) 的自适应刚度自调优**：
+   - 针对手术钻孔过程中不同骨质阻抗与切削反力，在线自适应微调末端顺应度与轨迹刚度。
+
+> [!NOTE]
+> 第二部分内容属于前沿学术研究与算法探索路线。本教程与代码库坚守“诚实与证据一致性”原则，在未完成真实物理平台闭环验证并归档 Canonical Evidence 之前，绝不宣称未实现的控制指标。
