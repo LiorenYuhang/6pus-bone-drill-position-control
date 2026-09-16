@@ -193,7 +193,7 @@ python3 -m pus6_motor_driver.j7_real_six_axis_park_home_runner   --port /dev/ser
 
 ### 4.2 实验日志与输出查看
 * 各 Runner 运行时会将关键遥测与指标（周期耗时、跟踪误差、电流、Fault 与 ACK）实时打印在控制台标准输出；
-* 结构化基准评测报告（如 J7-C10 只读预检、A/B 对比结果）会按需保存于 `reports/` 目录下（如 `reports/j7_c10_read_only_preflight.json`）。
+* 结构化基准评测报告（如 J7-C10 只读预检、A/B 对比结果）会按需保存于 `results/` 目录下（如 `results/j7/j7_c10_read_only_preflight.json`）。
 
 ---
 

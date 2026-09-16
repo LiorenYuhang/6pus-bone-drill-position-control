@@ -6,26 +6,32 @@
 
 ## 1. 文档架构与职责边界 (Separation of Concerns)
 
-为了避免同一事实在多处重复维护造成版本冲突，明确如下职责分工：
+为了避免文档分散与事实在多处重复维护造成版本冲突，明确如下职责分工：
 
 ```
 /home/lyapunov/bone_drill/
 ├── 6PUS_REAL_HARDWARE_OPERATION_GUIDE.md  <-- [根目录实机操作入口] 用户实机操作与命令速查指南
 ├── AGENTS.md                              <-- [根目录 Agent 规则] 操作规则、安全约束、变更纪律与工程不变量 (本文档)
-├── agent_docs/                            <-- [架构与设计归档] 架构、阶段方案、设计决策与 Frozen Manifest
-├── reports/                               <-- [实验与验证归档] 实验日志、数值结果与验证报告
+├── agent_docs/                            <-- [文档与方案唯一根] 架构、阶段方案、设计决策、分析报告与归档
+├── results/                               <-- [机读实验与运行数据唯一根] 自动化测试与实机运行生成的 CSV、JSON、日志等证据
 ├── bone_ws/                               <-- [正式 ROS2 工作空间] 源代码、测试与运行脚本
 ├── hardware/                              <-- [硬件与几何数据] 硬件规格书与机构几何数据
 ├── up/                                    <-- [UART 底层验证基线] 原始独立串口测试代码与基线协议
 └── STM32/ / teach/                        <-- [固件与示教器] 下位机工程与示教工具
 ```
 
-### 职责边界规则：
-1. **`AGENTS.md` (本文档)**：仅负责 Agent 操作规则、安全约束、变更纪律与工程不变量。不得记录实验日志、数值结果、验证表格、阶段结论、控制器参数或 ADRC/PID/SAC 设计细节。
-2. **`agent_docs/`**：负责架构、阶段方案、设计决策、Frozen Manifest 与交接归档。后续新生成的方案和设计文档默认统一放入 `agent_docs/`。
-3. **`reports/`**：负责实验日志、数值结果、验证报告及其原始证据归档。
-4. **设计文档**：负责控制器、算法与其他研究设计细节；这些内容不得写入 `AGENTS.md`。
-5. **`6PUS_REAL_HARDWARE_OPERATION_GUIDE.md`**：面向操作人员的实机开机、回零、运动与关机速查表。保留在根目录原位。
+### 文档与数据资产存放治理规则 (Documentation & Artifact Location Policy)：
+1. **分类基准**：目录归属以**“资产用途 (Asset Purpose)”**为唯一判定依据，严禁仅凭文件扩展名作机械划分。
+2. **`agent_docs/` (文档与知识唯一根)**：定位为 **human/Agent-readable project knowledge and documentation**。负责系统架构、阶段方案、设计决策、分析与测试报告（如 `agent_docs/reports/`）、Frozen Manifest 与操作交接指南等所有人类或 Agent 撰写与维护的知识沉淀。
+3. **`results/` (运行数据与证据唯一根)**：定位为 **machine-generated / experiment-generated evidence and runtime artifacts**。专门存放程序运行、自动化测试、仿真评测及真实实机实验生成的各类数据证据与运行时产物（包括传感器遥测、电机反馈、轨迹 CSV、运行日志、环境元数据等）。`results/` 专用于存放数据产物，严禁在其中撰写独立的分析文档。
+4. **根目录整洁与禁令 (Root Hygiene)**：根目录 `reports/` 已正式废弃并移除。严禁 Agent 在根目录新建随意命名的文档或输出目录（例如根目录 `docs/`、`reports/`、`notes/`、`summaries/` 等）。
+5. **资产隔离原则**：避免将知识库文档混入 `results/`，也避免将大体量机读证据/运行时日志倾倒至 `agent_docs/`。
+6. **创建与迁移纪律**：
+   - Agent 产出任何新资产前，必须先查阅上述目录树规范，严禁直接在根目录下创建未知目录。
+   - 迁移或调整旧数据前，必须先全局检索被引用的代码与文档，确保相对路径同步修正，杜绝破损链接。
+7. **`AGENTS.md` (本文档)**：仅负责 Agent 全局操作规则、安全约束、变更纪律与工程不变量。不得记录实验日志、数值结果、验证表格、阶段结论、控制器参数或具体算法设计细节。
+8. **设计文档与控制细节**：控制器、算法与其他研究设计细节统一放入 `agent_docs/`，不得写入 `AGENTS.md`。
+9. **`6PUS_REAL_HARDWARE_OPERATION_GUIDE.md`**：面向操作人员的实机开机、回零、运动与关机速查表，保留在根目录原位。
 
 ---
 

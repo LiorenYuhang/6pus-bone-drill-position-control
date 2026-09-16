@@ -35,7 +35,7 @@ This is an exploratory-policy/actuator-envelope stop, not a demonstrated mechani
 
 ## Artifacts
 
-- Offline refinement and closure report: `/home/lyapunov/bone_drill/reports/j10/J10_A6_X_POS_EXPLORATORY_ENVELOPE_CLOSURE_20260909.md`
+- Offline refinement and closure report: `/home/lyapunov/bone_drill/agent_docs/reports/j10/J10_A6_X_POS_EXPLORATORY_ENVELOPE_CLOSURE_20260909.md`
 - X+43.5 CSV: `/home/lyapunov/bone_drill/results/J10_A6/J10_workspace_x_pos435mm_20260909_131149.csv`
 - X+43.5 metadata: `/home/lyapunov/bone_drill/results/J10_A6/J10_workspace_x_pos435mm_20260909_131149_metadata.json`
 - X+43.5 runtime log: `/home/lyapunov/bone_drill/results/J10_A6/J10_x43p5_runtime_20260909_1311.log`

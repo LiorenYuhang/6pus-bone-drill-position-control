@@ -82,7 +82,7 @@ The table below summarizes the audited empirical results established from the pr
 
 ## 5. Resolution of Evidence Contradictions & Audit Findings
 
-During the J10-FINAL audit, the preliminary handwritten summary table generated at the conclusion of J10-A12 was compared against the primary stage closure reports ([`J10_A6_2`](file:///home/lyapunov/bone_drill/reports/j10/J10_A6_2_X_POS_ABSOLUTE_BOUND_CONTINUATION_20260909.md), [`J10_A7`](file:///home/lyapunov/bone_drill/reports/j10/J10_A7_X_NEGATIVE_COMPLETE_CHARACTERIZATION_20260909.md), [`J10_A8`](file:///home/lyapunov/bone_drill/reports/j10/J10_A8_Y_COMPLETE_CHARACTERIZATION_20260909.md), [`J10_A8_1`](file:///home/lyapunov/bone_drill/reports/j10/J10_A8_1_Y_BOUNDARY_CLOSURE_20260909.md)) and raw JSON metadata:
+During the J10-FINAL audit, the preliminary handwritten summary table generated at the conclusion of J10-A12 was compared against the primary stage closure reports ([`J10_A6_2`](file:///home/lyapunov/bone_drill/agent_docs/reports/j10/J10_A6_2_X_POS_ABSOLUTE_BOUND_CONTINUATION_20260909.md), [`J10_A7`](file:///home/lyapunov/bone_drill/agent_docs/reports/j10/J10_A7_X_NEGATIVE_COMPLETE_CHARACTERIZATION_20260909.md), [`J10_A8`](file:///home/lyapunov/bone_drill/agent_docs/reports/j10/J10_A8_Y_COMPLETE_CHARACTERIZATION_20260909.md), [`J10_A8_1`](file:///home/lyapunov/bone_drill/agent_docs/reports/j10/J10_A8_1_Y_BOUNDARY_CLOSURE_20260909.md)) and raw JSON metadata:
 
 1. **X-Axis Limiting Actuators and Margins**:
    - *Draft A12 Error*: Erroneously listed X limiting actuators as "ID2 (at -45.75), ID5 (at +45.75), margin 3 steps".
