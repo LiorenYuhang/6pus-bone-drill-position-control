@@ -1,0 +1,8 @@
+{
+  "stage": "j11_m2_3_phaseB_dynamic",
+  "mode": "POWERED REAL EXECUTION",
+  "hardware_write_count": 2946,
+  "total_cycles": 3000,
+  "final_state": "ACTIVE",
+  "fault_reason": ""
+}

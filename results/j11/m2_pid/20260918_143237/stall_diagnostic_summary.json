@@ -1,0 +1,42 @@
+{
+  "total_cycles_recorded": 3000,
+  "total_stall_events_recorded": 137,
+  "stalls_gt_50ms_count": 69,
+  "stalls_gt_100ms_count": 11,
+  "stalls_gt_150ms_count": 2,
+  "stalls_gt_200ms_count": 2,
+  "max_missing_interval_ms": 292.15,
+  "worst_stall_time_budget": {
+    "worst_stall_cycle": 2875,
+    "total_missing_interval_ms": 292.15,
+    "inter_callback_gap_ms": 0.026,
+    "callback_execution_total_ms": 292.124,
+    "timer_dispatch_delay_ms": 4635.669,
+    "in_callback_breakdown_ms": {
+      "target_lock_wait_ms": 0.029,
+      "slew_processing_ms": 0.008,
+      "preflight_check_ms": 0.005,
+      "uart_tx_ms": 289.445,
+      "uart_drain_ms": 1.957,
+      "uart_total_ms": 291.402,
+      "ingest_feedback_ms": 0.333,
+      "ros_pub_joint_state_ms": 0.0,
+      "ros_pub_timed_feedback_ms": 0.0,
+      "ros_pub_timed_command_ms": 0.0,
+      "ros_pub_diagnostics_ms": 0.0,
+      "ros_pub_raw_diagnostics_ms": 0.0,
+      "ros_pub_total_ms": 0.008,
+      "other_in_callback_ms": 0.293
+    },
+    "cpu_and_system": {
+      "thread_cpu_delta_ms": 7.415,
+      "process_cpu_delta_ms": 38.148,
+      "gc_pause_ms": 0.0,
+      "vol_ctx_switches": 170442,
+      "invol_ctx_switches": 3746,
+      "native_thread_id": 286716
+    },
+    "stall_classification": "B_IN_CALLBACK_UART_BLOCK",
+    "percentage_accounted_for": 100.0
+  }
+}

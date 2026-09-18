@@ -916,6 +916,8 @@ def run_m2_session(
     kp_pitch: float = 0.0,
     kp_yaw: float = 0.0,
     max_residual_roll_deg: float = 1.0,
+    max_residual_pitch_deg: float = 0.5,
+    max_residual_yaw_deg: float = 0.5,
 ) -> dict:
     mode_str = "POWERED REAL EXECUTION" if (execute_motion and not dry_run) else "DRY-RUN (hardware_write_count = 0)"
     print(f"\n[{stage.upper()}] Starting J11-M2 Dual-IMU PID Runner in {mode_str}...")
@@ -931,6 +933,8 @@ def run_m2_session(
         kp_pitch=kp_pitch,
         kp_yaw=kp_yaw,
         max_residual_roll_deg=max_residual_roll_deg,
+        max_residual_pitch_deg=max_residual_pitch_deg,
+        max_residual_yaw_deg=max_residual_yaw_deg,
     )
 
     t_start = time.monotonic()
@@ -1014,6 +1018,8 @@ def main():
     parser.add_argument("--kp-pitch", type=float, default=0.0)
     parser.add_argument("--kp-yaw", type=float, default=0.0)
     parser.add_argument("--max-residual-roll-deg", type=float, default=0.5)
+    parser.add_argument("--max-residual-pitch-deg", type=float, default=0.5)
+    parser.add_argument("--max-residual-yaw-deg", type=float, default=0.5)
     args = parser.parse_args()
 
     if not args.execute_motion:
@@ -1034,6 +1040,8 @@ def main():
         kp_pitch=args.kp_pitch,
         kp_yaw=args.kp_yaw,
         max_residual_roll_deg=args.max_residual_roll_deg,
+        max_residual_pitch_deg=args.max_residual_pitch_deg,
+        max_residual_yaw_deg=args.max_residual_yaw_deg,
     )
 
 

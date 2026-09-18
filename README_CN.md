@@ -66,30 +66,24 @@
 
 *(注：上述数据均为在 `OPERATING_HOME = [1000]*6` 步基准下独立单轴运动实测结果，详见 [`agent_docs/stages/J10/J10_FINAL_SUMMARY.md`](./agent_docs/stages/J10/J10_FINAL_SUMMARY.md))*。
 
-### J11 姿态防抖控制实机评定结果 (M1 vs. M2-1)
+### J11 姿态防抖控制实机评定结果 (M1 vs. 达标 3DOF P 基线)
 
-J11-M2 阶段正式引入了**任务空间 $SO(3)$ 姿态 PID 控制框架**。首阶段真机闭环实验 **J11-M2-1 Roll P-only Feedback** 已在真实六自由度并联机构上完成动基座低速扰动实测闭环验证。
+J11-M2 阶段正式引入了**任务空间 $SO(3)$ 姿态 PID 控制框架**。三轴姿态同时闭环比例反馈（**J11-M2-4 3DOF P 集成验证**）已在真实六自由度并联机构上完成动基座低速自然扰动实机闭环验证。
 
 > [!NOTE]
-> **J11-M2-1 当前实际控制结构与阶段定义**：
-> - **控制结构**：$\mathbf{\text{3DOF Base-IMU } SO(3) \text{ 前馈}} + \mathbf{\text{1DOF Platform-IMU Roll P 反馈}}$
-> - **Roll 轴**：前馈 + P 反馈（$K_{p\_roll} = 0.05, K_i = 0, K_d = 0, \text{Roll 残差上限} = 0.5^\circ$）
-> - **Pitch 轴**：仅前馈（$K_p = 0$）
-> - **Yaw 轴**：仅前馈（$K_p = 0$）
-> - **阶段状态**：Roll P-only 单轴反馈硬件验证通过；Pitch / Yaw / 3DOF 全姿态反馈待推进（后续规划：M2-2 Pitch P、M2-3 Yaw P、M2-4 3DOF P、M2-5 PD、M2-6 I）。
-> - *M2-1 中观察到的 Pitch/Yaw 姿态抑制均源于已冻结的 M1 完整 3DOF 前馈，不得归因于 Roll P 反馈。*
-> - *由于 M1 与 M2 采用人工动基座扰动，输入扰动并非严格一致，因此原始 Peak / RMS 仅作为观测参考，控制器横向比较严格优先采用归一化 Platform/Base 指标（$G_{\text{Peak}}, G_{\text{RMS}}$）。*
+> **J11-M2 当前实际控制状态与基线**：
+> - **控制结构**：$\mathbf{\text{3DOF Base-IMU } SO(3) \text{ 前馈}} + \mathbf{\text{3DOF Platform-IMU } SO(3) \text{ P 反馈}}$
+> - **当前权威达标基线**：$K_{p\_roll} = 0.05, K_{p\_pitch} = 0.05, K_{p\_yaw} = 0.05$（$K_i = 0, K_d = 0$，残差限幅 $\pm 0.5^\circ$）
+> - **调参状态**：M2-5 增益整定进行中。Candidate 1（$K_{p\_yaw} = 0.10$）经实机验证因系统级性能退化而不予保留。
+> - *由于采用人工动基座扰动，输入扰动能量并非严格一致，因此控制器横向评定严格采用归一化抑制比（$G_{\text{Peak}}, G_{\text{RMS}}$）。*
 
-| 评定指标 | M1 纯前馈 (Pure Feedforward) | M2 前馈 + Roll P 反馈 |
-| :--- | :---: | :---: |
-| **Platform Roll 峰值 (Peak)** | $5.3425^\circ$ | $3.5193^\circ$ |
-| **Platform Roll 均方根 (RMS)** | $1.0291^\circ$ | $1.1777^\circ$ |
-| **$G_{\text{Peak}}$ (Platform Peak / Base Peak)** | $0.4778$ | $0.4252$ |
-| **$G_{\text{RMS}}$ (Platform RMS / Base RMS)** | $0.4071$ | $0.4034$ |
-| **归一化峰值抑制提升 (Peak Improvement)** | 基准 (Baseline) | $\mathbf{\approx 11.0\%}$ |
-| **归一化 RMS 抑制提升 (RMS Improvement)** | 基准 (Baseline) | $\mathbf{\approx 0.91\%}$ |
+| 旋转轴 | 评定指标 | M1 纯前馈 (`20260918_112354`) | M2 达标 3DOF P 基线 (`20260918_152354`) | 归一化抑制提升率 |
+| :--- | :--- | :---: | :---: | :---: |
+| **Roll** | $G_{\text{Peak}}$ / $G_{\text{RMS}}$ | 0.4778 / 0.4071 | 0.4900 / 0.3066 | -2.55% (峰值) / **+24.68% (RMS)** |
+| **Pitch** | $G_{\text{Peak}}$ / $G_{\text{RMS}}$ | 0.5946 / 0.4153 | 0.3110 / 0.2705 | **+47.69% (峰值)** / **+34.87% (RMS)** |
+| **Yaw** | $G_{\text{Peak}}$ / $G_{\text{RMS}}$ | 0.7983 / 0.2912 | 0.9030 / 0.3374 | -13.12% (峰值) / -15.87% (RMS) *(调参目标)* |
 
-*完整实验数据来源、李代数误差推导与 50Hz 实机遥测档案详见：* [`agent_docs/j11/J11_M1_M2_CONTROL_COMPARISON.md`](./agent_docs/j11/J11_M1_M2_CONTROL_COMPARISON.md)。
+*完整权威评定档案、李代数误差推导与 50Hz 实机遥测记录详见：* [`agent_docs/j11/J11_M1_M2_CONTROL_COMPARISON.md`](./agent_docs/j11/J11_M1_M2_CONTROL_COMPARISON.md)。
 
 ---
 

@@ -124,7 +124,11 @@ def run_m2_staged_session(
     telemetry_publish_mode: str = "async_latest",
     feedback_loss_policy: str = "age_based",
     kp_roll: float = 0.05,
+    kp_pitch: float = 0.0,
+    kp_yaw: float = 0.0,
     max_residual_roll_deg: float = 0.5,
+    max_residual_pitch_deg: float = 0.5,
+    max_residual_yaw_deg: float = 0.5,
 ):
     cleanup_stale_processes_and_markers()
 
@@ -301,7 +305,8 @@ def run_m2_staged_session(
         # ==========================================================
         print("\n" + "=" * 70)
         print("[STAGE C] Launching J11-M2 PID Residual Runner...")
-        print(f"[STAGE C] Roll Kp={kp_roll:.3f}, Residual Limit={max_residual_roll_deg:.1f} deg, Pitch/Yaw Kp=0.0")
+        print(f"[STAGE C] Roll Kp={kp_roll:.3f}, Pitch Kp={kp_pitch:.3f}, Yaw Kp={kp_yaw:.3f}")
+        print(f"[STAGE C] Residual Limits: Roll={max_residual_roll_deg:.1f}°, Pitch={max_residual_pitch_deg:.1f}°, Yaw={max_residual_yaw_deg:.1f}°")
         print("=" * 70, flush=True)
 
         cmd_runner = [
@@ -311,7 +316,11 @@ def run_m2_staged_session(
             "--duration", str(duration),
             "--output-dir", output_dir,
             "--kp-roll", str(kp_roll),
+            "--kp-pitch", str(kp_pitch),
+            "--kp-yaw", str(kp_yaw),
             "--max-residual-roll-deg", str(max_residual_roll_deg),
+            "--max-residual-pitch-deg", str(max_residual_pitch_deg),
+            "--max-residual-yaw-deg", str(max_residual_yaw_deg),
             "--auto-start",
         ]
         if execute_motion and not dry_run:
@@ -328,9 +337,17 @@ def run_m2_staged_session(
         while runner_proc.poll() is None:
             if active_marker.exists() and not banner_printed:
                 banner_printed = True
+                active_channels = []
+                if kp_roll > 0:
+                    active_channels.append("Roll")
+                if kp_pitch > 0:
+                    active_channels.append("Pitch")
+                if kp_yaw > 0:
+                    active_channels.append("Yaw")
+                ch_str = "+".join(active_channels) if active_channels else "Zero-Feedback"
                 print("\n" + "=" * 60, flush=True)
-                print("J11-M2 ACTIVE: Feedforward + Roll P-only Feedback Engaged")
-                print("现在可以开始录像并移动 Base 进行小幅 Roll 扰动")
+                print(f"J11-M2 ACTIVE: Feedforward + {ch_str} P Feedback Engaged")
+                print(f"现在可以开始录像并移动 Base 进行小幅 {ch_str} 扰动")
                 print("=" * 60 + "\n", flush=True)
             if not banner_printed and (time.monotonic() - t_wait_active > 15.0):
                 print("[WARNING] Active marker not seen after 15s. Continuing to monitor runner...", flush=True)
@@ -361,7 +378,11 @@ def main():
     parser.add_argument("--telemetry-publish-mode", default="async_latest", choices=["auto", "inline", "async_latest"])
     parser.add_argument("--feedback-loss-policy", default="age_based", choices=["default", "consecutive_misses", "age_based"])
     parser.add_argument("--kp-roll", type=float, default=0.05, help="Roll proportional gain (default: 0.05)")
+    parser.add_argument("--kp-pitch", type=float, default=0.0, help="Pitch proportional gain (default: 0.0)")
+    parser.add_argument("--kp-yaw", type=float, default=0.0, help="Yaw proportional gain (default: 0.0)")
     parser.add_argument("--max-residual-roll-deg", type=float, default=0.5, help="Roll max residual limit in degrees (default: 0.5)")
+    parser.add_argument("--max-residual-pitch-deg", type=float, default=0.5, help="Pitch max residual limit in degrees (default: 0.5)")
+    parser.add_argument("--max-residual-yaw-deg", type=float, default=0.5, help="Yaw max residual limit in degrees (default: 0.5)")
     args = parser.parse_args()
 
     run_m2_staged_session(
@@ -375,7 +396,11 @@ def main():
         telemetry_publish_mode=args.telemetry_publish_mode,
         feedback_loss_policy=args.feedback_loss_policy,
         kp_roll=args.kp_roll,
+        kp_pitch=args.kp_pitch,
+        kp_yaw=args.kp_yaw,
         max_residual_roll_deg=args.max_residual_roll_deg,
+        max_residual_pitch_deg=args.max_residual_pitch_deg,
+        max_residual_yaw_deg=args.max_residual_yaw_deg,
     )
 
 
