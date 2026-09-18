@@ -11,7 +11,8 @@
 
 ### Key Milestones:
 - **J1–J10 (Completed & Frozen)**: Comprehensive real-hardware foundation covering low-level multi-actuator UART communication, analytical inverse kinematics, $C^2$ jerk-limited trajectory shaping, 50 Hz continuous servo streaming, dual-IMU microsecond clock synchronization, numerical forward kinematics, and complete 6-DOF single-axis operational workspace qualification on the physical platform.
-- **J11+ (Active Research Phase)**: Active attitude stabilization and anti-vibration research under dynamic base disturbances (Stage J11 PID world-attitude closed-loop control currently in progress; advanced ADRC and adaptive control on the future roadmap).
+- **J11-M1 (Completed & Frozen)**: Base-IMU full-$SO(3)$ feedforward attitude hold, dedicated driver runtime qualification, two-tier safety policy, 300s static home qualification, and low-speed dynamic base disturbance rejection on real physical hardware (`v1.0-j11-m1-feedforward-hardware-qualified`).
+- **J11-M2+ (Active Research Phase)**: Stage J11-M2 Dual-IMU PID residual attitude closed-loop stabilization currently in progress; advanced ADRC and adaptive control on the future roadmap.
 
 ---
 
@@ -39,7 +40,9 @@ The development of the 6PUS robotic platform is organized into two distinct over
 ┌─────────────────────────────────────────────────────────────────────────┐
 │               Part II — Active Stabilization Research (J11+)            │
 │                       [STATUS: ACTIVE ROADMAP]                          │
-│  • J11: PID 3-DOF World-Attitude Disturbance Rejection [IN PROGRESS]    │
+│  • J11-M1: Base-IMU Feedforward Attitude Hold & Driver Runtime Qualified│
+│            [STATUS: COMPLETED & FROZEN — Tag: v1.0-j11-m1]              │
+│  • J11-M2: Dual-IMU PID Residual Attitude Stabilization [NEXT]          │
 │  • Future Research Roadmap:                                             │
 │    - Active Disturbance Rejection Control (ADRC) & Extended State Obs   │
 │    - IMU Acceleration Feedforward & Disturbance Observer (DOB)          │
@@ -48,7 +51,7 @@ The development of the 6PUS robotic platform is organized into two distinct over
 ```
 
 > [!IMPORTANT]
-> **Honesty & Verification Boundary**: Stages J1 through J10 are fully qualified on real physical hardware and frozen (`v1.0-j8-active-servo-hardware-qualified`). Stage J11 is actively in development (pure offline simulations/dry-runs have been validated; active closed-loop real-hardware motion is pending qualification). No unverified claims are made for future phases.
+> **Honesty & Verification Boundary**: Stages J1 through J10 as well as Stage J11-M1 are fully qualified on real physical hardware and frozen (Official Release Tag: `v1.0-j11-m1-feedforward-hardware-qualified`). Stage J11-M2 (Dual-IMU PID Residual Attitude Stabilization) is the active next stage. No unverified claims are made for future phases.
 
 ### J10 Single-Axis Operational Workspace Envelope (HOME-Centered)
 

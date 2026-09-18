@@ -13,7 +13,7 @@
 | :--- | :--- | :---: | :--- |
 | **Canonical Evidence**<br>*(权威基准证据)* | 支撑核心里程碑结论、论文/博客图表（如 Stewart-3 图 6）、架构验收准入与阶段冻结的不可替代实机数据。具备完备元数据（`metadata.json`）、完整时序、严格单调递增时间戳与无故障断言。 | **MUST KEEP**<br>(永久纳入 Git 跟踪) | • `stewart3_j8_figure6_20260916_135013/`<br>• `j7/` (C10 预检与 50Hz 伺服基准)<br>• `j9_1/` (双 IMU 姿态与力臂可辨识性基线)<br>• `j10/` (6 自由度单轴安全包络量测基线) |
 | **Representative Evidence**<br>*(代表性样本)* | 验证算法阶段性表现或特定边界条件的典型采样切片，用于离线校验或跨环境基准对齐。 | **OPTIONAL**<br>(按需精简后跟踪) | • 仿真模型对齐样本<br>• 控制器参数基准响应片段 |
-| **Intermediate / Tuning**<br>*(中间过程与调试数据)* | 探索性边界搜索、高频扫描原始遥测、调参重试、单步调试 log 以及未达准入标准的运行产物。数据量通常在数十至数百兆。 | **LOCAL ONLY**<br>(保留于本地，Git 忽略) | • `results/J10_A*/` 各轴超大扫描数据<br>• `results/j11/j11_2a/` 正在进行的中间轮次<br>• 由 `.gitignore` 规则自动排除 |
+| **Intermediate / Tuning**<br>*(中间过程与调试数据)* | 探索性边界搜索、高频扫描原始遥测、调参重试、单步调试 log 以及未达准入标准的运行产物。数据量通常在数十至数百兆。 | **LOCAL ONLY**<br>(保留于本地，Git 忽略) | • `results/J10_A*/` 各轴超大扫描数据<br>• `results/j11/j11_2a/` 早期零增益粗测与本地调试数据<br>• 由 `.gitignore` 规则自动排除 |
 
 ---
 
@@ -94,6 +94,22 @@
   - `j7_single_motor_servo_comparison.json`: 单机对比基准
 - **对应分析与报告**：
   - J7 架构决策：[`agent_docs/decisions/J7_C0_SERVO_ARCHITECTURE_DESIGN.md`](../agent_docs/decisions/J7_C0_SERVO_ARCHITECTURE_DESIGN.md)
+
+### 3.5 J11-M1 动基座姿态前馈与驱动准入权威基准
+- **数据集索引总表**：[`results/j11/M1_DATASET_INDEX.md`](./j11/M1_DATASET_INDEX.md)
+- **数据性质与定位**：`Frozen Engineering Evidence + Preliminary Control Baseline`（已冻结的工程验证凭据与初步控制基准，严禁作为 Final Paper 对比数据；后续 PID/ADRC 研发就绪后将统一协议重新横向对比）
+- **官方 Release Tag**：`v1.0-j11-m1-feedforward-hardware-qualified`
+- **核心基准清单**：
+  1. **`CANONICAL_M1_STATIC`** ([`results/j11/runtime_validation/20260918_111527/`](./j11/runtime_validation/20260918_111527/)):
+     - 用途: 300s 长期连续运行与双层安全策略 (Two-Tier Safety Policy) 冻结运行时静态基线；
+     - 事实: 14,944 次硬件写操作，17 次暂态告警均自动恢复，Hard STOP = 0，过流 = 0，电机故障 = 0，HOME 误差 $\le 2\text{ steps}$。
+  2. **`CANONICAL_M1_DYNAMIC`** ([`results/j11/runtime_validation/20260918_112354/`](./j11/runtime_validation/20260918_112354/)):
+     - 用途: 120s 真实低速动基座扰动全 SO(3) 纯前馈动态工程基线；
+     - 事实: 5,929 次硬件写操作，退出原因 `scheduled_duration_complete`（非故障中断），Base 最大 SO(3) 扰动 $13.54^\circ$，电机行程 808~1203 步，Platform 倾角误差 RMS $1.55^\circ$。
+- **对应分析与报告**：
+  - J11-M1 最终总结与规范：[`agent_docs/stages/J11/J11_M1_FINAL_SUMMARY.md`](../agent_docs/stages/J11/J11_M1_FINAL_SUMMARY.md)
+  - J11 阶段研发主案：[`agent_docs/stages/J11/README.md`](../agent_docs/stages/J11/README.md)
+  - 当前状态卡：[`agent_docs/decisions/CURRENT_STAGE.md`](../agent_docs/decisions/CURRENT_STAGE.md)
 
 ---
 

@@ -34,16 +34,16 @@ agent_docs/
 | 阶段代号 | 阶段核心目标 | 关键结论与权威文档入口 | 状态 |
 | :---: | :--- | :--- | :---: |
 | **J1** | 电机只读通信与多机基线 | [`up/motor/uart_multi/AGENTS.md`](../up/motor/uart_multi/AGENTS.md) (ID1~ID6 串口基线) | **FROZEN** |
-| **J2** | 解析几何逆运动学验证 | [`agent_docs/stages/J2/J2_STAGE_PLAN.md`](./stages/J2/J2_STAGE_PLAN.md) (闭式解与几何配置文件) | **FROZEN** |
-| **J3** | FakeBus 调度与单槽覆盖 | [`agent_docs/stages/J3/J3_STAGE_PLAN.md`](./stages/J3/J3_STAGE_PLAN.md) (Latest-Value-Wins 机制) | **FROZEN** |
-| **J4** | 连续轨迹整形与安全门禁 | [`agent_docs/decisions/J4_SAFETY_GATES_AND_RECOVERY_SPEC.md`](./decisions/J4_SAFETY_GATES_AND_RECOVERY_SPEC.md) | **FROZEN** |
+| **J2** | 解析几何逆运动学验证 | 方案：[`agent_docs/stages/J2/J2-C_ROS2_SIX_AXIS_VECTOR_REAL_HARDWARE_PLAN.md`](./stages/J2/J2-C_ROS2_SIX_AXIS_VECTOR_REAL_HARDWARE_PLAN.md) (解析逆解与多轴方案) | **FROZEN** |
+| **J3** | FakeBus 调度与单槽覆盖 | 方案：[`agent_docs/stages/J3/J3_IK_REAL_HARDWARE_INTEGRATION_PLAN.md`](./stages/J3/J3_IK_REAL_HARDWARE_INTEGRATION_PLAN.md) (Latest-Value-Wins 机制) | **FROZEN** |
+| **J4** | 连续轨迹整形与安全门禁 | 总结：[`agent_docs/frozen/J4_FINAL_SUMMARY.md`](./frozen/J4_FINAL_SUMMARY.md)<br>方案：[`agent_docs/stages/J4/J4_ROS2_CONTINUOUS_CARTESIAN_CONTROL_PLAN.md`](./stages/J4/J4_ROS2_CONTINUOUS_CARTESIAN_CONTROL_PLAN.md) | **FROZEN** |
 | **J5** | 装配前统一时间轴与数值正解 | [`agent_docs/frozen/J5_PRE_ASSEMBLY_FROZEN_v1.0.md`](./frozen/J5_PRE_ASSEMBLY_FROZEN_v1.0.md) | **FROZEN** |
 | **J6** | 机械总装与零位回归 | [`agent_docs/j6/J6_FINAL_SUMMARY.md`](./j6/J6_FINAL_SUMMARY.md) (HOME/PARK 定位验收) | **FROZEN** |
 | **J7** | 六轴 50Hz 伺服驱动通信 | [`agent_docs/decisions/J7_C0_SERVO_ARCHITECTURE_DESIGN.md`](./decisions/J7_C0_SERVO_ARCHITECTURE_DESIGN.md) | **FROZEN** |
 | **J8** | 笛卡尔空间连续实机运动 | [`agent_docs/decisions/J8_FINAL_HARDWARE_QUALIFICATION.md`](./decisions/J8_FINAL_HARDWARE_QUALIFICATION.md) (9阶段视频演示准入) | **FROZEN** |
 | **J9** | 双 H30 IMU 传感集成与姿态验证 | [`agent_docs/stages/J9/J9_FINAL_SUMMARY.md`](./stages/J9/J9_FINAL_SUMMARY.md)<br>交接：[`agent_docs/stages/J9/J9_TO_J10_HANDOFF.md`](./stages/J9/J9_TO_J10_HANDOFF.md) | **FROZEN** |
 | **J10** | 6DOF 单轴实机安全运行包络 | 总结：[`agent_docs/stages/J10/J10_FINAL_SUMMARY.md`](./stages/J10/J10_FINAL_SUMMARY.md)<br>报告库：[`agent_docs/reports/j10/`](./reports/j10/) (15篇单轴报告)<br>交接：[`agent_docs/stages/J10/J10_TO_J11_HANDOFF.md`](./stages/J10/J10_TO_J11_HANDOFF.md) | **CLOSED** |
-| **J11** | 世界坐标系姿态防抖闭环 | 架构：[`agent_docs/stages/J11/README.md`](./stages/J11/README.md) (PID 防抖目标与路线) | **IN PROGRESS** |
+| **J11** | 世界坐标系姿态防抖闭环 | **J11-M1 前馈姿态保持与驱动准入**: [`agent_docs/stages/J11/J11_M1_FINAL_SUMMARY.md`](./stages/J11/J11_M1_FINAL_SUMMARY.md)<br>主案：[`agent_docs/stages/J11/README.md`](./stages/J11/README.md)<br>基线数据：[`results/j11/M1_DATASET_INDEX.md`](../results/j11/M1_DATASET_INDEX.md)<br>*(Release Tag: `v1.0-j11-m1-feedforward-hardware-qualified`)*<br>**Next**: `J11-M2: Dual-IMU PID Residual Attitude Stabilization` | **M1 FROZEN**<br>*(Next: M2)* |
 
 ---
 
