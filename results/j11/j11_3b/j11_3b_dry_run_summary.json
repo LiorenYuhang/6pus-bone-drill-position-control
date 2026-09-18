@@ -1,0 +1,18 @@
+{
+  "stage": "J11-3B",
+  "title": "Base-IMU Feedforward World-Attitude Hold",
+  "execute_motion": false,
+  "dry_run": true,
+  "hardware_write_count": 0,
+  "total_cycles": 499,
+  "active_cycles": 444,
+  "duration_s": 10.0,
+  "clamp_deg": 4.0,
+  "feedforward_law": "R_BP_ff = Delta_R_B^T @ R_BP0",
+  "platform_feedback_in_control": false,
+  "base_rel_roll_max_deg": 0.02086356663385708,
+  "cmd_feedforward_roll_max_deg": 0.02086397241191904,
+  "platform_roll_error_max_deg": 0.016215512675909427,
+  "platform_roll_error_rms_deg": 0.008393203625652698,
+  "verdict": "PASS"
+}

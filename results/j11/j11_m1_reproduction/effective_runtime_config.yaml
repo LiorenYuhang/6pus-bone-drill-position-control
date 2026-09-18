@@ -1,0 +1,44 @@
+# J11-3B2 Feedforward system parameters
+# Removes artificial +/-4 deg clamp; enables full J10 operational workspace.
+# Kinematics envelope enforcement is delegated to j11_base_feedforward_runner.
+
+pus6_motor_driver_node:
+  ros__parameters:
+    port: "/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0"
+    baudrate: 921600
+    timeout: 0.05
+    write_rate_hz: 50.0       # Dedicated high-rate UART dispatch loop (50 Hz)
+    poll_rate_hz: 10.0        # Background low-rate telemetry when idle (10 Hz)
+    hardware_mode: "mock"     # Overridden by launch argument
+    auto_connect: true
+    auto_configure: false
+    speed: 50
+    mode: 2
+    max_current_mA: 500
+    motor_ids: [1, 2, 3, 4, 5, 6]
+    maintenance_mode: true    # Enable [0, 2000] absolute hard limit for J10 workspace
+    reconnect_max_jump_steps: 80 # J11-3B3 single-variable override (default: 10)
+
+pus6_kinematics_node:
+  ros__parameters:
+    envelope_max_xy_m: 0.045
+    envelope_max_z_delta_m: 0.025
+    envelope_max_angle_rad: 1.50   # Permissive software envelope; runner enforces J10 safety
+    enforce_software_envelope: false
+
+pus6_control_node:
+  ros__parameters:
+    control_rate_hz: 50.0          # 50 Hz continuous reference shaping
+    max_speed_m_per_sec: 0.005     # 200 step/s = 5.0 mm/s
+    max_accel_m_per_sec2: 0.050    # 2000 step/s^2 = 50.0 mm/s^2
+    max_jerk_m_per_sec3: 0.500     # 20000 step/s^3 = 500.0 mm/s^3
+    omega_n: 20.0                  # 3rd-order filter bandwidth (rad/s)
+    maintenance_mode: true
+
+pus6_fk_node:
+  ros__parameters:
+    query_rate_hz: 200.0
+    fixed_lag_delay_ms: 160.0
+    max_residual_m: 0.0001
+    max_pos_jump_m: 0.015
+    max_ang_jump_rad: 0.15

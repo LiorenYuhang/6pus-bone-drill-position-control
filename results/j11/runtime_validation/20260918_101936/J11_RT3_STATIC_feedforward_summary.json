@@ -1,0 +1,155 @@
+{
+  "stage": "J11_RT3_STATIC",
+  "title": "Sustained Base-IMU Feedforward Attitude Hold",
+  "execute_motion": true,
+  "dry_run": false,
+  "hardware_write_count": 14049,
+  "total_cycles": 14104,
+  "active_cycles": 14048,
+  "duration_s": 300.0,
+  "angular_clamp": "DISABLED (Full SO(3) Inverse Rotation)",
+  "feedforward_law": "R_BP_cmd = Delta_R_B^T @ R_BP0",
+  "platform_feedback_in_control": false,
+  "initial_operating_home_verified": true,
+  "base_attitude_excursions": {
+    "so3_max_deg": 0.06584390607612992,
+    "roll_min_max_deg": [
+      -0.039163735617590595,
+      0.024423686189025903
+    ],
+    "pitch_min_max_deg": [
+      -0.020147486222661347,
+      0.03521825500473859
+    ],
+    "yaw_min_max_deg": [
+      -0.06495779418199969,
+      0.016059599834752872
+    ]
+  },
+  "command_attitude_excursions": {
+    "roll_min_max_deg": [
+      -0.02442993458569973,
+      0.03916350719382165
+    ],
+    "pitch_min_max_deg": [
+      -0.03521792779537676,
+      0.020147353087666495
+    ],
+    "yaw_min_max_deg": [
+      -0.016060725531848334,
+      0.06495743236322599
+    ]
+  },
+  "platform_world_attitude_errors": {
+    "so3_error_max_deg": 0.14388896369207801,
+    "so3_error_rms_deg": 0.09253290425310257,
+    "tilt_error_max_deg": 0.08786144765911792,
+    "tilt_error_rms_deg": 0.052920113426021986,
+    "roll_error_min_max_deg": [
+      -0.02189047078626203,
+      0.048959053227894754
+    ],
+    "pitch_error_min_max_deg": [
+      -0.0745701897634787,
+      0.007460022448713098
+    ],
+    "yaw_error_min_max_deg": [
+      -0.02598225630822873,
+      0.1271301662790997
+    ]
+  },
+  "motor_feedback_ranges": {
+    "min_steps_axis_1_to_6": [
+      999,
+      998,
+      998,
+      998,
+      998,
+      998
+    ],
+    "max_steps_axis_1_to_6": [
+      1000,
+      1000,
+      999,
+      999,
+      1000,
+      1001
+    ]
+  },
+  "joint_currents_metrics_mA": {
+    "min_current_per_axis_mA": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "max_current_per_axis_mA": [
+      0,
+      0,
+      0,
+      0,
+      51,
+      49
+    ],
+    "mean_current_per_axis_mA": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.1,
+      0.1
+    ],
+    "rms_current_per_axis_mA": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.4,
+      1.7
+    ],
+    "overall_max_current_mA": 51
+  },
+  "slew_recovery_summary": {
+    "total_slew_events": 0,
+    "events": []
+  },
+  "fault_window_audit_last_2s": {
+    "fault_state_triggered": true,
+    "fault_reason": "Driver fatal latch detected via /rosout: J7 driver STOP latched: scheduler_deadline_exceeded",
+    "window_cycle_count": 100,
+    "window_duration_s": 2.0,
+    "feedback_age_max_ms": 577.8,
+    "feedback_age_stall_confirmed": true,
+    "max_command_feedback_error_steps": [
+      1,
+      1,
+      2,
+      2,
+      1,
+      1
+    ],
+    "peak_currents_mA": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "peak_current_axis": 1,
+    "peak_current_mA": 0,
+    "window_slew_event_count": 0,
+    "window_slew_events": [],
+    "causal_chain_evaluation": {
+      "1_scheduler_stall": "CONFIRMED",
+      "2_target_feedback_gap_accumulation": "SUPPORTED",
+      "3_slew_recovery_triggered": "NOT CONFIRMED",
+      "4_current_surge": "NOT CONFIRMED",
+      "5_fault_latched": "CONFIRMED"
+    }
+  },
+  "final_fault_reason": "Driver fatal latch detected via /rosout: J7 driver STOP latched: scheduler_deadline_exceeded",
+  "verdict": "FAIL"
+}

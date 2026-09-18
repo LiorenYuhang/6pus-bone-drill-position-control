@@ -41,6 +41,24 @@ def generate_launch_description():
         description="Path to system parameters yaml",
     )
 
+    servo_scheduler_mode_arg = DeclareLaunchArgument(
+        "servo_scheduler_mode",
+        default_value="ros_timer",
+        description="Servo scheduler mode: 'ros_timer' (default) or 'dedicated_thread'",
+    )
+
+    telemetry_publish_mode_arg = DeclareLaunchArgument(
+        "telemetry_publish_mode",
+        default_value="auto",
+        description="Telemetry publication mode: 'auto' (default: inline for ros_timer, async_latest for dedicated_thread), 'inline', or 'async_latest'",
+    )
+
+    feedback_loss_policy_arg = DeclareLaunchArgument(
+        "feedback_loss_policy",
+        default_value="default",
+        description="Feedback loss policy: 'default' (J7/J8 strict 4-miss gate) or 'age_based' (J11 research mode: per-axis age gate)",
+    )
+
     motor_driver_node = Node(
         package="pus6_motor_driver",
         executable="motor_driver_node",
@@ -48,7 +66,12 @@ def generate_launch_description():
         output="screen",
         parameters=[
             LaunchConfiguration("config_file"),
-            {"hardware_mode": LaunchConfiguration("hardware_mode")},
+            {
+                "hardware_mode": LaunchConfiguration("hardware_mode"),
+                "servo_scheduler_mode": LaunchConfiguration("servo_scheduler_mode"),
+                "telemetry_publish_mode": LaunchConfiguration("telemetry_publish_mode"),
+                "feedback_loss_policy": LaunchConfiguration("feedback_loss_policy"),
+            },
         ],
     )
 
@@ -94,6 +117,9 @@ def generate_launch_description():
         launch_fk_arg,
         fixed_lag_delay_arg,
         config_arg,
+        servo_scheduler_mode_arg,
+        telemetry_publish_mode_arg,
+        feedback_loss_policy_arg,
         motor_driver_node,
         kinematics_node,
         control_node,

@@ -1,0 +1,182 @@
+{
+  "baudrate": 921600,
+  "feedback": {
+    "defer_count": 0,
+    "deferred": false,
+    "feedback_cycle_id": 1,
+    "full_scan": true,
+    "malformed_count": 0,
+    "mismatch_count": 0,
+    "motor_ids": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "rx_drain_end_ns": 27911883288043,
+    "rx_drain_start_ns": 27911883270582,
+    "rx_residual_count": 0,
+    "samples": [
+      {
+        "current_mA": 0,
+        "error": null,
+        "fault": 0,
+        "feedback_age_ns": 0,
+        "mode": null,
+        "motor_id": 1,
+        "position": 1000,
+        "timeout": false,
+        "timestamp_ns": 27911886717170
+      },
+      {
+        "current_mA": 0,
+        "error": null,
+        "fault": 0,
+        "feedback_age_ns": 0,
+        "mode": null,
+        "motor_id": 2,
+        "position": 1000,
+        "timeout": false,
+        "timestamp_ns": 27911890232395
+      },
+      {
+        "current_mA": 0,
+        "error": null,
+        "fault": 0,
+        "feedback_age_ns": 0,
+        "mode": null,
+        "motor_id": 3,
+        "position": 1000,
+        "timeout": false,
+        "timestamp_ns": 27911893635637
+      },
+      {
+        "current_mA": 0,
+        "error": null,
+        "fault": 0,
+        "feedback_age_ns": 0,
+        "mode": null,
+        "motor_id": 4,
+        "position": 998,
+        "timeout": false,
+        "timestamp_ns": 27911896967078
+      },
+      {
+        "current_mA": 0,
+        "error": null,
+        "fault": 0,
+        "feedback_age_ns": 0,
+        "mode": null,
+        "motor_id": 5,
+        "position": 1000,
+        "timeout": false,
+        "timestamp_ns": 27911900261767
+      },
+      {
+        "current_mA": 0,
+        "error": null,
+        "fault": 0,
+        "feedback_age_ns": 0,
+        "mode": null,
+        "motor_id": 6,
+        "position": 1001,
+        "timeout": false,
+        "timestamp_ns": 27911903589546
+      }
+    ],
+    "servo_cycle_id": 0,
+    "stale_response_count": 0,
+    "timeout_count": 0,
+    "timestamp_ns": 27911883265043,
+    "transaction_end_ns": 27911903597126,
+    "transaction_start_ns": 27911883303293
+  },
+  "motor_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "port": "/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0",
+  "requests": [
+    {
+      "command": 48,
+      "error": null,
+      "motor_id": 1,
+      "register_address": 0,
+      "response_received": true,
+      "retry_count": 0,
+      "timeout": false,
+      "tx_end_ns": 27911886689568,
+      "tx_start_ns": 27911883320341
+    },
+    {
+      "command": 48,
+      "error": null,
+      "motor_id": 2,
+      "register_address": 0,
+      "response_received": true,
+      "retry_count": 0,
+      "timeout": false,
+      "tx_end_ns": 27911890158506,
+      "tx_start_ns": 27911886743314
+    },
+    {
+      "command": 48,
+      "error": null,
+      "motor_id": 3,
+      "register_address": 0,
+      "response_received": true,
+      "retry_count": 0,
+      "timeout": false,
+      "tx_end_ns": 27911893608669,
+      "tx_start_ns": 27911890278556
+    },
+    {
+      "command": 48,
+      "error": null,
+      "motor_id": 4,
+      "register_address": 0,
+      "response_received": true,
+      "retry_count": 0,
+      "timeout": false,
+      "tx_end_ns": 27911896944077,
+      "tx_start_ns": 27911893670622
+    },
+    {
+      "command": 48,
+      "error": null,
+      "motor_id": 5,
+      "register_address": 0,
+      "response_received": true,
+      "retry_count": 0,
+      "timeout": false,
+      "tx_end_ns": 27911900245391,
+      "tx_start_ns": 27911896991883
+    },
+    {
+      "command": 48,
+      "error": null,
+      "motor_id": 6,
+      "register_address": 0,
+      "response_received": true,
+      "retry_count": 0,
+      "timeout": false,
+      "tx_end_ns": 27911903572252,
+      "tx_start_ns": 27911900279597
+    }
+  ],
+  "rx_owner": {
+    "feedback_response_count": 6,
+    "malformed_count": 0,
+    "motion_write_response_count": 0,
+    "overflow_count": 0,
+    "residual_bytes": 0,
+    "residual_frames": 0,
+    "stale_response_count": 0
+  }
+}

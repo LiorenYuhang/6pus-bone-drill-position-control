@@ -1,0 +1,118 @@
+{
+  "stage": "J11-3A",
+  "title": "Roll Disturbance-Rejection Initial Tuning",
+  "head_commit": "8241ce8",
+  "execute_motion": true,
+  "dry_run": false,
+  "active_cycles": 2201,
+  "active_duration_s": 44.02,
+  "gains": {
+    "kp": [
+      1.0,
+      0.0,
+      0.0
+    ],
+    "ki": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "kd": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "residual_limit_deg": 1.0,
+  "maximum_compensation_angle_deg": 1.0,
+  "residual_saturation_cycles": 1692,
+  "residual_saturation_duration_s": 33.84,
+  "disturbance_metrics": {
+    "base_peak_roll_deg": 7.7113769320617545,
+    "platform_peak_roll_deg": 6.739489691750059,
+    "peak_ratio": 0.873967094479475,
+    "peak_attenuation_percent": 12.603290552052504,
+    "hold1_time_window_s": [
+      10.0,
+      18.0
+    ],
+    "base_hold1_mean_roll_deg": 1.91900629922485,
+    "platform_hold1_mean_roll_deg": 1.092459949489038,
+    "hold1_mean_compensation_deg": 0.8265463497358121,
+    "hold1_ratio": 0.5692841914746807,
+    "hold1_attenuation_percent": 43.07158085253193,
+    "hold2_time_window_s": [
+      30.0,
+      35.0
+    ],
+    "base_hold2_mean_roll_deg": 1.8835300600349858,
+    "platform_hold2_mean_roll_deg": 0.963648586656159,
+    "hold2_mean_compensation_deg": 0.9198814733788268,
+    "hold2_ratio": 0.5116183739792609,
+    "hold2_attenuation_percent": 48.83816260207391
+  },
+  "actuator_motion": {
+    "commanded_steps_min": [
+      983,
+      1000,
+      999,
+      999,
+      1000,
+      983
+    ],
+    "commanded_steps_max": [
+      1001,
+      1000,
+      1017,
+      1017,
+      1000,
+      1001
+    ],
+    "command_step_peak_to_peak_per_axis": [
+      18,
+      0,
+      18,
+      18,
+      0,
+      18
+    ],
+    "feedback_steps_min": [
+      983,
+      998,
+      1000,
+      1000,
+      999,
+      983
+    ],
+    "feedback_steps_max": [
+      1000,
+      1000,
+      1016,
+      1016,
+      1000,
+      999
+    ],
+    "max_command_feedback_error_steps": 14,
+    "total_differential_stroke_steps": 36,
+    "total_differential_stroke_mm": 0.9
+  },
+  "safety": {
+    "motor_fault_codes_sum": 0,
+    "faulted_cycles": 0,
+    "unintended_motion": false,
+    "instability_detected": false,
+    "sustained_oscillation": false,
+    "motor_chatter": false,
+    "watchdog_trips": 0
+  },
+  "verdict": "PASS",
+  "core_question_1_measurable_reverse_mechanical_compensation": true,
+  "core_question_2_genuine_disturbance_attenuation_established": true,
+  "stage_conclusion": "\u5df2\u9a8c\u8bc1\u95ed\u73af\u5b58\u5728\u90e8\u5206\u53cd\u5411\u8865\u507f\u548c\u6570\u503c\u8870\u51cf\uff08\u8870\u51cf\u6bd4\u7ea6 0.51~0.57\uff09\uff0c\u4f46 Moving Platform \u4ecd\u7136\u8089\u773c\u660e\u663e\u8ddf\u968f Base \u503e\u659c\uff0c\u672a\u8868\u73b0\u51fa\u57fa\u672c\u4fdd\u6301\u539f\u4e16\u754c\u59ff\u6001\u4e0d\u52a8\uff0c\u59ff\u6001\u7a33\u5b9a\u6027\u80fd\uff08world-attitude hold\uff09\u5c1a\u672a\u5efa\u7acb\u3002",
+  "pass_scope": "Partial Roll Disturbance Attenuation / Closed-Loop Compensation Response",
+  "stabilization_status": "WORLD_ATTITUDE_HOLD_NOT_YET_ESTABLISHED",
+  "visible_world_attitude_hold": false,
+  "physical_observation_and_analysis": "User visually observed that when Base was tilted, Moving Platform still visibly and obviously followed the Base tilt rather than fundamentally maintaining its original world attitude stationary. This is consistent with measured data: during Hold 1, Base was ~1.919 deg while Platform remained at ~1.092 deg; at peak, Base was ~7.711 deg while Platform was at ~6.739 deg. Thus J11-3A establishes partial disturbance attenuation and closed-loop compensation response, but world-attitude hold has not yet been established.",
+  "next_stage": "J11-3B: Roll World-Attitude Hold Gain Tuning",
+  "next_stage_focus": "Shift focus from ratio < 1 to absolute Platform Roll error (|e_Roll| -> 0) and visual verification of whether the platform macroscopically remains level to the naked eye."
+}

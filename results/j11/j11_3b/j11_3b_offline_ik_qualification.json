@@ -1,0 +1,417 @@
+{
+  "stage": "J11-3B",
+  "title": "Base-IMU Feedforward Offline IK & Sign Qualification",
+  "verdict": "PASS",
+  "hardware_write_count": 0,
+  "reference_operating_home_raw_steps": [
+    1000,
+    1000,
+    1000,
+    1000,
+    1000,
+    1000
+  ],
+  "nominal_height_z0_m": 0.13261226796206452,
+  "feedforward_law": "R_BP_ff = Delta_R_B^T @ R_BP0",
+  "all_signs_correct": true,
+  "world_attitude_level_guaranteed": true,
+  "all_within_j4_envelope": true,
+  "cases": [
+    {
+      "name": "base_neutral",
+      "base_disturbance_rpy_deg": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "cmd_feedforward_rpy_deg": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "cmd_quat_xyzw": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "world_platform_residual_rpy_deg": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "world_level_guaranteed": true,
+      "delta_steps": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "predicted_raw_steps": [
+        1000,
+        1000,
+        1000,
+        1000,
+        1000,
+        1000
+      ],
+      "max_abs_delta_step": 0,
+      "sign_correct": true,
+      "within_j4_envelope": true
+    },
+    {
+      "name": "base_roll_pos_10",
+      "base_disturbance_rpy_deg": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "cmd_feedforward_rpy_deg": [
+        -1.0,
+        -0.0,
+        0.0
+      ],
+      "cmd_quat_xyzw": [
+        -0.008727,
+        0.0,
+        0.0,
+        0.999962
+      ],
+      "world_platform_residual_rpy_deg": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "world_level_guaranteed": true,
+      "delta_steps": [
+        -17,
+        0,
+        17,
+        17,
+        0,
+        -17
+      ],
+      "predicted_raw_steps": [
+        983,
+        1000,
+        1017,
+        1017,
+        1000,
+        983
+      ],
+      "max_abs_delta_step": 17,
+      "sign_correct": true,
+      "within_j4_envelope": true
+    },
+    {
+      "name": "base_roll_pos_20",
+      "base_disturbance_rpy_deg": [
+        2.0,
+        0.0,
+        0.0
+      ],
+      "cmd_feedforward_rpy_deg": [
+        -2.0,
+        -0.0,
+        0.0
+      ],
+      "cmd_quat_xyzw": [
+        -0.017452,
+        0.0,
+        0.0,
+        0.999848
+      ],
+      "world_platform_residual_rpy_deg": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "world_level_guaranteed": true,
+      "delta_steps": [
+        -33,
+        0,
+        33,
+        33,
+        0,
+        -33
+      ],
+      "predicted_raw_steps": [
+        967,
+        1000,
+        1033,
+        1033,
+        1000,
+        967
+      ],
+      "max_abs_delta_step": 33,
+      "sign_correct": true,
+      "within_j4_envelope": true
+    },
+    {
+      "name": "base_roll_pos_30",
+      "base_disturbance_rpy_deg": [
+        3.0,
+        0.0,
+        0.0
+      ],
+      "cmd_feedforward_rpy_deg": [
+        -3.0,
+        -0.0,
+        0.0
+      ],
+      "cmd_quat_xyzw": [
+        -0.026177,
+        0.0,
+        0.0,
+        0.999657
+      ],
+      "world_platform_residual_rpy_deg": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "world_level_guaranteed": true,
+      "delta_steps": [
+        -50,
+        0,
+        50,
+        50,
+        0,
+        -50
+      ],
+      "predicted_raw_steps": [
+        950,
+        1000,
+        1050,
+        1050,
+        1000,
+        950
+      ],
+      "max_abs_delta_step": 50,
+      "sign_correct": true,
+      "within_j4_envelope": true
+    },
+    {
+      "name": "base_roll_pos_40",
+      "base_disturbance_rpy_deg": [
+        4.0,
+        0.0,
+        0.0
+      ],
+      "cmd_feedforward_rpy_deg": [
+        -4.0,
+        -0.0,
+        0.0
+      ],
+      "cmd_quat_xyzw": [
+        -0.034899,
+        0.0,
+        0.0,
+        0.999391
+      ],
+      "world_platform_residual_rpy_deg": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "world_level_guaranteed": true,
+      "delta_steps": [
+        -66,
+        0,
+        67,
+        67,
+        0,
+        -66
+      ],
+      "predicted_raw_steps": [
+        934,
+        1000,
+        1067,
+        1067,
+        1000,
+        934
+      ],
+      "max_abs_delta_step": 67,
+      "sign_correct": true,
+      "within_j4_envelope": true
+    },
+    {
+      "name": "base_roll_pos_50",
+      "base_disturbance_rpy_deg": [
+        5.0,
+        0.0,
+        0.0
+      ],
+      "cmd_feedforward_rpy_deg": [
+        -5.0,
+        -0.0,
+        0.0
+      ],
+      "cmd_quat_xyzw": [
+        -0.043619,
+        0.0,
+        0.0,
+        0.999048
+      ],
+      "world_platform_residual_rpy_deg": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "world_level_guaranteed": true,
+      "delta_steps": [
+        -82,
+        0,
+        83,
+        83,
+        0,
+        -82
+      ],
+      "predicted_raw_steps": [
+        918,
+        1000,
+        1083,
+        1083,
+        1000,
+        918
+      ],
+      "max_abs_delta_step": 83,
+      "sign_correct": true,
+      "within_j4_envelope": true
+    },
+    {
+      "name": "base_roll_neg_30",
+      "base_disturbance_rpy_deg": [
+        -3.0,
+        0.0,
+        0.0
+      ],
+      "cmd_feedforward_rpy_deg": [
+        3.0,
+        -0.0,
+        0.0
+      ],
+      "cmd_quat_xyzw": [
+        0.026177,
+        0.0,
+        0.0,
+        0.999657
+      ],
+      "world_platform_residual_rpy_deg": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "world_level_guaranteed": true,
+      "delta_steps": [
+        50,
+        0,
+        -50,
+        -50,
+        0,
+        50
+      ],
+      "predicted_raw_steps": [
+        1050,
+        1000,
+        950,
+        950,
+        1000,
+        1050
+      ],
+      "max_abs_delta_step": 50,
+      "sign_correct": true,
+      "within_j4_envelope": true
+    },
+    {
+      "name": "base_pitch_pos_20",
+      "base_disturbance_rpy_deg": [
+        0.0,
+        2.0,
+        0.0
+      ],
+      "cmd_feedforward_rpy_deg": [
+        0.0,
+        -2.0,
+        0.0
+      ],
+      "cmd_quat_xyzw": [
+        0.0,
+        -0.017452,
+        0.0,
+        0.999848
+      ],
+      "world_platform_residual_rpy_deg": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "world_level_guaranteed": true,
+      "delta_steps": [
+        -19,
+        -38,
+        -19,
+        19,
+        38,
+        19
+      ],
+      "predicted_raw_steps": [
+        981,
+        962,
+        981,
+        1019,
+        1038,
+        1019
+      ],
+      "max_abs_delta_step": 38,
+      "sign_correct": true,
+      "within_j4_envelope": true
+    },
+    {
+      "name": "base_combined_roll_pitch",
+      "base_disturbance_rpy_deg": [
+        2.5,
+        1.0,
+        0.0
+      ],
+      "cmd_feedforward_rpy_deg": [
+        -2.5004,
+        -0.999,
+        0.0436
+      ],
+      "cmd_quat_xyzw": [
+        -0.021814,
+        -0.008724,
+        0.00019,
+        0.999724
+      ],
+      "world_platform_residual_rpy_deg": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "world_level_guaranteed": true,
+      "delta_steps": [
+        -51,
+        -19,
+        32,
+        51,
+        19,
+        -32
+      ],
+      "predicted_raw_steps": [
+        949,
+        981,
+        1032,
+        1051,
+        1019,
+        968
+      ],
+      "max_abs_delta_step": 51,
+      "sign_correct": true,
+      "within_j4_envelope": true
+    }
+  ]
+}

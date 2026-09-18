@@ -1,0 +1,137 @@
+{
+  "stage": "J11-2A",
+  "command_used": "/home/lyapunov/bone_drill/bone_ws/src/h30_imu/scripts/j11_attitude_stabilization_runner.py --start-imu --start-robot --execute-motion --kp-roll 0.1 --kp-pitch 0.0 --kp-yaw 0.0 --ki-roll 0.0 --ki-pitch 0.0 --ki-yaw 0.0 --kd-roll 0.0 --kd-pitch 0.0 --kd-yaw 0.0 --residual-limit-deg 0.3 --duration 15.0 --output-csv /home/lyapunov/bone_drill/results/j11/j11_2b/j11_2b_roll_p01_stationary.csv",
+  "execute_motion": true,
+  "dry_run": false,
+  "active_cycles": 700,
+  "active_duration_s": 14.0,
+  "gains": {
+    "kp": [
+      0.1,
+      0.0,
+      0.0
+    ],
+    "ki": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "kd": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "delta_phi_cmd_min_rad": [
+    -2.889896863046482e-05,
+    -0.0,
+    0.0
+  ],
+  "delta_phi_cmd_max_rad": [
+    3.359762888782558e-05,
+    -0.0,
+    0.0
+  ],
+  "cartesian_target": [
+    0.0,
+    0.0,
+    0.13261226796206452,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "commanded_steps_min": [
+    1000,
+    1000,
+    1000,
+    1000,
+    1000,
+    1000
+  ],
+  "commanded_steps_max": [
+    1000,
+    1000,
+    1000,
+    1000,
+    1000,
+    1000
+  ],
+  "feedback_steps_min": [
+    1000,
+    999,
+    1000,
+    998,
+    1000,
+    1000
+  ],
+  "feedback_steps_max": [
+    1000,
+    1000,
+    1000,
+    999,
+    1000,
+    1001
+  ],
+  "max_command_feedback_error_steps": 2,
+  "platform_attitude_rms_deg": [
+    0.007667158987286077,
+    0.01632209313237544,
+    0.0053469555837071595
+  ],
+  "platform_attitude_max_deg": [
+    0.0192502580395652,
+    0.027021091250246522,
+    0.013295740788235715
+  ],
+  "base_attitude_rms_deg": [
+    0.004050886954111859,
+    0.011871347966790787,
+    0.00906190563313752
+  ],
+  "base_attitude_max_deg": [
+    0.012447528415316931,
+    0.028968553720336764,
+    0.016803594419726266
+  ],
+  "initial_six_axis_raw_feedback": [
+    1000,
+    1000,
+    1000,
+    998,
+    1000,
+    1001
+  ],
+  "final_six_axis_raw_feedback": [
+    1000,
+    1000,
+    1000,
+    998,
+    1000,
+    1001
+  ],
+  "feedback_received": true,
+  "feedback_valid": true,
+  "faulted_cycle_count": 0,
+  "faulted_motor_count": 0,
+  "total_fault_codes_sum": 0,
+  "motor_fault_count": 0,
+  "watchdog_trip_count": 0,
+  "hardware_write_count": 700,
+  "unintended_motion": false,
+  "holding_mechanism": "stepper_electromagnetic_holding_current",
+  "oscillation": false,
+  "abnormal_noise_heating": false,
+  "pass_criteria": {
+    "active_duration_pass": true,
+    "feedback_received": true,
+    "feedback_valid": true,
+    "delta_phi_is_zero": false,
+    "cmd_nominal_pass": true,
+    "no_motor_faults": true,
+    "no_watchdog_trips": true,
+    "no_stale_imu": true,
+    "error_within_tolerance": true,
+    "no_unintended_motion": true
+  },
+  "verdict": "FAIL"
+}

@@ -1,0 +1,72 @@
+{
+  "stage": "J11-3B3",
+  "title": "Sustained Base-IMU Feedforward Attitude Hold",
+  "total_cycles": 362,
+  "active_cycles": 310,
+  "active_duration_s": 6.2,
+  "hardware_write_count": 310,
+  "peak_disturbance_sample": {
+    "cycle": 191,
+    "time_s": 3.8200000000000003,
+    "base_so3_deg": 17.145661643271502,
+    "base_roll_deg": -16.848449426324922,
+    "base_pitch_deg": 1.9172243675820864,
+    "base_yaw_deg": -2.8495821695122574,
+    "cmd_roll_deg": 16.75029842218191,
+    "cmd_pitch_deg": -2.6588562244781078,
+    "cmd_yaw_deg": 2.1741006827246836,
+    "platform_so3_err_deg": 3.5984505548733994,
+    "platform_tilt_err_deg": 3.50364221575098,
+    "platform_roll_err_deg": -2.961326888255168,
+    "platform_pitch_err_deg": 1.8732798346480126,
+    "so3_attenuation_ratio": 0.7901247190256117,
+    "roll_attenuation_ratio": 0.8242374230813055,
+    "feedback_steps": [
+      1214,
+      960,
+      759,
+      788,
+      1036,
+      1237
+    ]
+  },
+  "metrics": {
+    "base_so3_max_deg": 17.145661643271502,
+    "base_roll_min_max_deg": [
+      -16.85229021202419,
+      6.626436459683516
+    ],
+    "base_pitch_min_max_deg": [
+      -0.3288187713263618,
+      5.3007012256405925
+    ],
+    "base_yaw_min_max_deg": [
+      -2.8495821695122574,
+      3.4913706549083083
+    ],
+    "platform_so3_error_mean_deg": 3.423926020670986,
+    "platform_so3_error_rms_deg": 4.330057802041985,
+    "platform_tilt_error_mean_deg": 3.261044346148383,
+    "platform_tilt_error_rms_deg": 4.244906884141644,
+    "platform_roll_error_rms_deg": 4.158983628804848,
+    "platform_pitch_error_rms_deg": 0.8501241013424304,
+    "cmd_inverse_consistency_max_deg": 1.2074182697257333e-06,
+    "motor_feedback_min_steps": [
+      949,
+      925,
+      724,
+      758,
+      1000,
+      1001
+    ],
+    "motor_feedback_max_steps": [
+      1246,
+      999,
+      999,
+      1051,
+      1072,
+      1288
+    ]
+  },
+  "termination_cause": "Runner watchdog tripped: fb_age=208.7ms > 200.0ms limit. Driver node itself had 0 faults and never latched STOP."
+}

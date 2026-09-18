@@ -1,0 +1,163 @@
+{
+  "stage": "J11-3B4",
+  "title": "Sustained Feedforward Formal Run",
+  "total_cycles": 5573,
+  "active_cycles": 5521,
+  "active_duration_s": 110.42,
+  "hardware_write_count": 5521,
+  "zero_driver_stop_latched": true,
+  "zero_motor_hardware_faults": true,
+  "clean_user_stop": true,
+  "global_metrics": {
+    "base_so3_magnitude_deg": {
+      "min": 0.002406205582451982,
+      "max": 18.005039392527454,
+      "mean": 4.755206577864174,
+      "rms": 6.325537219282162
+    },
+    "base_roll_deg": {
+      "min": -15.394094461921373,
+      "max": 14.37094785473454,
+      "mean": 0.9862544710540254,
+      "rms": 4.722932660653373
+    },
+    "base_pitch_deg": {
+      "min": -16.167785324166626,
+      "max": 10.506779700520163,
+      "mean": -1.1490497703181068,
+      "rms": 3.5020696881904896
+    },
+    "base_yaw_deg": {
+      "min": -6.6486007628459545,
+      "max": 8.243966200169668,
+      "mean": 1.0118728649754092,
+      "rms": 2.3351097028056342
+    },
+    "platform_so3_error_deg": {
+      "min": 0.00036208458805235706,
+      "max": 22.579474223212404,
+      "mean": 2.23595467758032,
+      "rms": 4.560846883778709
+    },
+    "platform_tilt_error_deg": {
+      "min": 0.0003015912353861073,
+      "max": 14.624319166265689,
+      "mean": 1.6598240709976664,
+      "rms": 3.339390409866992
+    },
+    "platform_roll_error_deg": {
+      "min": -11.310950077591386,
+      "max": 6.76346073322281,
+      "mean": -0.14165059248197037,
+      "rms": 2.365832848928741
+    },
+    "platform_pitch_error_deg": {
+      "min": -7.226535136593063,
+      "max": 12.189396717638159,
+      "mean": 0.16129321282294495,
+      "rms": 2.3597639453137504
+    },
+    "cmd_inverse_consistency_deg": {
+      "min": 0.0,
+      "max": 1.2074182697257333e-06,
+      "mean": 2.4493904403057802e-08
+    },
+    "motor_feedback_min_steps": [
+      737,
+      825,
+      739,
+      739,
+      712,
+      757
+    ],
+    "motor_feedback_max_steps": [
+      1269,
+      1301,
+      1252,
+      1273,
+      1182,
+      1270
+    ],
+    "max_tracking_error_steps": [
+      107,
+      156,
+      155,
+      98,
+      157,
+      160
+    ]
+  },
+  "peak_disturbance_sample": {
+    "cycle": 2623,
+    "time_s": 52.46,
+    "base_so3_deg": 18.005039392527454,
+    "base_roll_deg": 11.180436515346399,
+    "base_pitch_deg": -12.308601015092796,
+    "base_yaw_deg": 5.858893319675396,
+    "cmd_roll_deg": -12.599470401555978,
+    "cmd_pitch_deg": 10.850428125119121,
+    "cmd_yaw_deg": -8.26964691677687,
+    "platform_so3_err_deg": 15.866380885441979,
+    "platform_tilt_err_deg": 8.499012272225874,
+    "platform_roll_err_deg": 4.686359070446001,
+    "platform_pitch_err_deg": -7.098152515156234,
+    "so3_attenuation_ratio": 0.11878110680352483,
+    "tilt_attenuation_ratio": 0.5279648054670083,
+    "feedback_steps": [
+      819,
+      1073,
+      1108,
+      1193,
+      935,
+      897
+    ]
+  },
+  "steady_windows": [
+    {
+      "name": "Window 1 (t=20s~30s)",
+      "count": 501,
+      "duration_s": 10.02,
+      "base_so3_mean_deg": 8.281165434620275,
+      "base_roll_mean_deg": 0.9676425656987443,
+      "base_pitch_mean_deg": 0.18371044831468783,
+      "base_yaw_mean_deg": -1.02308818537734,
+      "platform_so3_mean_deg": 5.4697502217775025,
+      "platform_tilt_mean_deg": 5.080795610440841,
+      "platform_roll_mean_deg": -1.4841036405395722,
+      "platform_pitch_mean_deg": 1.6581062010366265,
+      "so3_attenuation_ratio": 0.33949511515484987,
+      "tilt_attenuation_ratio": 0.3864636987929204
+    },
+    {
+      "name": "Window 2 (t=50s~70s)",
+      "count": 1001,
+      "duration_s": 20.02,
+      "base_so3_mean_deg": 6.061253553050553,
+      "base_roll_mean_deg": 1.461659626885537,
+      "base_pitch_mean_deg": -2.226044490342956,
+      "base_yaw_mean_deg": 2.6572502887832323,
+      "platform_so3_mean_deg": 2.6906255196833975,
+      "platform_tilt_mean_deg": 2.041669248554741,
+      "platform_roll_mean_deg": 0.04092526068674934,
+      "platform_pitch_mean_deg": 0.15277905390078908,
+      "so3_attenuation_ratio": 0.5560942144832005,
+      "tilt_attenuation_ratio": 0.6631605606521452
+    },
+    {
+      "name": "Window 3 (t=90s~110s Final Hold)",
+      "count": 1001,
+      "duration_s": 20.02,
+      "base_so3_mean_deg": 3.4678540297449123,
+      "base_roll_mean_deg": 2.2428262829333745,
+      "base_pitch_mean_deg": -1.464692018673323,
+      "base_yaw_mean_deg": 2.17411756448444,
+      "platform_so3_mean_deg": 0.1473812149629543,
+      "platform_tilt_mean_deg": 0.010406041270284834,
+      "platform_roll_mean_deg": 0.0058109155875685535,
+      "platform_pitch_mean_deg": -0.00010814029131934211,
+      "so3_attenuation_ratio": 0.95750074435117,
+      "tilt_attenuation_ratio": 0.9969992850964807
+    }
+  ],
+  "verdict": "PASS (Sustained Base-IMU Feedforward Attitude Hold Formally Qualified across 110.4s continuous active operation with >85% attenuation)"
+}

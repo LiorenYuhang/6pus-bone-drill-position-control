@@ -1,0 +1,81 @@
+{
+  "stage": "J11_M1_REPRODUCTION",
+  "title": "Sustained Base-IMU Feedforward Attitude Hold",
+  "execute_motion": true,
+  "dry_run": false,
+  "hardware_write_count": 1004,
+  "total_cycles": 1057,
+  "active_cycles": 1003,
+  "duration_s": 300.0,
+  "angular_clamp": "DISABLED (Full SO(3) Inverse Rotation)",
+  "feedforward_law": "R_BP_cmd = Delta_R_B^T @ R_BP0",
+  "platform_feedback_in_control": false,
+  "initial_operating_home_verified": true,
+  "base_attitude_excursions": {
+    "so3_max_deg": 23.284119790414692,
+    "roll_min_max_deg": [
+      -22.293799198474115,
+      16.317046351019197
+    ],
+    "pitch_min_max_deg": [
+      -1.286995776283257,
+      2.7639352133402544
+    ],
+    "yaw_min_max_deg": [
+      -6.768782531507248,
+      2.428773145514247
+    ]
+  },
+  "command_attitude_excursions": {
+    "roll_min_max_deg": [
+      -16.29383327216095,
+      21.90033068167462
+    ],
+    "pitch_min_max_deg": [
+      -5.100978478593523,
+      1.2612181886850156
+    ],
+    "yaw_min_max_deg": [
+      -2.4139717045790494,
+      5.288567806715746
+    ]
+  },
+  "platform_world_attitude_errors": {
+    "so3_error_max_deg": 13.36732967859247,
+    "so3_error_rms_deg": 3.574277967764868,
+    "tilt_error_max_deg": 12.444087129580081,
+    "tilt_error_rms_deg": 3.0859196733398044,
+    "roll_error_min_max_deg": [
+      -12.18907780269237,
+      3.767971088777949
+    ],
+    "pitch_error_min_max_deg": [
+      -1.952012216848362,
+      2.525512363679919
+    ],
+    "yaw_error_min_max_deg": [
+      -9.089782213350043,
+      2.7949416477098237
+    ]
+  },
+  "motor_feedback_ranges": {
+    "min_steps_axis_1_to_6": [
+      729,
+      949,
+      828,
+      863,
+      985,
+      758
+    ],
+    "max_steps_axis_1_to_6": [
+      1142,
+      1014,
+      1250,
+      1278,
+      1053,
+      1182
+    ]
+  },
+  "final_fault_reason": "Driver fatal latch detected via /rosout: J7 driver STOP latched: overcurrent_ID1",
+  "verdict": "FAIL"
+}

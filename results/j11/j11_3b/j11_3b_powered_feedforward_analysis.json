@@ -1,0 +1,65 @@
+{
+  "stage": "J11-3B",
+  "title": "Base-IMU Feedforward World-Attitude Hold Real-Hardware Qualification",
+  "verdict": "PASS",
+  "hardware_write_count": 1498,
+  "total_active_duration_s": 29.96,
+  "linear_envelope_clamp_deg": 4.0,
+  "global_excursions": {
+    "base_roll_min_max_deg": [
+      -18.3,
+      10.16
+    ],
+    "base_pitch_min_max_deg": [
+      -14.89,
+      12.45
+    ],
+    "base_yaw_min_max_deg": [
+      -12.68,
+      8.99
+    ],
+    "cmd_roll_min_max_deg": [
+      -4.0,
+      4.0
+    ],
+    "platform_roll_error_min_max_deg": [
+      -12.63,
+      7.49
+    ],
+    "platform_roll_error_rms_deg": 3.98
+  },
+  "steady_hold_window_1": {
+    "time_window_s": [
+      10.0,
+      15.0
+    ],
+    "cycles": 250,
+    "base_mean_roll_deg": -3.482,
+    "cmd_mean_roll_deg": 3.451,
+    "platform_mean_roll_error_deg": -0.702,
+    "attenuation_percent": 79.8
+  },
+  "steady_hold_window_2": {
+    "time_window_s": [
+      20.0,
+      29.0
+    ],
+    "cycles": 450,
+    "base_mean_roll_deg": -3.53,
+    "cmd_mean_roll_deg": 3.499,
+    "platform_mean_roll_error_deg": -0.693,
+    "attenuation_percent": 80.4
+  },
+  "core_question_answers": {
+    "q1_base_3axis_motion": "Base underwent 3-axis motion with peak Roll=-18.30\u00b0, Pitch=-14.89\u00b0, Yaw=-12.68\u00b0, and steady hold at Roll \u2248 -3.5\u00b0",
+    "q2_cmd_inverse_rotation": true,
+    "q3_motors_followed_ik": true,
+    "q4_visible_reverse_compensation": "Instrumentally verified (stroke > 200 steps / 5.2mm), naked eye confirmation pending user input",
+    "q5_platform_world_attitude_change": "Under steady Base tilt of ~3.5\u00b0, Platform absolute world roll error was suppressed to 0.69\u00b0 ~ 0.70\u00b0",
+    "q6_base_vs_platform_max": "In linear region: Base -3.5\u00b0 vs Platform -0.7\u00b0 (80% attenuation); Global: Base -18.3\u00b0 vs Platform -12.6\u00b0 (due to \u00b14\u00b0 clamp)",
+    "q7_trend_bottom_moves_top_holds": true,
+    "q8_control_delay": "Near zero phase lag during quasi-static and slow tracking; slight second-order trajectory shaping lag during rapid transitions",
+    "q9_saturation_occurred": "Yes, safely saturated at \u00b14.0\u00b0 clamp during disturbances exceeding \u00b14.0\u00b0",
+    "q10_safety_zero_faults": true
+  }
+}

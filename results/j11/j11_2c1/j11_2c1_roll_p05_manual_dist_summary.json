@@ -1,0 +1,133 @@
+{
+  "stage": "J11-2C1",
+  "title": "First Physical +Roll Disturbance Closed-Loop Qualification",
+  "head_commit": "8241ce8",
+  "execute_motion": true,
+  "dry_run": false,
+  "active_cycles": 2200,
+  "active_duration_s": 44.0,
+  "gains": {
+    "kp": [
+      0.5,
+      0.0,
+      0.0
+    ],
+    "ki": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "kd": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "residual_limit_deg": 0.25,
+  "residual_saturation_count": 1040,
+  "non_home_commanded_cycles": 1455,
+  "disturbance_metrics": {
+    "platform_roll_min_deg": -0.006149404686249741,
+    "platform_roll_max_deg": 3.6460062109483844,
+    "platform_roll_ptp_deg": 3.652155615634634,
+    "platform_roll_rms_deg": 1.4157753893448566,
+    "base_roll_min_deg": -0.8140123333679408,
+    "base_roll_max_deg": 0.06042110635485429,
+    "base_roll_ptp_deg": 0.8744334397227951,
+    "base_roll_rms_deg": 0.31569528856817536
+  },
+  "so3_roll_error": {
+    "min_rad": -0.06354498339761626,
+    "max_rad": 0.00010732182178336014,
+    "norm_max_deg": 3.8534129759403033
+  },
+  "delta_phi_cmd_roll": {
+    "min_deg": -0.25,
+    "max_deg": 0.003074543718920859,
+    "min_rad": -0.004363323129985824,
+    "max_rad": 5.366091089168007e-05,
+    "negative_compensation_verified": true
+  },
+  "actuator_motion": {
+    "commanded_steps_min": [
+      996,
+      1000,
+      1000,
+      1000,
+      1000,
+      996
+    ],
+    "commanded_steps_max": [
+      1000,
+      1000,
+      1004,
+      1004,
+      1000,
+      1000
+    ],
+    "command_step_peak_to_peak_per_axis": [
+      4,
+      0,
+      4,
+      4,
+      0,
+      4
+    ],
+    "feedback_steps_min": [
+      996,
+      998,
+      1000,
+      998,
+      999,
+      996
+    ],
+    "feedback_steps_max": [
+      1000,
+      1000,
+      1003,
+      1003,
+      1000,
+      1001
+    ],
+    "max_command_feedback_error_steps": 5,
+    "motor_position_feedback_response_verified": true,
+    "visible_platform_compensation_verified": false
+  },
+  "cross_axis": {
+    "res_pitch_min_rad": 0.0,
+    "res_pitch_max_rad": 0.0,
+    "res_yaw_min_rad": 0.0,
+    "res_yaw_max_rad": 0.0,
+    "platform_pitch_max_deg": 1.1615351921842243,
+    "platform_yaw_max_deg": 0.6615985888417991
+  },
+  "safety": {
+    "motor_fault_codes_sum": 0,
+    "faulted_cycles": 0,
+    "unintended_motion": false,
+    "instability_detected": false
+  },
+  "verdict": "PASS",
+  "pass_scope": "Command / Motor-Feedback Sign Chain Qualification",
+  "stabilization_status": "NOT_YET_ESTABLISHED",
+  "stage_conclusion": "\u5df2\u9a8c\u8bc1\u7535\u673a\u547d\u4ee4\u4e0e\u4f4d\u7f6e\u53cd\u9988\u94fe\u54cd\u5e94\u6b63\u786e\uff0c\u4f46\u5c1a\u672a\u901a\u8fc7\u8089\u773c\u6216\u72ec\u7acb\u4f4d\u59ff\u6d4b\u91cf\u786e\u8ba4 Moving Platform \u7684\u53ef\u89c1\u673a\u68b0\u8865\u507f\u8fd0\u52a8\u3002",
+  "proven_capabilities": [
+    "Base +Roll is correctly detected by Platform IMU / SO(3)",
+    "SO(3) error sign is correct",
+    "Controller outputs negative Roll compensation (delta_phi_roll < 0)",
+    "J8 outputs correct 6-axis negative-Roll step pattern ([-4, 0, +4, +4, 0, -4] steps)",
+    "Motor StatusFeedback undergoes corresponding position change following commanded steps",
+    "System has no divergence, fault, or watchdog"
+  ],
+  "unproven_capabilities": [
+    "Visible reverse compensation motion of 6PUS mechanism or Moving Platform has NOT been confirmed",
+    "Platform has NOT maintained world attitude invariant",
+    "Effective Roll anti-vibration has NOT been achieved",
+    "Appreciable disturbance attenuation has NOT been demonstrated",
+    "Current Kp=0.5 is NOT sufficient",
+    "Current +-0.25 deg residual limit is NOT sufficient"
+  ],
+  "physical_observation_and_analysis": "User visually observed that when the Base was tilted by approximately +3.6 deg, the Moving Platform visibly followed the Base tilt rather than remaining level, and user did not confirm any visible reverse compensation motion of the mechanism by naked eye. With Base disturbance reaching +3.646 deg and controller residual clamped to -0.25 deg, the commanded differential movement (+-4 steps, ~0.1mm) is below naked-eye visibility threshold against the large manual tilt. The test strictly proves that the command and motor feedback response chain has the correct sign, but visible mechanical compensation and active attitude stabilization performance have not yet been verified or established.",
+  "next_stage": "J11-3: Roll Disturbance-Rejection Gain / Compensation-Range Tuning",
+  "visible_mechanical_compensation": "NOT_YET_VERIFIED"
+}

@@ -1,21 +1,41 @@
 # 6PUS 当前开发阶段状态卡 (Current Stage State Sheet)
 
-**最后更新时间**: 2026-09-09
-**当前冻结状态**: $\mathbf{J10\ 6DOF\ Axis\text{-}Wise\ Operational\ Safe\ Workspace\ Measurement\ COMPLETE}$
-*(官方 Release Tag: `v1.0-j8-active-servo-hardware-qualified`)*
+**最后更新时间**: 2026-09-18  
+**当前冻结状态**: $\mathbf{J11\text{-}M1\ Base\text{-}IMU\ Full\ SO(3)\ Feedforward\ Attitude\ Hold\ +\ Driver\ Runtime\ QUALIFIED\ (COMPLETE\ /\ FROZEN)}$  
+*(官方 Release Tag: `v1.0-j11-m1-feedforward-hardware-qualified`)*
 
 ---
 
 ## 1. 阶段导航 (Stage Status)
 
-* **当前推进阶段**: **$\mathbf{J11\ PID\ 3DOF\ World\text{-}Attitude\ Stabilization\ /\ Anti\text{-}Vibration}$ (J11-1 推进中，物理标定 Calibration 暂缓并移出 J11)**
-  - **核心目标**: Base 承受人工施加的 Roll/Pitch/Yaw 姿态扰动时，利用 Platform H30 姿态反馈与任务空间 PID 控制器，使 Platform 尽可能保持世界坐标系初始参考姿态；
-  - **传感器职责**: Platform H30 为主反馈传感器；Base H30 仅用于扰动输入记录、日志及防抖性能对比评定（OFF vs ON），不进入 J11 PID 控制律；
-  - **范围边界**: 仅处理 3DOF 姿态，XYZ 平动防抖不在本阶段范围内；
-  - **执行底座**: 严格复用 J8 冻结生产链路（Cartesian -> IK -> Shaper -> 50Hz Servo Driver），零修改底层核心；
-  - **标定说明**: 原计划的执行器与运动学参数标定（Actuator & Kinematic Calibration）正式延后（DEFERRED），移至后续独立阶段，不再占用 J11 编号；
-  - **当前安全红线**: J11-1 期间 $\mathbf{hardware\_write\_count = 0}$，禁止真实电机运动。
+* **当前推进阶段**: **$\mathbf{J11\text{-}M1\ COMPLETE\ /\ FROZEN}$**
+  - **下一阶段**: **$\mathbf{J11\text{-}M2\ Dual\text{-}IMU\ PID\ Residual\ Attitude\ Stabilization}$**
+  - **阶段权威结论**:
+    - **`J11-M1 FEEDFORWARD ATTITUDE HOLD = PASS`**
+    - **`J11 DRIVER RUNTIME = QUALIFIED FOR CONTROL RESEARCH`**
+    - **`STOP ALL DRIVER RUNTIME OPTIMIZATION`**
+  - **最新实机验证**:
+    1. **`J11 FINAL STATIC HOME 300s QUALIFICATION = PASS`** (2026-09-18 11:15:27):
+       - 完整运行 300.0s，`hardware_write_count`: 14,944；
+       - Two-Tier Safety Policy 生效：17 次暂态告警均安全恢复，无控制发散；
+       - Hard STOP = 0，Overcurrent = 0（峰值 10mA），Motor fault = 0，>1.0s stale = 0；
+       - HOME 跟踪误差 $\le 2\text{ steps}$（$\le 0.05\text{ mm}$）。
+    2. **`J11 LOW-SPEED BASE DISTURBANCE QUALIFICATION = PASS`** (2026-09-18 11:23:54):
+       - 120s 会话正常收敛完成，`hardware_write_count`: 5,929；
+       - Base 多次动态扰动（最大 SO(3) 综合偏转 $13.54^\circ$），六轴真实产生平滑补偿运动（808 ~ 1203 steps）；
+       - 平台 Tilt 跟踪误差稳定在 $1.55^\circ$ (RMS)，姿态抗扰趋势显著；
+       - Hard STOP = 0，Overcurrent = 0（峰值 156mA <= 500mA），Motor fault = 0，>1.0s stale = 0，max stall ≈ 231ms。
+  - **最终安全策略 (Two-Tier Safety Policy)**:
+    - $\le 283.3\text{ms}$: **NORMAL**（正常 50Hz 伺服）；
+    - $> 283.3\text{ms} \sim \le 1.0\text{s}$: **WARNING / HOLD**（警告，保持最近安全目标，等待通信恢复）；
+    - $> 1.0\text{s}$: **HARD STOP**（真正通信失联立即熔断）；
+    - 过流 $\ge 500\text{mA}$、硬件故障码 $\ne 0$、行程极限违背保持立即硬停机；
+    - J7/J8 frozen baseline 默认行为严格保持不变。
+  - **当前安全红线与禁令**:
+    - **严禁继续开展任何 Driver / UART / 串口调度优化**（底层已完全满足闭环控制科研要求）；
+    - 全力转向博士课题控制主线：J11-M2 Dual-IMU PID 残差姿态稳定。
 * **已正式 PASS & 冻结的 Gates (Frozen Milestones)**:
+  * **J11-M1 (Base-IMU 全 SO(3) 前馈实机闭环与驱动层资格认证)**: $\mathbf{PASS\ /\ FROZEN}$ (`v1.0-j11-m1-feedforward-hardware-qualified`)
   * **J1 (单总线半双工 921600 8N1 底层驱动协议)**: $\mathbf{PASS\ /\ FROZEN}$
   * **J2 (六轴同步通信、0x29 伴随反馈与基准性能)**: $\mathbf{PASS\ /\ FROZEN}$
   * **J3 (IK / 执行器闭环就位验证)**: $\mathbf{PASS\ /\ FROZEN}$

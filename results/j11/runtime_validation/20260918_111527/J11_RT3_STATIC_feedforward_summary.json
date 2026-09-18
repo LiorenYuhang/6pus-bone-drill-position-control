@@ -1,0 +1,121 @@
+{
+  "stage": "J11_RT3_STATIC",
+  "title": "Sustained Base-IMU Feedforward Attitude Hold",
+  "execute_motion": true,
+  "dry_run": false,
+  "hardware_write_count": 14944,
+  "total_cycles": 14998,
+  "active_cycles": 14943,
+  "duration_s": 300.0,
+  "angular_clamp": "DISABLED (Full SO(3) Inverse Rotation)",
+  "feedforward_law": "R_BP_cmd = Delta_R_B^T @ R_BP0",
+  "platform_feedback_in_control": false,
+  "initial_operating_home_verified": true,
+  "base_attitude_excursions": {
+    "so3_max_deg": 0.06583682160377467,
+    "roll_min_max_deg": [
+      -0.034776341724086196,
+      0.017269839009738615
+    ],
+    "pitch_min_max_deg": [
+      -0.02843112252124392,
+      0.01942754343810756
+    ],
+    "yaw_min_max_deg": [
+      -0.020754783611267945,
+      0.06155701568289695
+    ]
+  },
+  "command_attitude_excursions": {
+    "roll_min_max_deg": [
+      -0.017273119744364053,
+      0.03477827165323904
+    ],
+    "pitch_min_max_deg": [
+      -0.019428389874109466,
+      0.028434814938686853
+    ],
+    "yaw_min_max_deg": [
+      -0.061553074561154976,
+      0.02075487321323492
+    ]
+  },
+  "platform_world_attitude_errors": {
+    "so3_error_max_deg": 0.055450593525011624,
+    "so3_error_rms_deg": 0.028205031054463998,
+    "tilt_error_max_deg": 0.03835624467149064,
+    "tilt_error_rms_deg": 0.015682782987196685,
+    "roll_error_min_max_deg": [
+      -0.015421182594288417,
+      0.03280972815959404
+    ],
+    "pitch_error_min_max_deg": [
+      -0.03151790807633557,
+      0.022924853473265998
+    ],
+    "yaw_error_min_max_deg": [
+      -0.012364796929211249,
+      0.052533681316029056
+    ]
+  },
+  "motor_feedback_ranges": {
+    "min_steps_axis_1_to_6": [
+      999,
+      998,
+      998,
+      998,
+      998,
+      999
+    ],
+    "max_steps_axis_1_to_6": [
+      1000,
+      1000,
+      999,
+      999,
+      1000,
+      1001
+    ]
+  },
+  "joint_currents_metrics_mA": {
+    "min_current_per_axis_mA": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "max_current_per_axis_mA": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "mean_current_per_axis_mA": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "rms_current_per_axis_mA": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "overall_max_current_mA": 0
+  },
+  "slew_recovery_summary": {
+    "total_slew_events": 0,
+    "events": []
+  },
+  "fault_window_audit_last_2s": null,
+  "final_fault_reason": "",
+  "verdict": "PASS"
+}

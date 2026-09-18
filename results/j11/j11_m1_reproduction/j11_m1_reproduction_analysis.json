@@ -1,0 +1,54 @@
+{
+  "stage": "J11-M1 Reproduction",
+  "title": "Base-IMU Feedforward Attitude Hold Video Reproduction Run",
+  "total_cycles": 3263,
+  "active_cycles": 3210,
+  "active_duration_s": 64.2,
+  "hardware_write_count": 3210,
+  "global_metrics": {
+    "base_so3_max_deg": 16.38662700677847,
+    "base_roll_range_deg": [
+      -13.898463931156167,
+      9.124778263347308
+    ],
+    "base_pitch_range_deg": [
+      -14.045970776639523,
+      9.351450166640829
+    ],
+    "base_yaw_range_deg": [
+      -9.989744391049484,
+      6.93496722229432
+    ],
+    "platform_so3_error_mean_deg": 2.910502045424099,
+    "platform_so3_error_rms_deg": 4.255310531142174,
+    "platform_tilt_error_mean_deg": 2.3778181918346397,
+    "platform_tilt_error_rms_deg": 3.5227394280003996
+  },
+  "steady_hold_window": {
+    "name": "Steady Hold Window (t=20s~45s, 25.0s)",
+    "count": 1251,
+    "duration_s": 25.02,
+    "base_so3_mean_deg": 7.701411359147175,
+    "base_so3_max_deg": 16.38662700677847,
+    "platform_so3_mean_deg": 4.662757196063243,
+    "platform_so3_rms_deg": 5.645269273696353,
+    "platform_tilt_mean_deg": 3.9775671553214127,
+    "platform_tilt_rms_deg": 4.898888277720216,
+    "so3_attenuation_ratio": 0.3945580908978249,
+    "tilt_attenuation_ratio": 0.4835275029690307
+  },
+  "dynamic_disturbance_window": {
+    "name": "Dynamic 3-Axis Disturbance Window (t=50s~63s, 13.0s)",
+    "count": 651,
+    "duration_s": 13.02,
+    "base_so3_mean_deg": 7.439513049456022,
+    "base_so3_max_deg": 15.577415666072218,
+    "platform_so3_mean_deg": 3.9555334874009014,
+    "platform_so3_rms_deg": 4.63681813101541,
+    "platform_tilt_mean_deg": 2.9024164403469053,
+    "platform_tilt_rms_deg": 3.2052603092343315,
+    "so3_attenuation_ratio": 0.468307473741157,
+    "tilt_attenuation_ratio": 0.6098647289073402
+  },
+  "verdict": "REPRODUCTION QUALIFIED (Base-IMU Feedforward Attitude Hold Visually & Numerically Confirmed across 64.2s Video Demonstration)"
+}

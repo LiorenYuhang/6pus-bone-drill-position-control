@@ -1,0 +1,81 @@
+{
+  "stage": "J11_3B4",
+  "title": "Sustained Base-IMU Feedforward Attitude Hold",
+  "execute_motion": false,
+  "dry_run": true,
+  "hardware_write_count": 0,
+  "total_cycles": 250,
+  "active_cycles": 196,
+  "duration_s": 5.0,
+  "angular_clamp": "DISABLED (Full SO(3) Inverse Rotation)",
+  "feedforward_law": "R_BP_cmd = Delta_R_B^T @ R_BP0",
+  "platform_feedback_in_control": false,
+  "initial_operating_home_verified": true,
+  "base_attitude_excursions": {
+    "so3_max_deg": 0.011261494811792862,
+    "roll_min_max_deg": [
+      -0.007262776235132656,
+      0.003953963122282897
+    ],
+    "pitch_min_max_deg": [
+      -0.009119037782166536,
+      0.002917637818489417
+    ],
+    "yaw_min_max_deg": [
+      -0.006989513415562723,
+      0.005125183658800559
+    ]
+  },
+  "command_attitude_excursions": {
+    "roll_min_max_deg": [
+      -0.003953922540226787,
+      0.007262914843853236
+    ],
+    "pitch_min_max_deg": [
+      -0.0029176303545067044,
+      0.009118930289559436
+    ],
+    "yaw_min_max_deg": [
+      -0.005124997230763555,
+      0.006989558226231619
+    ]
+  },
+  "platform_world_attitude_errors": {
+    "so3_error_max_deg": 0.03274893342544301,
+    "so3_error_rms_deg": 0.021130230492816027,
+    "tilt_error_max_deg": 0.03168295362817389,
+    "tilt_error_rms_deg": 0.019420436055124807,
+    "roll_error_min_max_deg": [
+      -0.0017604604187800308,
+      0.0228999930551132
+    ],
+    "pitch_error_min_max_deg": [
+      -0.004195137956119849,
+      0.027598158746608266
+    ],
+    "yaw_error_min_max_deg": [
+      -8.150395705256312e-05,
+      0.01217207132087077
+    ]
+  },
+  "motor_feedback_ranges": {
+    "min_steps_axis_1_to_6": [
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000
+    ],
+    "max_steps_axis_1_to_6": [
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000
+    ]
+  },
+  "final_fault_reason": "",
+  "verdict": "PASS"
+}

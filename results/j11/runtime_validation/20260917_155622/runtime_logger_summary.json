@@ -1,0 +1,41 @@
+{
+  "output_dir": "/home/lyapunov/bone_drill/results/j11/runtime_validation/20260917_155622",
+  "total_current_samples": 10109,
+  "total_step_samples": 10109,
+  "total_slew_events": 0,
+  "total_current_spikes_ge_400mA": 0,
+  "max_current_per_axis_mA": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    8
+  ],
+  "min_current_per_axis_mA": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "driver_stop_latched": true,
+  "driver_stop_reason": "J7 driver STOP latched: scheduler_deadline_exceeded",
+  "last_step_feedback": [
+    1001,
+    999,
+    1000,
+    999,
+    1000,
+    999
+  ],
+  "last_fault_codes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ]
+}

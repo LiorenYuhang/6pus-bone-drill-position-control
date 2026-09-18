@@ -309,7 +309,7 @@ class J7UartAdapter:
             if remaining_ns < 1_500_000 and self._clock_ns is time.monotonic_ns:
                 target_ns = self._clock_ns() + remaining_ns
                 while self._clock_ns() < target_ns:
-                    time.sleep(0)
+                    pass
             else:
                 self._sleep_fn(remaining_ns / 1e9)
 

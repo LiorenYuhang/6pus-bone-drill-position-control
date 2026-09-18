@@ -1,0 +1,175 @@
+{
+  "stage": "J11-2B2",
+  "title": "Roll Kp=0.5 Stationary-Base Stability Qualification",
+  "command_used": "python3 bone_ws/src/h30_imu/scripts/j11_attitude_stabilization_runner.py --start-imu --start-robot --execute-motion --kp-roll 0.5 --kp-pitch 0.0 --kp-yaw 0.0 --ki-roll 0.0 --ki-pitch 0.0 --ki-yaw 0.0 --kd-roll 0.0 --kd-pitch 0.0 --kd-yaw 0.0 --residual-limit-deg 0.25 --duration 15.0 --output-csv results/j11/j11_2b2/j11_2b2_roll_p05_stationary.csv",
+  "head_commit": "8241ce8",
+  "execute_motion": true,
+  "dry_run": false,
+  "active_cycles": 699,
+  "active_duration_s": 13.98,
+  "gains": {
+    "kp": [
+      0.5,
+      0.0,
+      0.0
+    ],
+    "ki": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "kd": [
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "residual_limit_deg": 0.25,
+  "residual_saturation_count": 0,
+  "base_roll": {
+    "rms_deg": 0.01320316280629042,
+    "max_deg": 0.025922862267958677,
+    "peak_to_peak_deg": 0.033509633388018656
+  },
+  "platform_roll": {
+    "rms_deg": 0.009772323871687845,
+    "max_deg": 0.018614888287650996,
+    "peak_to_peak_deg": 0.021750090207193096
+  },
+  "so3_roll_error": {
+    "rms_deg": 0.009770833262507182,
+    "max_deg": 0.018611396288206072
+  },
+  "delta_phi_cmd_roll": {
+    "rms_deg": 0.004885416631253591,
+    "max_deg": 0.009305698144103036,
+    "rms_rad": 8.526660554706486e-05,
+    "max_rad": 0.00016241507181132372
+  },
+  "quantization_analysis": {
+    "delta_phi_roll_max_deg": 0.009305698144103036,
+    "actuator_step_resolution_deg": 0.0625,
+    "rounding_deadband_threshold_deg": 0.03125,
+    "crossed_quantization_threshold": false,
+    "non_home_commanded_cycles": 0,
+    "command_step_peak_to_peak_per_axis": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "step_chatter_detected": false,
+    "limit_cycle_detected": false,
+    "motor_hunting_detected": false
+  },
+  "cross_axis": {
+    "pitch_delta_phi_min_rad": 0.0,
+    "pitch_delta_phi_max_rad": 0.0,
+    "yaw_delta_phi_min_rad": -0.0,
+    "yaw_delta_phi_max_rad": -0.0,
+    "platform_pitch_rms_deg": 0.014803494613672908,
+    "platform_pitch_max_deg": 0.03516208084599905,
+    "platform_yaw_rms_deg": 0.014615539105465964,
+    "platform_yaw_max_deg": 0.026064323155900307
+  },
+  "cartesian_target": [
+    0.0,
+    0.0,
+    0.13261226796206452,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "commanded_steps_min": [
+    1000,
+    1000,
+    1000,
+    1000,
+    1000,
+    1000
+  ],
+  "commanded_steps_max": [
+    1000,
+    1000,
+    1000,
+    1000,
+    1000,
+    1000
+  ],
+  "feedback_steps_min": [
+    1000,
+    999,
+    1000,
+    998,
+    1000,
+    1000
+  ],
+  "feedback_steps_max": [
+    1000,
+    1000,
+    1000,
+    998,
+    1000,
+    1001
+  ],
+  "initial_six_axis_raw_feedback": [
+    1000,
+    1000,
+    1000,
+    998,
+    1000,
+    1001
+  ],
+  "final_six_axis_raw_feedback": [
+    1000,
+    1000,
+    1000,
+    998,
+    1000,
+    1001
+  ],
+  "max_command_feedback_error_steps": 2,
+  "faulted_cycle_count": 0,
+  "faulted_motor_count": 0,
+  "total_fault_codes_sum": 0,
+  "motor_fault_count": 0,
+  "watchdog_trip_count": 0,
+  "platform_imu_age_mean_ms": 1.2926725021459227,
+  "platform_imu_age_max_ms": 8.479871,
+  "loop_timing_ms": {
+    "mean": 20.000614762517884,
+    "p95": 20.2800522,
+    "p99": 20.62057264,
+    "max": 21.673084
+  },
+  "unintended_motion": false,
+  "oscillation": false,
+  "abnormal_noise_heating": false,
+  "holding_mechanism": "stepper_electromagnetic_holding_current",
+  "pass_criteria": {
+    "active_successfully_entered": true,
+    "active_duration_ge_10s": true,
+    "kp_locked_roll_05": true,
+    "ki_locked_zero": true,
+    "kd_locked_zero": true,
+    "base_stationary": true,
+    "roll_attitude_error_bounded": true,
+    "no_sustained_oscillation": true,
+    "no_divergent_roll_error": true,
+    "no_repeated_residual_saturation": true,
+    "no_sustained_step_chatter": true,
+    "no_motor_hunting": true,
+    "no_motor_fault": true,
+    "no_watchdog_trip": true,
+    "no_stale_imu": true,
+    "no_topic_ownership_conflict": true,
+    "no_unintended_pitch_yaw_command": true,
+    "command_remains_close_to_home": true,
+    "tracking_within_normal_servo_behavior": true,
+    "no_abnormal_mechanical_noise": true,
+    "no_abnormal_rapid_heating": true
+  },
+  "verdict": "PASS"
+}

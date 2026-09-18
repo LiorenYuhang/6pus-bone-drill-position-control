@@ -1,0 +1,107 @@
+{
+  "stage": "J11-3B2",
+  "title": "Base-IMU Full SO(3) Feedforward World-Attitude Hold",
+  "total_cycles": 5167,
+  "active_cycles": 5115,
+  "hardware_write_count_runner": 5115,
+  "driver_latch_cycle": 336,
+  "driver_latch_time_s": 5.66,
+  "driver_latch_reason": "scheduler_deadline_exceeded (following timeout recovery rejection)",
+  "global_metrics": {
+    "base_so3_magnitude_deg": {
+      "min": 0.10449607726327638,
+      "max": 35.53959190670828,
+      "mean": 11.784615746898261,
+      "rms": 12.155549984737318
+    },
+    "base_roll_deg": {
+      "min": -34.39534205406098,
+      "max": 9.428058670894838,
+      "mean": -11.29333149233825,
+      "rms": 11.916386948015369
+    },
+    "base_pitch_deg": {
+      "min": -5.7196377155403235,
+      "max": 9.94944102517082,
+      "mean": 1.791406584378183,
+      "rms": 2.20050798303855
+    },
+    "base_yaw_deg": {
+      "min": -8.899502315195843,
+      "max": 4.355962611197064,
+      "mean": -0.506840426811226,
+      "rms": 1.2225076912112363
+    },
+    "cmd_roll_deg": {
+      "min": -9.713703994087297,
+      "max": 33.577039329572294,
+      "mean": 11.263928319226217,
+      "rms": 11.882439124830068
+    },
+    "cmd_pitch_deg": {
+      "min": -12.10550831994029,
+      "max": 5.0651223568709645,
+      "mean": -1.8894612113776466,
+      "rms": 2.38616984621996
+    },
+    "cmd_yaw_deg": {
+      "min": -5.097452142687085,
+      "max": 4.592647954088522,
+      "mean": 0.07794562112203543,
+      "rms": 0.7998862256255537
+    },
+    "cmd_inverse_consistency_deg": {
+      "min": 0.0,
+      "max": 1.2074182697257333e-06,
+      "mean": 2.0536733033458223e-08,
+      "rms": 1.5746881172180555e-07
+    },
+    "platform_so3_error_deg": {
+      "min": 0.1045644607761888,
+      "max": 34.878403616063906,
+      "mean": 14.902487381203615,
+      "rms": 15.450388290850768
+    },
+    "platform_tilt_error_deg": {
+      "min": 0.04138448859705663,
+      "max": 30.963557881772637,
+      "mean": 8.991765665009481,
+      "rms": 9.644232241305277
+    },
+    "platform_roll_error_deg": {
+      "min": -13.595727628584003,
+      "max": 25.906448608398858,
+      "mean": 6.553729415400481,
+      "rms": 7.439059388639378
+    }
+  },
+  "phase1_before_freeze": {
+    "duration_s": 5.66,
+    "base_roll_min_max": [
+      -20.862497687874423,
+      -0.04640866520064568
+    ],
+    "platform_roll_min_max": [
+      -3.893094785941946,
+      1.4702251461667477
+    ],
+    "platform_so3_error_rms": 2.8435194670317814,
+    "platform_tilt_error_rms": 2.2888867323788022
+  },
+  "frozen_position_steps": [
+    1208,
+    778,
+    658,
+    800,
+    1232,
+    1344
+  ],
+  "postflight_positions": [
+    1216,
+    774,
+    644,
+    794,
+    1232,
+    1363
+  ]
+}

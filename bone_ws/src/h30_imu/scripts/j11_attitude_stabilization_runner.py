@@ -252,6 +252,10 @@ class J11AttitudeStabilizationRunner(Node if Node is not object else object):
         self.last_cycle_time_ns: Optional[int] = None
         self.telemetry_history: List[J11CycleTelemetry] = []
 
+        # Manual disturbance prompt state
+        self.active_cycle_count = 0
+        self._manual_prompt_emitted = False
+
         # J8 ROS 2 Interfaces (if rclpy is active)
         self.target_pose_pub = None
         self.platform_imu_sub = None
@@ -512,6 +516,7 @@ class J11AttitudeStabilizationRunner(Node if Node is not object else object):
                 self.state = J11State.ACTIVE
 
             elif self.state == J11State.ACTIVE:
+                self.active_cycle_count += 1
                 # 4.2 Platform IMU Freshness & Validity Gate
                 if not plat_rec.is_valid:
                     self._enter_fault("Platform IMU signal invalid or NaN/Inf")
@@ -631,6 +636,27 @@ class J11AttitudeStabilizationRunner(Node if Node is not object else object):
                     # In dry-run: execution sink is completely disconnected.
                     cycle_telem.hardware_write_issued = False
 
+                if self.state == J11State.ACTIVE:
+                    if not self._manual_prompt_emitted and self.active_cycle_count >= 150:
+                        self._manual_prompt_emitted = True
+                        print("\n" + "=" * 60, flush=True)
+                        print("READY FOR MANUAL +ROLL DISTURBANCE", flush=True)
+                        print("=" * 60 + "\n", flush=True)
+                    elif self._manual_prompt_emitted and self.active_cycle_count % 25 == 0:
+                        status_tag = ""
+                        if cycle_telem.base_roll_deg > 5.0:
+                            status_tag = " [EXCEEDS 5° CEILING!]"
+                        elif 2.0 <= cycle_telem.base_roll_deg <= 5.0:
+                            status_tag = " [IN TARGET RANGE 2°~5°]"
+                        print(
+                            f"[ACTIVE t={self.active_cycle_count*0.02:.1f}s] "
+                            f"Base Roll: {cycle_telem.base_roll_deg:+.2f}°{status_tag} | "
+                            f"Plat Roll: {cycle_telem.plat_roll_deg:+.2f}° | "
+                            f"Res Roll: {math.degrees(cycle_telem.res_roll_rad):+.3f}° | "
+                            f"Cmd Steps: {cycle_telem.commanded_steps}",
+                            flush=True,
+                        )
+
         self.telemetry_history.append(cycle_telem)
 
     def _dispatch_hardware_cartesian_target(self, telem: J11CycleTelemetry) -> None:
@@ -665,6 +691,7 @@ class J11AttitudeStabilizationRunner(Node if Node is not object else object):
         self.state = J11State.FAULT
         self.fault_reason = str(reason)
         self.pid.disable()
+        print(f"\n[J11 FAULT] {self.fault_reason}\n", flush=True)
         if hasattr(self, "get_logger"):
             self.get_logger().error(
                 f"J11 Controller FAULT: {self.fault_reason}. Ceasing target publication; J8 will hold last accepted pose."

@@ -1,0 +1,81 @@
+{
+  "stage": "J11_M1_REPRODUCTION",
+  "title": "Sustained Base-IMU Feedforward Attitude Hold",
+  "execute_motion": true,
+  "dry_run": false,
+  "hardware_write_count": 739,
+  "total_cycles": 793,
+  "active_cycles": 738,
+  "duration_s": 300.0,
+  "angular_clamp": "DISABLED (Full SO(3) Inverse Rotation)",
+  "feedforward_law": "R_BP_cmd = Delta_R_B^T @ R_BP0",
+  "platform_feedback_in_control": false,
+  "initial_operating_home_verified": true,
+  "base_attitude_excursions": {
+    "so3_max_deg": 0.0291418964902804,
+    "roll_min_max_deg": [
+      -0.0021814120633667253,
+      0.02479158659183976
+    ],
+    "pitch_min_max_deg": [
+      -0.014616304675951375,
+      0.01037122954741107
+    ],
+    "yaw_min_max_deg": [
+      -0.024143876733649677,
+      0.0029829352291245556
+    ]
+  },
+  "command_attitude_excursions": {
+    "roll_min_max_deg": [
+      -0.024791269910873076,
+      0.0021814187656179333
+    ],
+    "pitch_min_max_deg": [
+      -0.010366520435536387,
+      0.014619760840109613
+    ],
+    "yaw_min_max_deg": [
+      -0.0029835411583247393,
+      0.024143400215112285
+    ]
+  },
+  "platform_world_attitude_errors": {
+    "so3_error_max_deg": 0.03145272372035896,
+    "so3_error_rms_deg": 0.015211870744638777,
+    "tilt_error_max_deg": 0.014916048512474715,
+    "tilt_error_rms_deg": 0.007702708670769912,
+    "roll_error_min_max_deg": [
+      -0.0073156755948791214,
+      0.009564154493617907
+    ],
+    "pitch_error_min_max_deg": [
+      -0.0009771729624441542,
+      0.014808993941825336
+    ],
+    "yaw_error_min_max_deg": [
+      -0.030702180248857614,
+      0.00017129279821941204
+    ]
+  },
+  "motor_feedback_ranges": {
+    "min_steps_axis_1_to_6": [
+      998,
+      1000,
+      1000,
+      1000,
+      998,
+      998
+    ],
+    "max_steps_axis_1_to_6": [
+      999,
+      1001,
+      1000,
+      1001,
+      999,
+      999
+    ]
+  },
+  "final_fault_reason": "Driver fatal latch detected via /rosout: J7 driver STOP latched: scheduler_deadline_exceeded",
+  "verdict": "FAIL"
+}

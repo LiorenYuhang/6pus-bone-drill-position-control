@@ -1,0 +1,91 @@
+{
+  "stage": "J11-3A1",
+  "title": "Base IMU Mechanical-Axis Qualification",
+  "verdict": "PASS",
+  "hardware_write_count": 0,
+  "confirmed_R_B_IB": "Rz(+90 deg)",
+  "winning_candidate": "cand2",
+  "winning_description": "Rz(+90 deg) (R_B_IB = Rz(+90 deg))",
+  "roll_sign_convention": "Right-handed (+Roll tilt produces +measured Roll)",
+  "pitch_sign_convention": "Right-handed (+Pitch tilt produces +measured Pitch)",
+  "chip_alignment_with_platform": "ALIGNED (r_sb_sp \u2248 [0, 0, 0, 1], R_P_IP = Rz(+90 deg), R_B_IB = Rz(+90 deg))",
+  "runs_evaluated": {
+    "j11_2c1_roll_test": {
+      "cand1": {
+        "roll_deg": -0.814,
+        "pitch_deg": -3.812,
+        "isolation_ratio": 0.21
+      },
+      "cand2": {
+        "roll_deg": 3.812,
+        "pitch_deg": -0.813,
+        "isolation_ratio": 4.69
+      },
+      "cand3": {
+        "roll_deg": -3.812,
+        "pitch_deg": 0.813,
+        "isolation_ratio": 4.69
+      },
+      "cand4": {
+        "roll_deg": 0.814,
+        "pitch_deg": 3.812,
+        "isolation_ratio": 0.21
+      }
+    },
+    "j11_3a_roll_test": {
+      "cand1": {
+        "roll_deg": -1.887,
+        "pitch_deg": -7.707,
+        "isolation_ratio": 0.24
+      },
+      "cand2": {
+        "roll_deg": 7.711,
+        "pitch_deg": -1.87,
+        "isolation_ratio": 4.12
+      },
+      "cand3": {
+        "roll_deg": -7.711,
+        "pitch_deg": 1.87,
+        "isolation_ratio": 4.12
+      },
+      "cand4": {
+        "roll_deg": 1.887,
+        "pitch_deg": 7.707,
+        "isolation_ratio": 0.24
+      }
+    },
+    "j11_3a1_manual_test": {
+      "cand1": {
+        "roll_deg": 1.926,
+        "pitch_deg": 10.296,
+        "isolation_ratio": 0.19
+      },
+      "cand2": {
+        "roll_deg": -10.301,
+        "pitch_deg": 1.895,
+        "isolation_ratio": 5.44
+      },
+      "cand3": {
+        "roll_deg": 10.301,
+        "pitch_deg": -1.895,
+        "isolation_ratio": 5.44
+      },
+      "cand4": {
+        "roll_deg": -1.926,
+        "pitch_deg": -10.296,
+        "isolation_ratio": 0.19
+      }
+    }
+  },
+  "j11_3a_reassessment": {
+    "candidate_used_in_runner_logging": "cand1 (No transform, unrotated)",
+    "consequence": "Base Roll disturbance was mapped into the base_pitch_deg column of raw telemetry",
+    "corrected_base_roll_hold1_mean_deg": 1.928,
+    "corrected_base_roll_peak_deg": 7.711,
+    "platform_hold1_mean_roll_deg": 1.092,
+    "platform_peak_roll_deg": 6.739,
+    "hold1_attenuation_ratio": 0.566,
+    "peak_attenuation_ratio": 0.874,
+    "physical_validity": "VALIDATED. The reported 1.919\u00b0 hold and 7.711\u00b0 peak were physically true Base Roll; the attenuation conclusion holds."
+  }
+}

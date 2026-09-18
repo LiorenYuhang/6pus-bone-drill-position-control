@@ -1,0 +1,2 @@
+timestamp_ns,level,node,msg
+1205404310619,50,pus6_motor_driver_node,J7 driver STOP latched: scheduler_deadline_exceeded

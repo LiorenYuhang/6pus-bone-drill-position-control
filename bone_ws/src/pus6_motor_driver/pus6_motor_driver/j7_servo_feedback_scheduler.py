@@ -134,8 +134,12 @@ MEASURED_MAX_AXIS_INTERVAL_S = 0.121662
 FEEDBACK_AGE_MARGIN_CYCLES = 1.0
 
 
+DEFAULT_WARNING_FEEDBACK_AGE_S: float = 0.2833
+DEFAULT_HARD_STOP_FEEDBACK_AGE_S: float = 1.0
+
+
 class J7ServoFeedbackScheduler:
-    """Round-robin feedback with an explicit low-frequency full scan."""
+    """Schedules non-blocking feedback scans over an existing Servo transport."""
 
     def __init__(
         self,
@@ -147,7 +151,11 @@ class J7ServoFeedbackScheduler:
         servo_cycle_period_s: float = 0.020,
         timeout_escalation_misses: int = 2,
         max_feedback_age_s: float | None = None,
+        warning_feedback_age_s: float = DEFAULT_WARNING_FEEDBACK_AGE_S,
+        hard_stop_feedback_age_s: float = DEFAULT_HARD_STOP_FEEDBACK_AGE_S,
         clock_ns: Callable[[], int] | None = None,
+        feedback_loss_policy: str = "default",
+        warn_callback: Callable[[str], None] | None = None,
     ) -> None:
         if full_scan_period_s <= 0.0:
             raise ValueError("full_scan_period_s must be positive")
@@ -157,6 +165,12 @@ class J7ServoFeedbackScheduler:
             raise ValueError("servo_cycle_period_s must be positive")
         if timeout_escalation_misses < 2:
             raise ValueError("timeout_escalation_misses must be at least 2")
+        if feedback_loss_policy not in ("default", "consecutive_misses", "age_based"):
+            raise ValueError(
+                f"feedback_loss_policy must be 'default', 'consecutive_misses', or 'age_based', got {feedback_loss_policy!r}"
+            )
+        self.feedback_loss_policy = feedback_loss_policy
+        self._warn_callback = warn_callback
         nominal_axis_interval_s = len(MOTOR_IDS) * servo_cycle_period_s
         if max_feedback_age_s is None:
             measured_or_nominal_max_s = max(
@@ -177,7 +191,14 @@ class J7ServoFeedbackScheduler:
         self.servo_cycle_period_ns = int(servo_cycle_period_s * 1e9)
         self.nominal_axis_interval_ns = len(MOTOR_IDS) * self.servo_cycle_period_ns
         self.timeout_escalation_misses = timeout_escalation_misses
-        self.max_feedback_age_ns = int(max_feedback_age_s * 1e9)
+        if self.feedback_loss_policy == "age_based":
+            self.warning_feedback_age_ns = int(warning_feedback_age_s * 1e9)
+            self.hard_stop_feedback_age_ns = int(hard_stop_feedback_age_s * 1e9)
+            self.max_feedback_age_ns = self.hard_stop_feedback_age_ns
+        else:
+            self.warning_feedback_age_ns = int(max_feedback_age_s * 1e9)
+            self.hard_stop_feedback_age_ns = int(max_feedback_age_s * 1e9)
+            self.max_feedback_age_ns = int(max_feedback_age_s * 1e9)
         self._clock_ns = clock_ns or time.monotonic_ns
         self._uart_lock = writer.uart_lock
 
@@ -350,27 +371,57 @@ class J7ServoFeedbackScheduler:
         # Tier 2: Servo scheduler / deadline watchdog
         if self._feedback_age_watchdog_armed and self._last_poll_completion_ns > 0:
             scheduler_gap_ns = now_ns - self._last_poll_completion_ns
-            if scheduler_gap_ns > self.max_feedback_age_ns:
-                reason = "scheduler_deadline_exceeded"
-                err_msg = f"Servo scheduler deadline exceeded: gap {scheduler_gap_ns / 1e6:.1f}ms > {self.max_feedback_age_ns / 1e6:.1f}ms"
-                self._watchdog_stop_snapshot = FeedbackAgeWatchdogStopSnapshot(
-                    axis_id=0,
-                    check_timestamp_ns=now_ns,
-                    last_valid_timestamp_ns=self._last_poll_completion_ns,
-                    age_ns=scheduler_gap_ns,
-                    threshold_ns=self.max_feedback_age_ns,
-                    armed=self._feedback_age_watchdog_armed,
-                    servo_cycle_id=self._last_servo_cycle_id,
-                    feedback_cycle_id=self._last_feedback_cycle_id,
-                    last_poll_completion_ns=self._last_poll_completion_ns,
-                    rx_residual_count=self._rx_residual_count,
-                    stale_response_count=self._stale_response_count,
-                    motion_write_response_count=self._motion_write_response_count,
-                    transport_stopped=self.writer.stopped,
-                    stop_reason=reason,
-                )
-                self._stop(reason)
-                raise FeedbackSchedulerError(err_msg)
+            if self.feedback_loss_policy == "age_based":
+                if scheduler_gap_ns > self.hard_stop_feedback_age_ns:
+                    reason = "scheduler_deadline_exceeded"
+                    err_msg = f"Servo scheduler deadline exceeded: gap {scheduler_gap_ns / 1e6:.1f}ms > {self.hard_stop_feedback_age_ns / 1e6:.1f}ms"
+                    self._watchdog_stop_snapshot = FeedbackAgeWatchdogStopSnapshot(
+                        axis_id=0,
+                        check_timestamp_ns=now_ns,
+                        last_valid_timestamp_ns=self._last_poll_completion_ns,
+                        age_ns=scheduler_gap_ns,
+                        threshold_ns=self.hard_stop_feedback_age_ns,
+                        armed=self._feedback_age_watchdog_armed,
+                        servo_cycle_id=self._last_servo_cycle_id,
+                        feedback_cycle_id=self._last_feedback_cycle_id,
+                        last_poll_completion_ns=self._last_poll_completion_ns,
+                        rx_residual_count=self._rx_residual_count,
+                        stale_response_count=self._stale_response_count,
+                        motion_write_response_count=self._motion_write_response_count,
+                        transport_stopped=self.writer.stopped,
+                        stop_reason=reason,
+                    )
+                    self._stop(reason)
+                    raise FeedbackSchedulerError(err_msg)
+                elif scheduler_gap_ns > self.warning_feedback_age_ns:
+                    if self._warn_callback is not None:
+                        self._warn_callback(
+                            f"Servo scheduler gap {scheduler_gap_ns / 1e6:.1f}ms > {self.warning_feedback_age_ns / 1e6:.1f}ms "
+                            f"(threshold <= {self.hard_stop_feedback_age_ns / 1e6:.1f}ms): "
+                            f"transient scheduling stall warning, continuing in research mode."
+                        )
+            else:
+                if scheduler_gap_ns > self.max_feedback_age_ns:
+                    reason = "scheduler_deadline_exceeded"
+                    err_msg = f"Servo scheduler deadline exceeded: gap {scheduler_gap_ns / 1e6:.1f}ms > {self.max_feedback_age_ns / 1e6:.1f}ms"
+                    self._watchdog_stop_snapshot = FeedbackAgeWatchdogStopSnapshot(
+                        axis_id=0,
+                        check_timestamp_ns=now_ns,
+                        last_valid_timestamp_ns=self._last_poll_completion_ns,
+                        age_ns=scheduler_gap_ns,
+                        threshold_ns=self.max_feedback_age_ns,
+                        armed=self._feedback_age_watchdog_armed,
+                        servo_cycle_id=self._last_servo_cycle_id,
+                        feedback_cycle_id=self._last_feedback_cycle_id,
+                        last_poll_completion_ns=self._last_poll_completion_ns,
+                        rx_residual_count=self._rx_residual_count,
+                        stale_response_count=self._stale_response_count,
+                        motion_write_response_count=self._motion_write_response_count,
+                        transport_stopped=self.writer.stopped,
+                        stop_reason=reason,
+                    )
+                    self._stop(reason)
+                    raise FeedbackSchedulerError(err_msg)
 
         samples: list[FeedbackSample] = []
         timeout_count = 0
@@ -416,10 +467,15 @@ class J7ServoFeedbackScheduler:
                 self._feedback_age_watchdog_armed
                 and self._consecutive_incomplete_cycles >= self.timeout_escalation_misses
             ):
-                self._stop("persistent_incomplete_cycle_feedback_loss")
-                raise FeedbackSchedulerError("persistent incomplete cycle feedback loss")
+                if self.feedback_loss_policy != "age_based":
+                    self._stop("persistent_incomplete_cycle_feedback_loss")
+                    raise FeedbackSchedulerError("persistent incomplete cycle feedback loss")
         else:
             self._consecutive_incomplete_cycles = 0
+
+        # In age-based policy, enforce per-axis feedback age watchdog across all initialized axes
+        if self.feedback_loss_policy == "age_based":
+            self._enforce_feedback_age(now_ns)
 
         if len(self._initialized_axes) == len(MOTOR_IDS):
             self._feedback_age_watchdog_armed = True
@@ -601,46 +657,159 @@ class J7ServoFeedbackScheduler:
             return 0
         return max(0, now_ns - self._last_feedback_ns[motor_id])
 
+    def consecutive_timeouts(self, motor_id: int) -> int:
+        return self._consecutive_timeouts.get(motor_id, 0)
+
+    def feedback_age_ms(self, motor_id: int, now_ns: int | None = None) -> float:
+        current_ns = self._clock_ns() if now_ns is None else now_ns
+        return self._feedback_age_ns(motor_id, current_ns) / 1e6
+
     def _record_timeout(self, motor_id: int, now_ns: int) -> None:
         if not self._feedback_age_watchdog_armed:
             return
         self._consecutive_timeouts[motor_id] += 1
-        if self._consecutive_timeouts[motor_id] >= self.timeout_escalation_misses:
-            self._stop(f"persistent_feedback_loss_ID{motor_id}")
+        if self.feedback_loss_policy == "age_based":
+            age_ns = self._feedback_age_ns(motor_id, now_ns)
+            if age_ns > self.hard_stop_feedback_age_ns:
+                reason = f"feedback_age_exceeded_ID{motor_id}"
+                err_msg = f"ID{motor_id} feedback age exceeded {self.hard_stop_feedback_age_ns / 1e6:.1f}ms"
+                last_ns = self._last_feedback_ns[motor_id]
+                self._watchdog_stop_snapshot = FeedbackAgeWatchdogStopSnapshot(
+                    axis_id=motor_id,
+                    check_timestamp_ns=now_ns,
+                    last_valid_timestamp_ns=last_ns,
+                    age_ns=age_ns,
+                    threshold_ns=self.hard_stop_feedback_age_ns,
+                    armed=self._feedback_age_watchdog_armed,
+                    servo_cycle_id=self._last_servo_cycle_id,
+                    feedback_cycle_id=self._last_feedback_cycle_id,
+                    last_poll_completion_ns=self._last_poll_completion_ns,
+                    rx_residual_count=self._rx_residual_count,
+                    stale_response_count=self._stale_response_count,
+                    motion_write_response_count=self._motion_write_response_count,
+                    transport_stopped=self.writer.stopped,
+                    stop_reason=reason,
+                )
+                self._stop(reason)
+                raise FeedbackSchedulerError(err_msg)
+            elif age_ns > self.warning_feedback_age_ns or self._consecutive_timeouts[motor_id] >= self.timeout_escalation_misses:
+                age_ms = age_ns / 1e6
+                if self._warn_callback is not None:
+                    self._warn_callback(
+                        f"ID{motor_id} transient feedback miss count={self._consecutive_timeouts[motor_id]} "
+                        f"(feedback_age={age_ms:.1f}ms <= {self.hard_stop_feedback_age_ns / 1e6:.1f}ms): "
+                        f"transient jitter warning, continuing in research mode."
+                    )
+        else:
+            if self._consecutive_timeouts[motor_id] >= self.timeout_escalation_misses:
+                self._stop(f"persistent_feedback_loss_ID{motor_id}")
 
     def _enforce_feedback_age(self, now_ns: int) -> None:
         if not self._feedback_age_watchdog_armed:
             return
-        stale_axes = [
-            mid
-            for mid in MOTOR_IDS
-            if mid in self._initialized_axes
-            and now_ns - self._last_feedback_ns[mid] > self.max_feedback_age_ns
-        ]
-        if not stale_axes:
-            return
-        trigger_mid = stale_axes[0]
-        reason = f"feedback_age_exceeded_ID{trigger_mid}"
-        err_msg = f"ID{trigger_mid} feedback age exceeded {self.max_feedback_age_ns / 1e6:.1f}ms"
-        last_ns = self._last_feedback_ns[trigger_mid]
-        self._watchdog_stop_snapshot = FeedbackAgeWatchdogStopSnapshot(
-            axis_id=trigger_mid,
-            check_timestamp_ns=now_ns,
-            last_valid_timestamp_ns=last_ns,
-            age_ns=now_ns - last_ns,
-            threshold_ns=self.max_feedback_age_ns,
-            armed=self._feedback_age_watchdog_armed,
-            servo_cycle_id=self._last_servo_cycle_id,
-            feedback_cycle_id=self._last_feedback_cycle_id,
-            last_poll_completion_ns=self._last_poll_completion_ns,
-            rx_residual_count=self._rx_residual_count,
-            stale_response_count=self._stale_response_count,
-            motion_write_response_count=self._motion_write_response_count,
-            transport_stopped=self.writer.stopped,
-            stop_reason=reason,
-        )
-        self._stop(reason)
-        raise FeedbackSchedulerError(err_msg)
+        if self.feedback_loss_policy == "age_based":
+            stale_axes = [
+                mid
+                for mid in MOTOR_IDS
+                if mid in self._initialized_axes
+                and now_ns - self._last_feedback_ns[mid] > self.hard_stop_feedback_age_ns
+            ]
+            if stale_axes:
+                trigger_mid = stale_axes[0]
+                reason = f"feedback_age_exceeded_ID{trigger_mid}"
+                err_msg = f"ID{trigger_mid} feedback age exceeded {self.hard_stop_feedback_age_ns / 1e6:.1f}ms"
+                last_ns = self._last_feedback_ns[trigger_mid]
+                self._watchdog_stop_snapshot = FeedbackAgeWatchdogStopSnapshot(
+                    axis_id=trigger_mid,
+                    check_timestamp_ns=now_ns,
+                    last_valid_timestamp_ns=last_ns,
+                    age_ns=now_ns - last_ns,
+                    threshold_ns=self.hard_stop_feedback_age_ns,
+                    armed=self._feedback_age_watchdog_armed,
+                    servo_cycle_id=self._last_servo_cycle_id,
+                    feedback_cycle_id=self._last_feedback_cycle_id,
+                    last_poll_completion_ns=self._last_poll_completion_ns,
+                    rx_residual_count=self._rx_residual_count,
+                    stale_response_count=self._stale_response_count,
+                    motion_write_response_count=self._motion_write_response_count,
+                    transport_stopped=self.writer.stopped,
+                    stop_reason=reason,
+                )
+                self._stop(reason)
+                raise FeedbackSchedulerError(err_msg)
+
+            warning_axes = [
+                mid
+                for mid in MOTOR_IDS
+                if mid in self._initialized_axes
+                and self.warning_feedback_age_ns < (now_ns - self._last_feedback_ns[mid]) <= self.hard_stop_feedback_age_ns
+            ]
+            if warning_axes and self._warn_callback is not None:
+                trigger_mid = warning_axes[0]
+                age_ms = (now_ns - self._last_feedback_ns[trigger_mid]) / 1e6
+                self._warn_callback(
+                    f"ID{trigger_mid} feedback age warning: age={age_ms:.1f}ms > {self.warning_feedback_age_ns / 1e6:.1f}ms "
+                    f"(threshold <= {self.hard_stop_feedback_age_ns / 1e6:.1f}ms), continuing in research mode."
+                )
+        else:
+            stale_axes = [
+                mid
+                for mid in MOTOR_IDS
+                if mid in self._initialized_axes
+                and now_ns - self._last_feedback_ns[mid] > self.max_feedback_age_ns
+            ]
+            if not stale_axes:
+                return
+            trigger_mid = stale_axes[0]
+            reason = f"feedback_age_exceeded_ID{trigger_mid}"
+            err_msg = f"ID{trigger_mid} feedback age exceeded {self.max_feedback_age_ns / 1e6:.1f}ms"
+            last_ns = self._last_feedback_ns[trigger_mid]
+            self._watchdog_stop_snapshot = FeedbackAgeWatchdogStopSnapshot(
+                axis_id=trigger_mid,
+                check_timestamp_ns=now_ns,
+                last_valid_timestamp_ns=last_ns,
+                age_ns=now_ns - last_ns,
+                threshold_ns=self.max_feedback_age_ns,
+                armed=self._feedback_age_watchdog_armed,
+                servo_cycle_id=self._last_servo_cycle_id,
+                feedback_cycle_id=self._last_feedback_cycle_id,
+                last_poll_completion_ns=self._last_poll_completion_ns,
+                rx_residual_count=self._rx_residual_count,
+                stale_response_count=self._stale_response_count,
+                motion_write_response_count=self._motion_write_response_count,
+                transport_stopped=self.writer.stopped,
+                stop_reason=reason,
+            )
+            self._stop(reason)
+            raise FeedbackSchedulerError(err_msg)
+
+    def is_feedback_stale_warning(self, now_ns: int | None = None) -> bool:
+        """Returns True if feedback age or scheduler gap is in warning range (283.3ms < age <= 1.0s)."""
+        if not self._feedback_age_watchdog_armed:
+            return False
+        current_ns = self._clock_ns() if now_ns is None else now_ns
+        if self._last_poll_completion_ns > 0:
+            sched_gap = current_ns - self._last_poll_completion_ns
+            if self.warning_feedback_age_ns < sched_gap <= self.hard_stop_feedback_age_ns:
+                return True
+        for mid in self._initialized_axes:
+            age_ns = self._feedback_age_ns(mid, current_ns)
+            if self.warning_feedback_age_ns < age_ns <= self.hard_stop_feedback_age_ns:
+                return True
+        return False
+
+    def is_feedback_normal(self, now_ns: int | None = None) -> bool:
+        """Returns True if all initialized axes and scheduler gap are <= warning_feedback_age_ns."""
+        if not self._feedback_age_watchdog_armed:
+            return True
+        current_ns = self._clock_ns() if now_ns is None else now_ns
+        if self._last_poll_completion_ns > 0:
+            if (current_ns - self._last_poll_completion_ns) > self.warning_feedback_age_ns:
+                return False
+        for mid in self._initialized_axes:
+            if self._feedback_age_ns(mid, current_ns) > self.warning_feedback_age_ns:
+                return False
+        return True
 
     def _stop(self, reason: str) -> None:
         if self._stopped:

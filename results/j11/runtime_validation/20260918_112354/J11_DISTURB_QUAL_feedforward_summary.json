@@ -1,0 +1,401 @@
+{
+  "stage": "J11_DISTURB_QUAL",
+  "title": "Sustained Base-IMU Feedforward Attitude Hold",
+  "execute_motion": true,
+  "dry_run": false,
+  "hardware_write_count": 5929,
+  "total_cycles": 5999,
+  "active_cycles": 5928,
+  "duration_s": 120.0,
+  "angular_clamp": "DISABLED (Full SO(3) Inverse Rotation)",
+  "feedforward_law": "R_BP_cmd = Delta_R_B^T @ R_BP0",
+  "platform_feedback_in_control": false,
+  "initial_operating_home_verified": true,
+  "base_attitude_excursions": {
+    "so3_max_deg": 13.537012508602457,
+    "roll_min_max_deg": [
+      -11.182479952923044,
+      8.177945146508508
+    ],
+    "pitch_min_max_deg": [
+      -10.862161992343069,
+      8.586056392292418
+    ],
+    "yaw_min_max_deg": [
+      -10.937322732168582,
+      0.49058972669492634
+    ]
+  },
+  "command_attitude_excursions": {
+    "roll_min_max_deg": [
+      -8.11603718733222,
+      11.231130380391965
+    ],
+    "pitch_min_max_deg": [
+      -8.920294720116754,
+      10.863129335708138
+    ],
+    "yaw_min_max_deg": [
+      -0.6684244668948803,
+      10.679157983200827
+    ]
+  },
+  "platform_world_attitude_errors": {
+    "so3_error_max_deg": 9.953334603220515,
+    "so3_error_rms_deg": 1.7626084391108598,
+    "tilt_error_max_deg": 6.885129377115409,
+    "tilt_error_rms_deg": 1.548838452029325,
+    "roll_error_min_max_deg": [
+      -5.342482785029663,
+      3.978546362928157
+    ],
+    "pitch_error_min_max_deg": [
+      -6.05221255280951,
+      6.458522853312505
+    ],
+    "yaw_error_min_max_deg": [
+      -3.9417885239312827,
+      8.731181637450856
+    ]
+  },
+  "motor_feedback_ranges": {
+    "min_steps_axis_1_to_6": [
+      865,
+      825,
+      829,
+      808,
+      799,
+      828
+    ],
+    "max_steps_axis_1_to_6": [
+      1203,
+      1203,
+      1174,
+      1140,
+      1181,
+      1180
+    ]
+  },
+  "joint_currents_metrics_mA": {
+    "min_current_per_axis_mA": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "max_current_per_axis_mA": [
+      131,
+      151,
+      140,
+      109,
+      156,
+      153
+    ],
+    "mean_current_per_axis_mA": [
+      15.9,
+      16.8,
+      14.9,
+      12.2,
+      17.2,
+      18.9
+    ],
+    "rms_current_per_axis_mA": [
+      32.7,
+      35.0,
+      30.4,
+      25.6,
+      35.3,
+      38.2
+    ],
+    "overall_max_current_mA": 156
+  },
+  "slew_recovery_summary": {
+    "total_slew_events": 31,
+    "events": [
+      {
+        "timestamp_ns": 2601664480806,
+        "original_gap": 9,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.556,
+        "sent_gap": 5,
+        "remaining_gap": 4
+      },
+      {
+        "timestamp_ns": 2604569704099,
+        "original_gap": 8,
+        "allowance": 5,
+        "dt_ms": 29.1,
+        "alpha": 0.625,
+        "sent_gap": 5,
+        "remaining_gap": 3
+      },
+      {
+        "timestamp_ns": 2609082410132,
+        "original_gap": 8,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.625,
+        "sent_gap": 5,
+        "remaining_gap": 3
+      },
+      {
+        "timestamp_ns": 2610527594899,
+        "original_gap": 6,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.833,
+        "sent_gap": 5,
+        "remaining_gap": 1
+      },
+      {
+        "timestamp_ns": 2629491023051,
+        "original_gap": 7,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.714,
+        "sent_gap": 5,
+        "remaining_gap": 2
+      },
+      {
+        "timestamp_ns": 2630690528110,
+        "original_gap": 6,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.833,
+        "sent_gap": 5,
+        "remaining_gap": 1
+      },
+      {
+        "timestamp_ns": 2632101138511,
+        "original_gap": 13,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.385,
+        "sent_gap": 5,
+        "remaining_gap": 8
+      },
+      {
+        "timestamp_ns": 2633264361020,
+        "original_gap": 10,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.5,
+        "sent_gap": 5,
+        "remaining_gap": 5
+      },
+      {
+        "timestamp_ns": 2634410926891,
+        "original_gap": 8,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.625,
+        "sent_gap": 5,
+        "remaining_gap": 3
+      },
+      {
+        "timestamp_ns": 2636294605408,
+        "original_gap": 8,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.625,
+        "sent_gap": 5,
+        "remaining_gap": 3
+      },
+      {
+        "timestamp_ns": 2637305105360,
+        "original_gap": 9,
+        "allowance": 5,
+        "dt_ms": 13.5,
+        "alpha": 0.556,
+        "sent_gap": 5,
+        "remaining_gap": 4
+      },
+      {
+        "timestamp_ns": 2638496256179,
+        "original_gap": 7,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.714,
+        "sent_gap": 5,
+        "remaining_gap": 2
+      },
+      {
+        "timestamp_ns": 2664087437358,
+        "original_gap": 12,
+        "allowance": 10,
+        "dt_ms": 50.4,
+        "alpha": 0.833,
+        "sent_gap": 10,
+        "remaining_gap": 2
+      },
+      {
+        "timestamp_ns": 2665247810799,
+        "original_gap": 6,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.833,
+        "sent_gap": 5,
+        "remaining_gap": 1
+      },
+      {
+        "timestamp_ns": 2666373171333,
+        "original_gap": 8,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.625,
+        "sent_gap": 5,
+        "remaining_gap": 3
+      },
+      {
+        "timestamp_ns": 2667650921931,
+        "original_gap": 6,
+        "allowance": 5,
+        "dt_ms": 11.0,
+        "alpha": 0.833,
+        "sent_gap": 5,
+        "remaining_gap": 1
+      },
+      {
+        "timestamp_ns": 2668952313482,
+        "original_gap": 7,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.714,
+        "sent_gap": 5,
+        "remaining_gap": 2
+      },
+      {
+        "timestamp_ns": 2670171728192,
+        "original_gap": 10,
+        "allowance": 7,
+        "dt_ms": 37.0,
+        "alpha": 0.7,
+        "sent_gap": 7,
+        "remaining_gap": 3
+      },
+      {
+        "timestamp_ns": 2671366855254,
+        "original_gap": 12,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.417,
+        "sent_gap": 5,
+        "remaining_gap": 7
+      },
+      {
+        "timestamp_ns": 2689028609169,
+        "original_gap": 8,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.625,
+        "sent_gap": 5,
+        "remaining_gap": 3
+      },
+      {
+        "timestamp_ns": 2690381535768,
+        "original_gap": 9,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.556,
+        "sent_gap": 5,
+        "remaining_gap": 4
+      },
+      {
+        "timestamp_ns": 2691392110886,
+        "original_gap": 30,
+        "allowance": 5,
+        "dt_ms": 13.2,
+        "alpha": 0.167,
+        "sent_gap": 5,
+        "remaining_gap": 25
+      },
+      {
+        "timestamp_ns": 2692491817269,
+        "original_gap": 6,
+        "allowance": 5,
+        "dt_ms": 10.4,
+        "alpha": 0.833,
+        "sent_gap": 5,
+        "remaining_gap": 1
+      },
+      {
+        "timestamp_ns": 2693495422118,
+        "original_gap": 33,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.152,
+        "sent_gap": 5,
+        "remaining_gap": 28
+      },
+      {
+        "timestamp_ns": 2694610138611,
+        "original_gap": 8,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.625,
+        "sent_gap": 5,
+        "remaining_gap": 3
+      },
+      {
+        "timestamp_ns": 2695749684693,
+        "original_gap": 8,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.625,
+        "sent_gap": 5,
+        "remaining_gap": 3
+      },
+      {
+        "timestamp_ns": 2697831146674,
+        "original_gap": 6,
+        "allowance": 5,
+        "dt_ms": 12.3,
+        "alpha": 0.833,
+        "sent_gap": 5,
+        "remaining_gap": 1
+      },
+      {
+        "timestamp_ns": 2698972089292,
+        "original_gap": 8,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.625,
+        "sent_gap": 5,
+        "remaining_gap": 3
+      },
+      {
+        "timestamp_ns": 2699985840666,
+        "original_gap": 13,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.385,
+        "sent_gap": 5,
+        "remaining_gap": 8
+      },
+      {
+        "timestamp_ns": 2700993432990,
+        "original_gap": 17,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.294,
+        "sent_gap": 5,
+        "remaining_gap": 12
+      },
+      {
+        "timestamp_ns": 2702692575834,
+        "original_gap": 7,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.714,
+        "sent_gap": 5,
+        "remaining_gap": 2
+      }
+    ]
+  },
+  "fault_window_audit_last_2s": null,
+  "final_fault_reason": "",
+  "verdict": "PASS"
+}

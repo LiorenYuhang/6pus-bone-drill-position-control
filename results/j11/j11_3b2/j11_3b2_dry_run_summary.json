@@ -1,0 +1,80 @@
+{
+  "stage": "J11-3B2",
+  "title": "Base-IMU Full SO(3) Feedforward World-Attitude Hold",
+  "execute_motion": false,
+  "dry_run": true,
+  "hardware_write_count": 0,
+  "total_cycles": 150,
+  "active_cycles": 0,
+  "duration_s": 3.0,
+  "angular_clamp": "DISABLED (Full SO(3) Inverse Rotation)",
+  "feedforward_law": "R_BP_cmd = Delta_R_B^T @ R_BP0",
+  "platform_feedback_in_control": false,
+  "base_attitude_excursions": {
+    "so3_max_deg": 0.0,
+    "roll_min_max_deg": [
+      0.0,
+      0.0
+    ],
+    "pitch_min_max_deg": [
+      0.0,
+      0.0
+    ],
+    "yaw_min_max_deg": [
+      0.0,
+      0.0
+    ]
+  },
+  "command_attitude_excursions": {
+    "roll_min_max_deg": [
+      0.0,
+      0.0
+    ],
+    "pitch_min_max_deg": [
+      0.0,
+      0.0
+    ],
+    "yaw_min_max_deg": [
+      0.0,
+      0.0
+    ]
+  },
+  "platform_world_attitude_errors": {
+    "so3_error_max_deg": 0.0,
+    "so3_error_rms_deg": 0.0,
+    "tilt_error_max_deg": 0.0,
+    "tilt_error_rms_deg": 0.0,
+    "roll_error_min_max_deg": [
+      0.0,
+      0.0
+    ],
+    "pitch_error_min_max_deg": [
+      0.0,
+      0.0
+    ],
+    "yaw_error_min_max_deg": [
+      0.0,
+      0.0
+    ]
+  },
+  "motor_feedback_ranges": {
+    "min_steps_axis_1_to_6": [
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000
+    ],
+    "max_steps_axis_1_to_6": [
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000
+    ]
+  },
+  "final_fault_reason": "",
+  "verdict": "PASS"
+}

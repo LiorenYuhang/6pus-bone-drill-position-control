@@ -1,0 +1,41 @@
+{
+  "output_dir": "/home/lyapunov/bone_drill/bone_ws/results/j11/runtime_validation/20260918_111527",
+  "total_current_samples": 14282,
+  "total_step_samples": 14282,
+  "total_slew_events": 0,
+  "total_current_spikes_ge_400mA": 0,
+  "max_current_per_axis_mA": [
+    0,
+    0,
+    0,
+    10,
+    0,
+    0
+  ],
+  "min_current_per_axis_mA": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "driver_stop_latched": false,
+  "driver_stop_reason": "",
+  "last_step_feedback": [
+    999,
+    1000,
+    999,
+    998,
+    999,
+    1000
+  ],
+  "last_fault_codes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ]
+}

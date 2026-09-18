@@ -361,7 +361,7 @@ class J7SixAxisServoTransport:
                     feedbacks.update(new_fbs)
                     if len(feedbacks) >= len(MOTOR_IDS) or self._clock_ns() >= deadline_ns:
                         break
-                    time.sleep(0)
+                    pass
 
             batch_complete_ns = self._clock_ns()
             cycle_end_ns = batch_complete_ns
@@ -394,7 +394,7 @@ class J7SixAxisServoTransport:
             if remaining_ns < 1_500_000 and self._clock_ns is time.monotonic_ns:
                 target_ns = self._clock_ns() + remaining_ns
                 while self._clock_ns() < target_ns:
-                    time.sleep(0)
+                    pass
             else:
                 self._sleep_fn(remaining_ns / 1e9)
 
