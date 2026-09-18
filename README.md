@@ -66,6 +66,31 @@ The development of the 6PUS robotic platform is organized into two distinct over
 
 *(Note: These ranges represent independent single-axis explorations centered at `OPERATING_HOME = [1000]*6` steps. Full details are documented in [`agent_docs/stages/J10/J10_FINAL_SUMMARY.md`](./agent_docs/stages/J10/J10_FINAL_SUMMARY.md)).*
 
+### J11 Attitude Stabilization — Hardware Results (M1 vs. M2-1)
+
+Stage J11-M2 introduces the **Task-Space $SO(3)$ Attitude PID control architecture**. The initial real-hardware validation stage, **J11-M2-1 Roll P-only Feedback**, has been verified on the physical parallel robot under dynamic base disturbance.
+
+> [!NOTE]
+> **Active Control Structure in J11-M2-1**:
+> - **Structure**: $\mathbf{\text{3DOF Base-IMU } SO(3) \text{ Feedforward}} + \mathbf{\text{1DOF Platform-IMU Roll P Feedback}}$
+> - **Roll Axis**: Feedforward + P Feedback ($K_{p\_roll} = 0.05, K_i = 0, K_d = 0, \text{max residual} = 0.5^\circ$)
+> - **Pitch Axis**: Feedforward Only ($K_p = 0$)
+> - **Yaw Axis**: Feedforward Only ($K_p = 0$)
+> - **Status**: Roll P-only hardware feedback verified. Pitch / Yaw / 3DOF feedback pending (Roadmap: M2-2 Pitch P, M2-3 Yaw P, M2-4 3DOF P, M2-5 PD, M2-6 I).
+> - *Pitch/Yaw stabilization observed during M2-1 derives from frozen M1 3DOF feedforward, not Roll P feedback.*
+> - *Because manual Base disturbances are not strictly identical across runs, raw Peak/RMS serve as observational data; cross-controller evaluation prioritizes normalized Platform/Base metrics ($G_{\text{Peak}}, G_{\text{RMS}}$).*
+
+| Metric | M1 Pure Feedforward | M2 Feedforward + Roll P |
+| :--- | :---: | :---: |
+| **Platform Roll Peak** | $5.3425^\circ$ | $3.5193^\circ$ |
+| **Platform Roll RMS** | $1.0291^\circ$ | $1.1777^\circ$ |
+| **$G_{\text{Peak}}$ (Plat Peak / Base Peak)** | $0.4778$ | $0.4252$ |
+| **$G_{\text{RMS}}$ (Plat RMS / Base RMS)** | $0.4071$ | $0.4034$ |
+| **Normalized Peak Improvement** | Baseline | $\mathbf{\approx 11.0\%}$ |
+| **Normalized RMS Improvement** | Baseline | $\mathbf{\approx 0.91\%}$ |
+
+*Detailed experimental report, Lie-algebra error derivations, and full 50 Hz telemetry archives:* [`agent_docs/j11/J11_M1_M2_CONTROL_COMPARISON.md`](./agent_docs/j11/J11_M1_M2_CONTROL_COMPARISON.md).
+
 ---
 
 ## 3. Repository Layout

@@ -1,0 +1,8 @@
+{
+  "stage": "j11_m2_0_offline_audit",
+  "mode": "DRY-RUN (hardware_write_count = 0)",
+  "hardware_write_count": 0,
+  "total_cycles": 100,
+  "final_state": "WAITING_FOR_PREFLIGHT",
+  "fault_reason": ""
+}
