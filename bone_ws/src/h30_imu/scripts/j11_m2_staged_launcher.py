@@ -124,8 +124,13 @@ def run_m2_staged_session(
     telemetry_publish_mode: str = "async_latest",
     feedback_loss_policy: str = "age_based",
     kp_roll: float = 0.05,
-    kp_pitch: float = 0.0,
-    kp_yaw: float = 0.0,
+    kp_pitch: float = 0.05,
+    kp_yaw: float = 0.025,
+    kd_roll: float = 0.0,
+    kd_pitch: float = 0.0,
+    kd_yaw: float = 0.0,
+    derivative_enabled: bool = True,
+    derivative_lpf_cutoff_hz: float = 10.0,
     max_residual_roll_deg: float = 0.5,
     max_residual_pitch_deg: float = 0.5,
     max_residual_yaw_deg: float = 0.5,
@@ -305,7 +310,9 @@ def run_m2_staged_session(
         # ==========================================================
         print("\n" + "=" * 70)
         print("[STAGE C] Launching J11-M2 PID Residual Runner...")
-        print(f"[STAGE C] Roll Kp={kp_roll:.3f}, Pitch Kp={kp_pitch:.3f}, Yaw Kp={kp_yaw:.3f}")
+        print(f"[STAGE C] Proportional Gains: Roll Kp={kp_roll:.3f}, Pitch Kp={kp_pitch:.3f}, Yaw Kp={kp_yaw:.3f}")
+        print(f"[STAGE C] Derivative Gains:   Roll Kd={kd_roll:.3f}s, Pitch Kd={kd_pitch:.3f}s, Yaw Kd={kd_yaw:.3f}s")
+        print(f"[STAGE C] Derivative LPF: Enabled={derivative_enabled}, Cutoff={derivative_lpf_cutoff_hz:.1f}Hz")
         print(f"[STAGE C] Residual Limits: Roll={max_residual_roll_deg:.1f}°, Pitch={max_residual_pitch_deg:.1f}°, Yaw={max_residual_yaw_deg:.1f}°")
         print("=" * 70, flush=True)
 
@@ -318,11 +325,20 @@ def run_m2_staged_session(
             "--kp-roll", str(kp_roll),
             "--kp-pitch", str(kp_pitch),
             "--kp-yaw", str(kp_yaw),
+            "--kd-roll", str(kd_roll),
+            "--kd-pitch", str(kd_pitch),
+            "--kd-yaw", str(kd_yaw),
+            "--derivative-lpf-cutoff-hz", str(derivative_lpf_cutoff_hz),
             "--max-residual-roll-deg", str(max_residual_roll_deg),
             "--max-residual-pitch-deg", str(max_residual_pitch_deg),
             "--max-residual-yaw-deg", str(max_residual_yaw_deg),
             "--auto-start",
         ]
+        if derivative_enabled:
+            cmd_runner.append("--enable-derivative")
+        else:
+            cmd_runner.append("--disable-derivative")
+
         if execute_motion and not dry_run:
             cmd_runner.append("--execute-motion")
         else:
@@ -338,15 +354,17 @@ def run_m2_staged_session(
             if active_marker.exists() and not banner_printed:
                 banner_printed = True
                 active_channels = []
-                if kp_roll > 0:
+                if kp_roll > 0 or kd_roll > 0:
                     active_channels.append("Roll")
-                if kp_pitch > 0:
+                if kp_pitch > 0 or kd_pitch > 0:
                     active_channels.append("Pitch")
-                if kp_yaw > 0:
+                if kp_yaw > 0 or kd_yaw > 0:
                     active_channels.append("Yaw")
                 ch_str = "+".join(active_channels) if active_channels else "Zero-Feedback"
+                has_d = any(k > 0 for k in [kd_roll, kd_pitch, kd_yaw])
+                mode_label = "PD" if has_d else "P"
                 print("\n" + "=" * 60, flush=True)
-                print(f"J11-M2 ACTIVE: Feedforward + {ch_str} P Feedback Engaged")
+                print(f"J11-M2 ACTIVE: Feedforward + {ch_str} {mode_label} Feedback Engaged")
                 print(f"现在可以开始录像并移动 Base 进行小幅 {ch_str} 扰动")
                 print("=" * 60 + "\n", flush=True)
             if not banner_printed and (time.monotonic() - t_wait_active > 15.0):
@@ -378,8 +396,14 @@ def main():
     parser.add_argument("--telemetry-publish-mode", default="async_latest", choices=["auto", "inline", "async_latest"])
     parser.add_argument("--feedback-loss-policy", default="age_based", choices=["default", "consecutive_misses", "age_based"])
     parser.add_argument("--kp-roll", type=float, default=0.05, help="Roll proportional gain (default: 0.05)")
-    parser.add_argument("--kp-pitch", type=float, default=0.0, help="Pitch proportional gain (default: 0.0)")
-    parser.add_argument("--kp-yaw", type=float, default=0.0, help="Yaw proportional gain (default: 0.0)")
+    parser.add_argument("--kp-pitch", type=float, default=0.05, help="Pitch proportional gain (default: 0.05)")
+    parser.add_argument("--kp-yaw", type=float, default=0.025, help="Yaw proportional gain (default: 0.025)")
+    parser.add_argument("--kd-roll", type=float, default=0.0, help="Roll derivative gain in seconds (default: 0.0)")
+    parser.add_argument("--kd-pitch", type=float, default=0.0, help="Pitch derivative gain in seconds (default: 0.0)")
+    parser.add_argument("--kd-yaw", type=float, default=0.0015, help="Yaw derivative gain in seconds (default: 0.0015)")
+    parser.add_argument("--enable-derivative", action="store_true", default=True)
+    parser.add_argument("--disable-derivative", action="store_false", dest="enable_derivative")
+    parser.add_argument("--derivative-lpf-cutoff-hz", type=float, default=5.0, help="Derivative LPF cutoff in Hz (default: 5.0)")
     parser.add_argument("--max-residual-roll-deg", type=float, default=0.5, help="Roll max residual limit in degrees (default: 0.5)")
     parser.add_argument("--max-residual-pitch-deg", type=float, default=0.5, help="Pitch max residual limit in degrees (default: 0.5)")
     parser.add_argument("--max-residual-yaw-deg", type=float, default=0.5, help="Yaw max residual limit in degrees (default: 0.5)")
@@ -398,6 +422,11 @@ def main():
         kp_roll=args.kp_roll,
         kp_pitch=args.kp_pitch,
         kp_yaw=args.kp_yaw,
+        kd_roll=args.kd_roll,
+        kd_pitch=args.kd_pitch,
+        kd_yaw=args.kd_yaw,
+        derivative_enabled=args.enable_derivative,
+        derivative_lpf_cutoff_hz=args.derivative_lpf_cutoff_hz,
         max_residual_roll_deg=args.max_residual_roll_deg,
         max_residual_pitch_deg=args.max_residual_pitch_deg,
         max_residual_yaw_deg=args.max_residual_yaw_deg,

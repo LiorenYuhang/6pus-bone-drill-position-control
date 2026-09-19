@@ -1,24 +1,29 @@
 # J11-M2: Dual-IMU Task-Space Attitude PID Residual Stabilization Parameters
-# Stage: J11-M2-1 Roll P-only Minimal Closed-Loop Baseline
-# Note: Kp_roll = 0.05, max_residual = 0.5 deg; Pitch/Yaw disabled; Ki=0, Kd=0.
+# Stage: J11-M2-6 3DOF PD (Feedforward + PD Attitude Residual Stabilization)
+# Note: Retained P baseline Kp = [0.05, 0.05, 0.025], max_residual = 0.5 deg; Ki = 0, Kd = 0 initial baseline.
 
 j11_m2_attitude_pid:
   ros__parameters:
     # 3-Axis Proportional Gains [dimensionless rad_out/rad_err]
-    # M2-1 Roll P-only Baseline: Kp_roll = 0.05, Pitch/Yaw = 0.0
+    # Retained Best Tested P-Only Baseline: Kp = [0.05, 0.05, 0.025]
     kp_roll: 0.05
-    kp_pitch: 0.0
-    kp_yaw: 0.0
+    kp_pitch: 0.05
+    kp_yaw: 0.025
 
-    # 3-Axis Integral Gains [1/s^2]
+    # 3-Axis Integral Gains [1/s^2] (strictly 0.0 in M2-6)
     ki_roll: 0.0
     ki_pitch: 0.0
     ki_yaw: 0.0
 
     # 3-Axis Derivative Gains [s]
+    # Retained Working Baseline: Kd = [0.0, 0.0, 0.0015] s
     kd_roll: 0.0
     kd_pitch: 0.0
-    kd_yaw: 0.0
+    kd_yaw: 0.0015
+
+    # Derivative Control & LPF Configuration
+    derivative_enabled: true
+    derivative_lpf_cutoff_hz: 5.0
 
     # Output Residual Saturation Limits (per axis, degrees)
     # Small task-space correction budget; DOES NOT restrict geometric workspace

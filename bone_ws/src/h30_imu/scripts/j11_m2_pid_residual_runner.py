@@ -263,6 +263,8 @@ class M2PidLimits:
     )
     min_dt_s: float = 0.001
     max_dt_s: float = 0.100
+    derivative_enabled: bool = True
+    derivative_lpf_cutoff_hz: float = 10.0  # Low-pass filter cutoff frequency in Hz; <= 0 disables LPF
 
 
 class M2TaskSpaceAttitudePid:
@@ -282,6 +284,9 @@ class M2TaskSpaceAttitudePid:
         self.last_p_term: np.ndarray = np.zeros(3, dtype=np.float64)
         self.last_i_term: np.ndarray = np.zeros(3, dtype=np.float64)
         self.last_d_term: np.ndarray = np.zeros(3, dtype=np.float64)
+        self.last_raw_derivative: np.ndarray = np.zeros(3, dtype=np.float64)
+        self.last_filtered_derivative: np.ndarray = np.zeros(3, dtype=np.float64)
+        self.derivative_initialized: bool = False
 
     def reset(self) -> None:
         self.integral = np.zeros(3, dtype=np.float64)
@@ -292,6 +297,9 @@ class M2TaskSpaceAttitudePid:
         self.last_p_term = np.zeros(3, dtype=np.float64)
         self.last_i_term = np.zeros(3, dtype=np.float64)
         self.last_d_term = np.zeros(3, dtype=np.float64)
+        self.last_raw_derivative = np.zeros(3, dtype=np.float64)
+        self.last_filtered_derivative = np.zeros(3, dtype=np.float64)
+        self.derivative_initialized = False
 
     def enable(self) -> None:
         self.enabled = True
@@ -306,7 +314,14 @@ class M2TaskSpaceAttitudePid:
         dt_s: float,
         omega_W_rad_s: Optional[Sequence[float]] = None,
     ) -> np.ndarray:
-        """Computes PID corrective residual delta_phi_W [rad] in World frame."""
+        """Computes PID corrective residual delta_phi_W [rad] in World frame.
+
+        Mathematical Structure:
+          e_R_W = Log(R_WP_des @ R_WP_meas^T)^vee
+          e_dot_R_W_raw = (e_R_W[k] - e_R_W[k-1]) / dt
+          e_dot_R_W = LPF(e_dot_R_W_raw)
+          delta_phi_W = Kp * e_R_W + Kd * e_dot_R_W + Ki * integral
+        """
         if not self.enabled:
             return np.zeros(3, dtype=np.float64)
 
@@ -319,10 +334,10 @@ class M2TaskSpaceAttitudePid:
 
         effective_dt = min(dt_s, self.limits.max_dt_s)
 
-        # Proportional term
+        # 1. Proportional term
         p_term = self.gains.kp * e
 
-        # Integral term with anti-windup clamping
+        # 2. Integral term with anti-windup clamping (strictly 0 when Ki = 0)
         integral_cand = self.integral + e * effective_dt
         for i in range(3):
             if self.saturated_axes[i] and (e[i] * self.last_cmd[i] > 0.0):
@@ -334,14 +349,28 @@ class M2TaskSpaceAttitudePid:
         )
         i_term = self.gains.ki * self.integral
 
-        # Derivative term
-        if omega_W_rad_s is not None:
-            w_w = np.asarray(omega_W_rad_s, dtype=np.float64)
-            d_term = -self.gains.kd * w_w if np.all(np.isfinite(w_w)) else np.zeros(3, dtype=np.float64)
-        elif self.has_prev_error:
-            de_dt = (e - self.last_error) / effective_dt
-            d_term = self.gains.kd * de_dt
+        # 3. Derivative term with low-pass filtering
+        if self.limits.derivative_enabled:
+            if self.has_prev_error:
+                raw_deriv = (e - self.last_error) / effective_dt
+                if self.limits.derivative_lpf_cutoff_hz > 0.0:
+                    fc = self.limits.derivative_lpf_cutoff_hz
+                    tau = 1.0 / (2.0 * math.pi * fc)
+                    alpha = tau / (tau + effective_dt)
+                    if not self.derivative_initialized:
+                        filt_deriv = raw_deriv.copy()
+                        self.derivative_initialized = True
+                    else:
+                        filt_deriv = alpha * self.last_filtered_derivative + (1.0 - alpha) * raw_deriv
+                else:
+                    filt_deriv = raw_deriv.copy()
+            else:
+                raw_deriv = np.zeros(3, dtype=np.float64)
+                filt_deriv = np.zeros(3, dtype=np.float64)
+            d_term = self.gains.kd * filt_deriv
         else:
+            raw_deriv = np.zeros(3, dtype=np.float64)
+            filt_deriv = np.zeros(3, dtype=np.float64)
             d_term = np.zeros(3, dtype=np.float64)
 
         raw_output = p_term + i_term + d_term
@@ -356,6 +385,8 @@ class M2TaskSpaceAttitudePid:
         self.last_p_term = p_term
         self.last_i_term = i_term
         self.last_d_term = d_term
+        self.last_raw_derivative = raw_deriv
+        self.last_filtered_derivative = filt_deriv
 
         return cmd
 
@@ -416,8 +447,12 @@ class J11M2Telemetry:
 
     # PID: P[3], I[3], D[3], total residual[3]
     pid_p_rad: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
+    pid_p_deg: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
     pid_i_rad: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
     pid_d_rad: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
+    pid_d_deg: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
+    e_dot_R_W_raw_rad_s: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
+    e_dot_R_W_filt_rad_s: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
     pid_total_residual_rad: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
     pid_total_residual_deg: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
     pid_saturated_axes: List[bool] = field(default_factory=lambda: [False, False, False])
@@ -459,15 +494,17 @@ class J11M2PidResidualRunner(Node if Node is not object else object):
         dry_run: bool = True,
         output_dir: str = "results/j11/m2_pid",
         auto_start: bool = True,
-        kp_roll: float = 0.0,
-        kp_pitch: float = 0.0,
-        kp_yaw: float = 0.0,
+        kp_roll: float = 0.05,
+        kp_pitch: float = 0.05,
+        kp_yaw: float = 0.025,
         ki_roll: float = 0.0,
         ki_pitch: float = 0.0,
         ki_yaw: float = 0.0,
         kd_roll: float = 0.0,
         kd_pitch: float = 0.0,
         kd_yaw: float = 0.0,
+        derivative_enabled: bool = True,
+        derivative_lpf_cutoff_hz: float = 10.0,
         max_residual_roll_deg: float = 0.5,
         max_residual_pitch_deg: float = 0.5,
         max_residual_yaw_deg: float = 0.5,
@@ -511,7 +548,9 @@ class J11M2PidResidualRunner(Node if Node is not object else object):
                 math.radians(max_residual_roll_deg),
                 math.radians(max_residual_pitch_deg),
                 math.radians(max_residual_yaw_deg),
-            ], dtype=np.float64)
+            ], dtype=np.float64),
+            derivative_enabled=derivative_enabled,
+            derivative_lpf_cutoff_hz=derivative_lpf_cutoff_hz,
         )
         self.pid = M2TaskSpaceAttitudePid(gains=gains, limits=limits)
 
@@ -818,8 +857,12 @@ class J11M2PidResidualRunner(Node if Node is not object else object):
             # 5. Task-Space Attitude PID Update
             delta_phi_W = self.pid.update(e_R_W_rad, dt_s)
             telem.pid_p_rad = self.pid.last_p_term.tolist()
+            telem.pid_p_deg = np.degrees(self.pid.last_p_term).tolist()
             telem.pid_i_rad = self.pid.last_i_term.tolist()
             telem.pid_d_rad = self.pid.last_d_term.tolist()
+            telem.pid_d_deg = np.degrees(self.pid.last_d_term).tolist()
+            telem.e_dot_R_W_raw_rad_s = self.pid.last_raw_derivative.tolist()
+            telem.e_dot_R_W_filt_rad_s = self.pid.last_filtered_derivative.tolist()
             telem.pid_total_residual_rad = delta_phi_W.tolist()
             telem.pid_total_residual_deg = np.degrees(delta_phi_W).tolist()
             telem.pid_saturated_axes = list(self.pid.saturated_axes)
@@ -878,8 +921,8 @@ class J11M2PidResidualRunner(Node if Node is not object else object):
                         f"[M2 ACTIVE t={self.active_cycle_count*0.02:.1f}s] "
                         f"Base SO3: {telem.base_so3_magnitude_deg:.2f}° | "
                         f"Plat SO3 Err: {telem.platform_so3_error_deg:.2f}° "
-                        f"(R:{telem.platform_rel_roll_deg:+.2f}°, P:{telem.platform_rel_pitch_deg:+.2f}°) | "
-                        f"PID Res: (R:{telem.pid_total_residual_deg[0]:+.2f}°, P:{telem.pid_total_residual_deg[1]:+.2f}°) | "
+                        f"(R:{telem.platform_rel_roll_deg:+.2f}°, P:{telem.platform_rel_pitch_deg:+.2f}°, Y:{telem.platform_rel_yaw_deg:+.2f}°) | "
+                        f"Res: (P_r:{telem.pid_p_deg[0]:+.2f}°, D_r:{telem.pid_d_deg[0]:+.2f}°, Tot_y:{telem.pid_total_residual_deg[2]:+.2f}°) | "
                         f"FB: {telem.feedback_steps}",
                         flush=True,
                     )
@@ -912,10 +955,18 @@ def run_m2_session(
     output_dir: str = "results/j11/m2_pid",
     stage: str = "j11_m2_0_audit",
     auto_start: bool = True,
-    kp_roll: float = 0.0,
-    kp_pitch: float = 0.0,
-    kp_yaw: float = 0.0,
-    max_residual_roll_deg: float = 1.0,
+    kp_roll: float = 0.05,
+    kp_pitch: float = 0.05,
+    kp_yaw: float = 0.025,
+    ki_roll: float = 0.0,
+    ki_pitch: float = 0.0,
+    ki_yaw: float = 0.0,
+    kd_roll: float = 0.0,
+    kd_pitch: float = 0.0,
+    kd_yaw: float = 0.0,
+    derivative_enabled: bool = True,
+    derivative_lpf_cutoff_hz: float = 10.0,
+    max_residual_roll_deg: float = 0.5,
     max_residual_pitch_deg: float = 0.5,
     max_residual_yaw_deg: float = 0.5,
 ) -> dict:
@@ -932,6 +983,14 @@ def run_m2_session(
         kp_roll=kp_roll,
         kp_pitch=kp_pitch,
         kp_yaw=kp_yaw,
+        ki_roll=ki_roll,
+        ki_pitch=ki_pitch,
+        ki_yaw=ki_yaw,
+        kd_roll=kd_roll,
+        kd_pitch=kd_pitch,
+        kd_yaw=kd_yaw,
+        derivative_enabled=derivative_enabled,
+        derivative_lpf_cutoff_hz=derivative_lpf_cutoff_hz,
         max_residual_roll_deg=max_residual_roll_deg,
         max_residual_pitch_deg=max_residual_pitch_deg,
         max_residual_yaw_deg=max_residual_yaw_deg,
@@ -1014,9 +1073,18 @@ def main():
     parser.add_argument("--stage", default="j11_m2_0_audit")
     parser.add_argument("--auto-start", action="store_true", default=True)
     parser.add_argument("--no-auto-start", action="store_true", default=False)
-    parser.add_argument("--kp-roll", type=float, default=0.0)
-    parser.add_argument("--kp-pitch", type=float, default=0.0)
-    parser.add_argument("--kp-yaw", type=float, default=0.0)
+    parser.add_argument("--kp-roll", type=float, default=0.05)
+    parser.add_argument("--kp-pitch", type=float, default=0.05)
+    parser.add_argument("--kp-yaw", type=float, default=0.025)
+    parser.add_argument("--ki-roll", type=float, default=0.0)
+    parser.add_argument("--ki-pitch", type=float, default=0.0)
+    parser.add_argument("--ki-yaw", type=float, default=0.0)
+    parser.add_argument("--kd-roll", type=float, default=0.0)
+    parser.add_argument("--kd-pitch", type=float, default=0.0)
+    parser.add_argument("--kd-yaw", type=float, default=0.0)
+    parser.add_argument("--enable-derivative", action="store_true", default=True)
+    parser.add_argument("--disable-derivative", action="store_false", dest="enable_derivative")
+    parser.add_argument("--derivative-lpf-cutoff-hz", type=float, default=10.0)
     parser.add_argument("--max-residual-roll-deg", type=float, default=0.5)
     parser.add_argument("--max-residual-pitch-deg", type=float, default=0.5)
     parser.add_argument("--max-residual-yaw-deg", type=float, default=0.5)
@@ -1039,6 +1107,14 @@ def main():
         kp_roll=args.kp_roll,
         kp_pitch=args.kp_pitch,
         kp_yaw=args.kp_yaw,
+        ki_roll=args.ki_roll,
+        ki_pitch=args.ki_pitch,
+        ki_yaw=args.ki_yaw,
+        kd_roll=args.kd_roll,
+        kd_pitch=args.kd_pitch,
+        kd_yaw=args.kd_yaw,
+        derivative_enabled=args.enable_derivative,
+        derivative_lpf_cutoff_hz=args.derivative_lpf_cutoff_hz,
         max_residual_roll_deg=args.max_residual_roll_deg,
         max_residual_pitch_deg=args.max_residual_pitch_deg,
         max_residual_yaw_deg=args.max_residual_yaw_deg,
