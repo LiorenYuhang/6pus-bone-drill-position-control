@@ -1,0 +1,10 @@
+{
+  "total_cycles_recorded": 0,
+  "total_stall_events_recorded": 0,
+  "stalls_gt_50ms_count": 0,
+  "stalls_gt_100ms_count": 0,
+  "stalls_gt_150ms_count": 0,
+  "stalls_gt_200ms_count": 0,
+  "max_missing_interval_ms": 0.0,
+  "worst_stall_time_budget": null
+}

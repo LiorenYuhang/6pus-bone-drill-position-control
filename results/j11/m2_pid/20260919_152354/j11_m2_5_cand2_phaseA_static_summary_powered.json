@@ -1,0 +1,8 @@
+{
+  "stage": "j11_m2_5_cand2_phaseA_static",
+  "mode": "POWERED REAL EXECUTION",
+  "hardware_write_count": 1446,
+  "total_cycles": 1500,
+  "final_state": "ACTIVE",
+  "fault_reason": ""
+}

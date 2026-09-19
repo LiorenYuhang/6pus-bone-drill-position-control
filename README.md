@@ -12,7 +12,7 @@
 ### Key Milestones:
 - **J1–J10 (Completed & Frozen)**: Comprehensive real-hardware foundation covering low-level multi-actuator UART communication, analytical inverse kinematics, $C^2$ jerk-limited trajectory shaping, 50 Hz continuous servo streaming, dual-IMU microsecond clock synchronization, numerical forward kinematics, and complete 6-DOF single-axis operational workspace qualification on the physical platform.
 - **J11-M1 (Completed & Frozen)**: Base-IMU full-$SO(3)$ feedforward attitude hold, dedicated driver runtime qualification, two-tier safety policy, 300s static home qualification, and low-speed dynamic base disturbance rejection on real physical hardware (`v1.0-j11-m1-feedforward-hardware-qualified`).
-- **J11-M2+ (Active Research Phase)**: Stage J11-M2 Dual-IMU PID residual attitude closed-loop stabilization currently in progress; advanced ADRC and adaptive control on the future roadmap.
+- **J11-M2+ (Active Research Phase)**: Stage J11-M2-5 (3DOF P-only coarse tuning) completed with best tested P-only configuration $K_p = [0.05, 0.05, 0.025]$, $K_i = 0, K_d = 0$. Next: Stage J11-M2-6 (3DOF PD). Advanced ADRC and adaptive control on the future roadmap.
 
 ---
 
@@ -42,7 +42,9 @@ The development of the 6PUS robotic platform is organized into two distinct over
 │                       [STATUS: ACTIVE ROADMAP]                          │
 │  • J11-M1: Base-IMU Feedforward Attitude Hold & Driver Runtime Qualified│
 │            [STATUS: COMPLETED & FROZEN — Tag: v1.0-j11-m1]              │
-│  • J11-M2: Dual-IMU PID Residual Attitude Stabilization [NEXT]          │
+│  • J11-M2-5: 3DOF P-only Coarse Tuning Completed                        │
+│              (Best Tested P-Only: Kp=[0.05, 0.05, 0.025], Ki=0, Kd=0)   │
+│  • J11-M2-6: 3DOF PD (Feedforward + PD Feedback) [NEXT]                 │
 │  • Future Research Roadmap:                                             │
 │    - Active Disturbance Rejection Control (ADRC) & Extended State Obs   │
 │    - IMU Acceleration Feedforward & Disturbance Observer (DOB)          │

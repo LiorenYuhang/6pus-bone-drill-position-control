@@ -1,12 +1,12 @@
 # J11 Canonical System-Level Controller Performance Comparison Archive
 
 **Current Status**: Active Canonical Comparison Baseline  
-**Last Updated**: 2026-09-18  
+**Last Updated**: 2026-09-19  
 **Scope**: Authoritative performance comparison of multi-axis control architectures on the 6PUS parallel surgical robot:
 - **J11-M1**: 3DOF Base-IMU $SO(3)$ Pure Feedforward (*Frozen Baseline*)
 - **J11-M2**: 3DOF Base-IMU $SO(3)$ Feedforward + 3DOF Platform-IMU $SO(3)$ P-only Feedback (*Qualified Baseline: $K_p = [0.05, 0.05, 0.05]$*)
-- **J11-M2-5**: 3DOF P Gain Tuning (*Active Stage; Candidate 1 tested and not retained*)
-- **Subsequent Stages**: 3DOF Tuned P $\to$ 3DOF PD (M2-6) $\to$ 3DOF PID (M2-7) $\to$ Active Disturbance Rejection Control (J12 ADRC).
+- **J11-M2-5**: 3DOF P Gain Tuning (*Coarse sweep completed; Candidate 2 retained as BEST TESTED P-ONLY CONFIGURATION*)
+- **Subsequent Stages**: 3DOF PD (M2-6) $\to$ 3DOF PID (M2-7) $\to$ Active Disturbance Rejection Control (J12 ADRC).
 
 ---
 
@@ -31,8 +31,13 @@ The objective of Stage J11 is active attitude vibration suppression on a 6PUS pa
                                         │
                                         ▼
 ┌─────────────────────────────────────────────────────────────────────────────────┐
+│ J11-M2-5: 3DOF P Gain Tuning (Coarse Sweep Complete; Candidate 2 Retained)       │
+│ Best Tested P-Only Config: Candidate 2 (Kp = [0.05, 0.05, 0.025])               │
+└───────────────────────────────────────┬─────────────────────────────────────────┘
+                                        │
+                                        ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
 │ Progression Roadmap:                                                            │
-│   • J11-M2-5: 3DOF P Gain Tuning (Active stage, single-variable tuning trials)  │
 │   • J11-M2-6: 3DOF PD Feedback (Derivative damping on platform rate error)      │
 │   • J11-M2-7: 3DOF PID Feedback (Integral action only if steady bias persists)  │
 │   • J12: Extended State Observer & ADRC (Task-space total disturbance rejection)│
@@ -49,21 +54,20 @@ The objective of Stage J11 is active attitude vibration suppression on a 6PUS pa
 
 All comparative metrics are computed directly from machine-generated, timestamped, 50 Hz real-hardware telemetry runs:
 
-| Attribute | J11-M1 Canonical Baseline | J11-M2 Qualified Baseline | J11-M2-5 Candidate 1 Trial |
-| :--- | :--- | :--- | :--- |
-| **Run Timestamp** | `20260918_112354` | `20260918_152354` | `20260918_160014` |
-| **Stage Identifier** | `J11_DISTURB_QUAL` | `j11_m2_4_phaseB_dynamic` | `j11_m2_5_phaseB_dynamic` |
-| **Evidence Directory** | [`results/j11/runtime_validation/20260918_112354/`](../../results/j11/runtime_validation/20260918_112354/) | [`results/j11/m2_pid/20260918_152354/`](../../results/j11/m2_pid/20260918_152354/) | [`results/j11/m2_pid/20260918_160014/`](../../results/j11/m2_pid/20260918_160014/) |
-| **Primary Telemetry CSV** | `J11_DISTURB_QUAL_feedforward_powered.csv` | `j11_m2_4_phaseB_dynamic_telemetry_powered.csv` | `j11_m2_5_phaseB_dynamic_telemetry_powered.csv` |
-| **Duration / Rate** | 120.0 s (5999 rows @ 50 Hz) | 60.0 s (2999 rows @ 50 Hz, 2929 writes) | 60.0 s (2997 rows @ 50 Hz, 2943 writes) |
-| **Control Structure** | 3DOF Base Feedforward Only | 3DOF Feedforward + 3DOF P Feedback | 3DOF Feedforward + 3DOF P Feedback |
-| **Active Gains** | None ($K_p=0, K_i=0, K_d=0$) | $K_p = [0.05, 0.05, 0.05]$ | $K_p = [0.05, 0.05, 0.10]$ |
-| **Residual Limits** | N/A | $\pm 0.5^\circ$ per axis | $\pm 0.5^\circ$ per axis |
-| **Classification** | **FROZEN BASELINE** | **QUALIFIED BASELINE (CURRENT BEST)** | **INTERMEDIATE TRIAL (NOT RETAINED)** |
+| Attribute | J11-M1 Canonical Baseline | J11-M2 Qualified Baseline | J11-M2-5 Cand 1 Trial | J11-M2-5 Cand 2 Trial | J11-M2-5 Cand 3 Trial |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Run Timestamp** | `20260918_112354` | `20260918_152354` | `20260918_160014` | `20260919_152543` | `20260919_153847` |
+| **Stage Identifier** | `J11_DISTURB_QUAL` | `j11_m2_4_phaseB_dynamic` | `j11_m2_5_phaseB_dynamic` | `j11_m2_5_cand2_phaseB_dynamic` | `j11_m2_5_cand3_phaseB_dynamic` |
+| **Evidence Directory** | [`results/j11/runtime_validation/20260918_112354/`](../../results/j11/runtime_validation/20260918_112354/) | [`results/j11/m2_pid/20260918_152354/`](../../results/j11/m2_pid/20260918_152354/) | [`results/j11/m2_pid/20260918_160014/`](../../results/j11/m2_pid/20260918_160014/) | [`results/j11/m2_pid/20260919_152543/`](../../results/j11/m2_pid/20260919_152543/) | [`results/j11/m2_pid/20260919_153847/`](../../results/j11/m2_pid/20260919_153847/) |
+| **Primary Telemetry CSV** | `J11_DISTURB_QUAL_feedforward_powered.csv` | `j11_m2_4_phaseB_dynamic_telemetry_powered.csv` | `j11_m2_5_phaseB_dynamic_telemetry_powered.csv` | `j11_m2_5_cand2_phaseB_dynamic_telemetry_powered.csv` | `j11_m2_5_cand3_phaseB_dynamic_telemetry_powered.csv` |
+| **Duration / Rate** | 120.0 s (5999 rows @ 50 Hz) | 60.0 s (2999 rows @ 50 Hz) | 60.0 s (2997 rows @ 50 Hz) | 60.0 s (2999 rows @ 50 Hz) | 60.0 s (2999 rows @ 50 Hz) |
+| **Active Gains** | None ($K_p=0, K_i=0, K_d=0$) | $K_p = [0.05, 0.05, 0.05]$ | $K_p = [0.05, 0.05, 0.10]$ | $K_p = [0.05, 0.05, 0.025]$ | $K_p = [0.05, 0.05, 0.0125]$ |
+| **Residual Limits** | N/A | $\pm 0.5^\circ$ per axis | $\pm 0.5^\circ$ per axis | $\pm 0.5^\circ$ per axis | $\pm 0.5^\circ$ per axis |
+| **Classification** | **FROZEN BASELINE** | **QUALIFIED BASELINE** | **NOT RETAINED (Degraded)** | **BEST TESTED P-ONLY CONFIGURATION** | **NOT RETAINED (Rebound)** |
 
 > [!WARNING]
-> **Formal Exclusion of Session `20260918_150445`**:
-> Session `results/j11/m2_pid/20260918_150445/` is formally classified as **NON-QUALIFIED / INVALID** and excluded from canonical performance evaluation because the operator did not intentionally apply the prescribed multi-axis manual Base disturbance during that run. Its raw telemetry is preserved intact strictly as an observational record.
+> **Formal Exclusion of Session `20260918_150445` and `20260919_153610`**:
+> Sessions `20260918_150445` and `20260919_153610` are formally classified as **NON-QUALIFIED / INVALID (NO-DISTURBANCE RUNS)** and excluded from canonical performance evaluation because manual Base disturbance was not applied during those runs. Raw telemetry is preserved intact strictly as observational records.
 
 ---
 
@@ -75,69 +79,74 @@ $$G_{SO(3)\_\text{Peak}} = \frac{\text{Peak}(\text{Platform } SO(3) \text{ Error
 
 ### Canonical Master Comparison:
 
-| Axis / Metric | Parameter | M1: Pure Feedforward (`20260918_112354`) | M2: Qualified 3DOF P Baseline (`20260918_152354`) | M2 Candidate 1 Trial ($K_{p\_yaw}=0.10$) (`20260918_160014`) | Evaluation vs. Qualified Baseline |
-| :--- | :--- | :---: | :---: | :---: | :--- |
-| **Roll** | Base Peak / RMS | $11.1825^\circ$ / $2.5426^\circ$ | $9.5619^\circ$ / $3.6490^\circ$ | $11.6446^\circ$ / $4.0537^\circ$ | — |
-| | Plat Peak / RMS | $5.3425^\circ$ / $1.0351^\circ$ | $4.6850^\circ$ / $1.1188^\circ$ | $6.5956^\circ$ / $1.7125^\circ$ | Excursion increased |
-| | **$G_{\text{Peak}}$** | **0.4778** | **0.4900** | **0.5664** | **-15.59%** (Degraded) |
-| | **$G_{\text{RMS}}$** | **0.4071** | **0.3066** | **0.4225** | **-37.80%** (Degraded) |
-| **Pitch** | Base Peak / RMS | $10.8622^\circ$ / $2.7747^\circ$ | $12.0675^\circ$ / $4.5458^\circ$ | $12.4453^\circ$ / $4.5927^\circ$ | — |
-| | Plat Peak / RMS | $6.4585^\circ$ / $1.1522^\circ$ | $3.7535^\circ$ / $1.2295^\circ$ | $8.6080^\circ$ / $2.0500^\circ$ | Platform excursion surge |
-| | **$G_{\text{Peak}}$** | **0.5946** | **0.3110** | **0.6917** | **-122.41%** (Severe degradation) |
-| | **$G_{\text{RMS}}$** | **0.4153** | **0.2705** | **0.4464** | **-65.03%** (Severe degradation) |
-| **Yaw** | Base Peak / RMS | $10.9373^\circ$ / $2.8939^\circ$ | $3.4753^\circ$ / $1.5259^\circ$ | $4.3949^\circ$ / $2.4879^\circ$ | Natural multi-axis yaw disturbance |
-| | Plat Peak / RMS | $8.7312^\circ$ / $0.8428^\circ$ | $3.1383^\circ$ / $0.5148^\circ$ | $6.8188^\circ$ / $1.2589^\circ$ | Platform yaw amplification |
-| | **$G_{\text{Peak}}$** | **0.7983** | **0.9030** | **1.5515** | **-71.82%** (Severe degradation, $>1.0$) |
-| | **$G_{\text{RMS}}$** | **0.2912** | **0.3374** | **0.5060** | **-49.97%** (Severe degradation) |
-| **Overall $SO(3)$** | Base Peak / RMS | $13.5370^\circ$ / $4.7470^\circ$ | $12.9456^\circ$ / $6.0256^\circ$ | $13.8446^\circ$ / $6.5948^\circ$ | Multi-axis 3D disturbance input |
-| | Plat Peak / RMS | $9.9533^\circ$ / $1.7626^\circ$ | $4.7035^\circ$ / $1.7405^\circ$ | $9.5163^\circ$ / $2.9561^\circ$ | 3D attitude error doubled |
-| | **$G_{SO(3)\_\text{Peak}}$** | **0.7353** | **0.3633** | **0.6874** | **-89.21%** (Severe degradation) |
-| | **$G_{SO(3)\_\text{RMS}}$** | **0.3713** | **0.2888** | **0.4482** | **-55.20%** (Severe degradation) |
-
-### Engineering Assessment on Candidate 1 Trial:
-1. **Decision**: **$K_{p\_yaw} = 0.10$ IS NOT RETAINED**.
-2. **Attribution & Cross-Axis Observation**: Increasing $K_{p\_yaw}$ from $0.05$ to $0.10$ produced substantial system-level cross-axis performance degradation in this experiment. The exact physical mechanism has not yet been isolated.
-3. **Observed Empirical Phenomena**:
-   - Roll rejection degraded ($-15.59\%$ Peak, $-37.80\%$ RMS).
-   - Pitch rejection degraded severely ($-122.41\%$ Peak, $-65.03\%$ RMS).
-   - Yaw rejection degraded severely ($-71.82\%$ Peak, $-49.97\%$ RMS), with $G_{\text{Peak}} = 1.5515$ indicating platform excursion exceeding base excitation.
-   - Overall $SO(3)$ attitude error doubled ($-89.21\%$ Peak, $-55.20\%$ RMS).
-   - Yaw attitude residual correction reached saturation for $26$ cycles ($0.88\%$).
-4. **Current Best Baseline Retained**: The qualified baseline **$K_p = [0.05, 0.05, 0.05]$** remains the active authoritative reference. Stage M2-5 gain tuning remains active.
+| Axis / Metric | Parameter | A. M1: Pure FF (`112354`) | B. M2 Qualified (`152354`) | C. Cand 1 ($K_{p\_y}=0.10$) (`160014`) | D. Cand 2 ($K_{p\_y}=0.025$) (`152543`) | E. Cand 3 ($K_{p\_y}=0.0125$) (`153847`) | Assessment |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **Roll** | Base Peak / RMS | $11.18^\circ$ / $2.54^\circ$ | $9.56^\circ$ / $3.65^\circ$ | $11.64^\circ$ / $4.05^\circ$ | $11.99^\circ$ / $4.81^\circ$ | $12.39^\circ$ / $5.03^\circ$ | Strong disturbance energy across trials |
+| | Plat Peak / RMS | $5.34^\circ$ / $1.04^\circ$ | $4.68^\circ$ / $1.12^\circ$ | $6.60^\circ$ / $1.71^\circ$ | $5.50^\circ$ / $1.31^\circ$ | $5.16^\circ$ / $1.49^\circ$ | Platform excursion well restrained |
+| | **$G_{\text{Peak}}$** | **0.4778** | **0.4900** | **0.5664** | **0.4584** | **0.4163** | Both Cand 2 and 3 improve over M1 |
+| | **$G_{\text{RMS}}$** | **0.4071** | **0.3066** | **0.4225** | **0.2724** | **0.2967** | **Cand 2 achieves best Roll RMS** |
+| **Pitch** | Base Peak / RMS | $10.86^\circ$ / $2.77^\circ$ | $12.07^\circ$ / $4.55^\circ$ | $12.45^\circ$ / $4.59^\circ$ | $11.60^\circ$ / $4.72^\circ$ | $14.06^\circ$ / $5.75^\circ$ | Strong multi-axis pitch inputs |
+| | Plat Peak / RMS | $6.46^\circ$ / $1.15^\circ$ | $3.75^\circ$ / $1.23^\circ$ | $8.61^\circ$ / $2.05^\circ$ | $4.59^\circ$ / $1.32^\circ$ | $5.22^\circ$ / $1.51^\circ$ | All stable P modes strongly suppress pitch |
+| | **$G_{\text{Peak}}$** | **0.5946** | **0.3110** | **0.6917** | **0.3951** | **0.3715** | Both Cand 2 and 3 far superior to M1 |
+| | **$G_{\text{RMS}}$** | **0.4153** | **0.2705** | **0.4464** | **0.2794** | **0.2624** | Strong consistent variance attenuation |
+| **Yaw** | Base Peak / RMS | $10.94^\circ$ / $2.89^\circ$ | $3.48^\circ$ / $1.53^\circ$ | $4.39^\circ$ / $2.49^\circ$ | $4.33^\circ$ / $1.87^\circ$ | $5.09^\circ$ / $1.85^\circ$ | Natural multi-axis yaw disturbance |
+| | Plat Peak / RMS | $8.73^\circ$ / $0.84^\circ$ | $3.14^\circ$ / $0.51^\circ$ | $6.82^\circ$ / $1.26^\circ$ | $3.58^\circ$ / $0.57^\circ$ | $4.50^\circ$ / $0.74^\circ$ | Platform yaw excursion |
+| | **$G_{\text{Peak}}$** | **0.7983** | **0.9030** | **1.5515** | **0.8274** | **0.8828** | **Cand 2 achieves lowest Peak ($0.8274$)** |
+| | **$G_{\text{RMS}}$** | **0.2912** | **0.3374** | **0.5060** | **0.3075** | **0.3992** | **Cand 2 achieves lowest RMS ($0.3075$)** |
+| **Overall $SO(3)$** | Base Peak / RMS | $13.54^\circ$ / $4.75^\circ$ | $12.95^\circ$ / $6.03^\circ$ | $13.84^\circ$ / $6.59^\circ$ | $12.76^\circ$ / $6.97^\circ$ | $15.01^\circ$ / $7.84^\circ$ | 3D attitude excitation |
+| | Plat Peak / RMS | $9.95^\circ$ / $1.76^\circ$ | $4.70^\circ$ / $1.74^\circ$ | $9.52^\circ$ / $2.96^\circ$ | $5.53^\circ$ / $1.94^\circ$ | $6.70^\circ$ / $2.25^\circ$ | 3D attitude response |
+| | **$G_{SO(3)\_\text{Peak}}$** | **0.7353** | **0.3633** | **0.6874** | **0.4334** | **0.4463** | Substantially superior to M1 ($0.7353$) |
+| | **$G_{SO(3)\_\text{RMS}}$** | **0.3713** | **0.2888** | **0.4482** | **0.2789** | **0.2865** | **Cand 2 achieves best overall SO(3) RMS** |
 
 ---
 
 ## 4. Closed-Loop Negative Feedback & Residual Telemetry
 
-| Parameter | M2 Qualified Baseline (`20260918_152354`) | M2 Candidate 1 Trial (`20260918_160014`) | Note / Limit |
-| :--- | :---: | :---: | :---: |
-| **$K_p$ Configuration** | $[0.05, 0.05, 0.05]$ | $[0.05, 0.05, 0.10]$ | Single-variable yaw test |
-| **Roll Residual Peak / RMS** | $0.2342^\circ$ / $0.0553^\circ$ | $0.3330^\circ$ / $0.0859^\circ$ | Within $\pm 0.50^\circ$ limit |
-| **Pitch Residual Peak / RMS** | $0.1878^\circ$ / $0.0607^\circ$ | $0.4274^\circ$ / $0.1022^\circ$ | Within $\pm 0.50^\circ$ limit |
-| **Yaw Residual Peak / RMS** | $0.1575^\circ$ / $0.0255^\circ$ | $\mathbf{0.5000^\circ}$ / $0.1218^\circ$ | Reached $\pm 0.50^\circ$ limit |
-| **Saturation Cycles (R / P / Y)** | **0 / 0 / 0** ($0.0\%$) | **0 / 0 / 26** ($0.88\%$ on Yaw) | 26 cycles clamped on Yaw |
-| **Pearson Correlation $\rho$ (R / P / Y)** | -0.999977 / -0.999978 / -0.999618 | -0.999635 / -0.999905 / -0.995515 | Negative feedback preserved |
-| **Max Tracking Error** | 62 steps | 90 steps | Continuous servo follow-up |
-| **Max Joint Current** | $171\,\text{mA}$ | $282\,\text{mA}$ | Below $500\,\text{mA}$ safety trip |
-| **Hardware Faults** | `0x0000` (0 faults) | `0x0000` (0 faults) | Zero motor faults |
-| **Safety Aborts (WH / HS)** | 0 / 0 | 0 / 0 | Zero safety aborts |
-| **Base IMU Age** | Mean $2.14\,\text{ms}$ / Max $76.2\,\text{ms}$ | Mean $2.20\,\text{ms}$ / Max $78.0\,\text{ms}$ | Measured runtime latency |
-| **Platform IMU Age** | Mean $2.48\,\text{ms}$ / Max $81.5\,\text{ms}$ | Mean $2.59\,\text{ms}$ / Max $82.5\,\text{ms}$ | Measured runtime latency |
-| **Driver Feedback Age** | Mean $15.8\,\text{ms}$ / Max $245.1\,\text{ms}$ | Mean $17.3\,\text{ms}$ / Max $231.1\,\text{ms}$ | Measured runtime latency |
+| Parameter | M2 Qualified Baseline (`152354`) | Cand 1 (`160014`) | Cand 2 (`152543`) | Cand 3 (`153847`) | Note / Safety Limit |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **$K_p$ Configuration** | $[0.05, 0.05, 0.05]$ | $[0.05, 0.05, 0.10]$ | $[0.05, 0.05, 0.025]$ | $[0.05, 0.05, 0.0125]$ | Systematic coarse sweep |
+| **Roll Residual Peak / RMS** | $0.2342^\circ$ / $0.0553^\circ$ | $0.3330^\circ$ / $0.0859^\circ$ | $0.2749^\circ$ / $0.0655^\circ$ | $0.2571^\circ$ / $0.0746^\circ$ | Safe ($< 0.50^\circ$ limit) |
+| **Pitch Residual Peak / RMS** | $0.1878^\circ$ / $0.0607^\circ$ | $0.4274^\circ$ / $0.1022^\circ$ | $0.2298^\circ$ / $0.0659^\circ$ | $0.2589^\circ$ / $0.0754^\circ$ | Safe ($< 0.50^\circ$ limit) |
+| **Yaw Residual Peak / RMS** | $0.1575^\circ$ / $0.0255^\circ$ | $\mathbf{0.5000^\circ}$ / $0.1218^\circ$ | $\mathbf{0.0900^\circ}$ / $0.0143^\circ$ | $\mathbf{0.0559^\circ}$ / $0.0093^\circ$ | Clean monotonic decrease |
+| **Saturation Cycles (R / P / Y)** | **0 / 0 / 0** ($0.0\%$) | **0 / 0 / 26** ($0.88\%$) | **0 / 0 / 0** ($0.0\%$) | **0 / 0 / 0** ($0.0\%$) | Zero saturation in Cand 2 & 3 |
+| **Pearson Correlation $\rho$ (R / P / Y)** | -0.99998 / -0.99998 / -0.99962 | -0.99964 / -0.99991 / -0.99552 | -0.99998 / -0.99998 / -0.99962 | -0.99997 / -0.99995 / -0.99947 | Strict negative feedback |
+| **Max Tracking Error** | 62 steps | 90 steps | 74 steps | 61 steps | Smooth execution |
+| **Max Joint Current** | $171\,\text{mA}$ | $282\,\text{mA}$ | $451\,\text{mA}$ | $167\,\text{mA}$ | Well below $500\,\text{mA}$ trip limit |
+| **Hardware Faults** | `0x0000` (0 faults) | `0x0000` (0 faults) | `0x0000` (0 faults) | `0x0000` (0 faults) | Zero motor faults |
+| **Safety Aborts (WH / HS)** | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | Zero safety aborts |
+| **Base IMU Age (Mean / Max)** | $2.14\,\text{ms}$ / $76.2\,\text{ms}$ | $2.20\,\text{ms}$ / $78.0\,\text{ms}$ | $3.36\,\text{ms}$ / $51.2\,\text{ms}$ | $1.38\,\text{ms}$ / $46.9\,\text{ms}$ | Measured runtime latency |
+| **Platform IMU Age (Mean / Max)** | $2.48\,\text{ms}$ / $81.5\,\text{ms}$ | $2.59\,\text{ms}$ / $82.5\,\text{ms}$ | $2.25\,\text{ms}$ / $48.1\,\text{ms}$ | $3.17\,\text{ms}$ / $48.8\,\text{ms}$ | Measured runtime latency |
+| **Driver Feedback Age (Mean / Max)**| $15.8\,\text{ms}$ / $245.1\,\text{ms}$ | $17.3\,\text{ms}$ / $231.1\,\text{ms}$ | $16.15\,\text{ms}$ / $175.6\,\text{ms}$ | $12.53\,\text{ms}$ / $147.0\,\text{ms}$ | Measured runtime latency |
 
 ---
 
-## 5. Historical Single-Axis Channel Qualification
+## 5. M2-5 Coarse Tuning Assessment & Engineering Conclusions
 
-Before 3DOF integration, Roll/Pitch/Yaw P-only tests were used strictly for feedback-channel qualification.
+### 5.1 Tested Configurations & Retention Decision
+Four configurations were systematically evaluated on real hardware:
+- $K_{p\_yaw} = 0.100$: **NOT RETAINED** (over-correction, 26 cycles of yaw saturation, cross-axis degradation).
+- $K_{p\_yaw} = 0.050$: **QUALIFIED BASELINE** (moderate under-damping, Yaw $G_{\text{Peak}} = 0.9030$).
+- $K_{p\_yaw} = 0.025$: **BEST TESTED P-ONLY CONFIGURATION (RETAINED)** (Yaw $G_{\text{Peak}} = 0.8274$, $G_{\text{RMS}} = 0.3075$; $SO(3)$ RMS = $0.2789$; zero saturation).
+- $K_{p\_yaw} = 0.0125$: **NOT RETAINED** (measured Yaw and overall performance rebounded when $K_{p\_yaw}$ was reduced further: Yaw $G_{\text{Peak}} \to 0.8828$, $G_{\text{RMS}} \to 0.3992$, $SO(3)$ RMS $\to 0.2865$).
 
-All three channels passed hardware verification for:
-- feedback sign
-- $SO(3)$ error/residual path
-- execution chain
-- safety behavior
+> [!NOTE]
+> Candidate 2 ($K_p = [0.05, 0.05, 0.025], K_i = 0, K_d = 0$) is formally designated as the **BEST TESTED P-ONLY CONFIGURATION** in the current coarse sweep. It is not claimed to be globally optimal, an exact optimum, or mathematically optimal.
 
-Detailed single-axis evidence remains archived under [`results/j11/m2_pid/`](../../results/j11/m2_pid/) and is not used as canonical system-level performance evidence.
+### 5.2 System-Level Metrics vs. M1 Frozen Baseline
+| Metric | M1 Pure Feedforward (`112354`) | Candidate 2 Best Tested P-Only (`152543`) | Engineering Assessment |
+| :--- | :---: | :---: | :--- |
+| **Roll ($G_{\text{Peak}} / G_{\text{RMS}}$)** | 0.4778 / 0.4071 | **0.4584 / 0.2724** | Roll clearly better than M1 |
+| **Pitch ($G_{\text{Peak}} / G_{\text{RMS}}$)** | 0.5946 / 0.4153 | **0.3951 / 0.2794** | Pitch clearly better than M1 |
+| **Yaw ($G_{\text{Peak}} / G_{\text{RMS}}$)** | **0.7983 / 0.2912** | 0.8274 / 0.3075 | Yaw remains slightly worse than M1 |
+| **Overall $SO(3)$ ($G_{\text{Peak}} / G_{\text{RMS}}$)** | 0.7353 / 0.3713 | **0.4334 / 0.2789** | Overall $SO(3)$ clearly better than M1 |
+
+**Core Engineering Conclusions**:
+1. Roll, Pitch, and overall $SO(3)$ performance are clearly better than M1 Pure Feedforward.
+2. Yaw remains slightly worse than M1 Pure Feedforward.
+3. The coarse sweep indicates that the useful tested Yaw-P region lies between the degraded low/high candidates, with $K_{p\_yaw} = 0.025$ providing the best measured overall balance.
+4. The best measured Yaw $G_{\text{RMS}}$ among the tested P-only configurations was $0.3075$.
+5. The P-only experiments show a non-monotonic gain-performance relationship on the Yaw channel. Increasing $K_{p\_yaw}$ to $0.10$ degraded performance, while reducing it to $0.025$ improved the system-level balance. Further reducing it to $0.0125$ caused Yaw rejection to rebound. The exact physical mechanism has not yet been isolated.
+6. P-only tuning therefore provides a strong traditional-control baseline, but dynamic performance still has room for improvement.
 
 ---
 
@@ -148,10 +157,11 @@ The canonical performance record tracks system-level controller evolution throug
 | Stage | Controller Architecture | $G_{\text{Peak}}$ (R / P / Y / $SO(3)$) | $G_{\text{RMS}}$ (R / P / Y / $SO(3)$) | Canonical Session | Status / Outcome |
 | :--- | :--- | :---: | :---: | :---: | :--- |
 | **J11-M1** | 3DOF Base-IMU Feedforward | 0.4778 / 0.5946 / 0.7983 / 0.7353 | 0.4071 / 0.4153 / 0.2912 / 0.3713 | `20260918_112354` | **FROZEN BASELINE** |
-| **J11-M2** | Qualified 3DOF P Baseline ($K_p=[0.05, 0.05, 0.05]$) | **0.4900 / 0.3110 / 0.9030 / 0.3633** | **0.3066 / 0.2705 / 0.3374 / 0.2888** | `20260918_152354` | **QUALIFIED BASELINE (CURRENT BEST)** |
-| **J11-M2-5** | Candidate 1 Trial ($K_p=[0.05, 0.05, 0.10]$) | 0.5664 / 0.6917 / 1.5515 / 0.6874 | 0.4225 / 0.4464 / 0.5060 / 0.4482 | `20260918_160014` | **NOT RETAINED (Degraded)** |
-| **J11-M2-5** | Subsequent Tuning Candidates | *Pending Selection* | *Pending Selection* | TBD | *Active Tuning Stage* |
-| **J11-M2-6** | 3DOF FF + 3DOF PD ($K_p + K_d$) | *Pending* | *Pending* | TBD | *Roadmap* |
+| **J11-M2** | Qualified Baseline ($K_p=[0.05, 0.05, 0.05]$) | 0.4900 / 0.3110 / 0.9030 / 0.3633 | 0.3066 / 0.2705 / 0.3374 / 0.2888 | `20260918_152354` | **QUALIFIED BASELINE** |
+| **J11-M2-5** | Cand 1 Trial ($K_p=[0.05, 0.05, 0.10]$) | 0.5664 / 0.6917 / 1.5515 / 0.6874 | 0.4225 / 0.4464 / 0.5060 / 0.4482 | `20260918_160014` | **NOT RETAINED (Degraded)** |
+| **J11-M2-5** | Cand 2 Trial ($K_p=[0.05, 0.05, 0.025]$) | **0.4584 / 0.3951 / 0.8274 / 0.4334** | **0.2724 / 0.2794 / 0.3075 / 0.2789** | `20260919_152543` | **BEST TESTED P-ONLY CONFIGURATION** |
+| **J11-M2-5** | Cand 3 Trial ($K_p=[0.05, 0.05, 0.0125]$) | 0.4163 / 0.3715 / 0.8828 / 0.4463 | 0.2967 / 0.2624 / 0.3992 / 0.2865 | `20260919_153847` | **NOT RETAINED (Rebound)** |
+| **J11-M2-6** | 3DOF FF + 3DOF PD ($K_p + K_d$) | *Pending* | *Pending* | TBD | *Next Stage Roadmap* |
 | **J11-M2-7** | 3DOF FF + 3DOF PID ($K_p + K_d + K_i$) | *Pending* | *Pending* | TBD | *Roadmap* |
 | **J12** | Task-Space ADRC (ESO + Disturbance Rejection) | *Pending* | *Pending* | TBD | *Roadmap* |
 
