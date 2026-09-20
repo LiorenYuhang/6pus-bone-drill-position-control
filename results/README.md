@@ -7,13 +7,14 @@
 
 ## 1. 证据分级体系 (Evidence Hierarchy)
 
-为了在保证实机实验全可复现性的同时，防止海量高频运行时日志造成 Git 仓库膨胀，本项目对实验数据实施严格的三级治理：
+为了在保证实机实验全可复现性的同时，防止海量高频运行时日志造成 Git 仓库膨胀，本项目对实验数据实施严格的四级治理：
 
 | 级别 | 定义与准入标准 | Git 版本控制策略 | 说明与典型产物 |
 | :--- | :--- | :---: | :--- |
-| **Canonical Evidence**<br>*(权威基准证据)* | 支撑核心里程碑结论、论文/博客图表（如 Stewart-3 图 6）、架构验收准入与阶段冻结的不可替代实机数据。具备完备元数据（`metadata.json`）、完整时序、严格单调递增时间戳与无故障断言。 | **MUST KEEP**<br>(永久纳入 Git 跟踪) | • `stewart3_j8_figure6_20260916_135013/`<br>• `j7/` (C10 预检与 50Hz 伺服基准)<br>• `j9_1/` (双 IMU 姿态与力臂可辨识性基线)<br>• `j10/` (6 自由度单轴安全包络量测基线) |
+| **Canonical Final Evidence**<br>*(权威基准证据)* | 支撑核心里程碑结论、论文/博客图表（如 Stewart-3 图 6）、最终控制结论、架构验收准入与阶段冻结的不可替代实机数据。具备完备元数据（`metadata.json`）、完整时序、严格单调递增时间戳与无故障断言。 | **RECOMMENDED**<br>(纳入 Git，供 clone 后重算/作图) | • `stewart3_j8_figure6_20260916_135013/`<br>• `j7/` (C10 预检与 50Hz 伺服基准)<br>• `j9_1/` (双 IMU 姿态与力臂可辨识性基线)<br>• `j10/` (6 自由度单轴安全包络量测基线)<br>• J11 M1/M2 最终 raw CSV + summary |
 | **Representative Evidence**<br>*(代表性样本)* | 验证算法阶段性表现或特定边界条件的典型采样切片，用于离线校验或跨环境基准对齐。 | **OPTIONAL**<br>(按需精简后跟踪) | • 仿真模型对齐样本<br>• 控制器参数基准响应片段 |
-| **Intermediate / Tuning**<br>*(中间过程与调试数据)* | 探索性边界搜索、高频扫描原始遥测、调参重试、单步调试 log 以及未达准入标准的运行产物。数据量通常在数十至数百兆。 | **LOCAL ONLY**<br>(保留于本地，Git 忽略) | • `results/J10_A*/` 各轴超大扫描数据<br>• `results/j11/j11_2a/` 早期零增益粗测与本地调试数据<br>• 由 `.gitignore` 规则自动排除 |
+| **Intermediate / Tuning**<br>*(中间过程与调试数据)* | 探索性边界搜索、高频扫描原始遥测、调参重试、单步调试 log 以及未达准入标准的运行产物。数据量通常在数十至数百兆。 | **LOCAL ONLY**<br>(保留于本地，Git 忽略) | • `results/J10_A*/` 各轴超大扫描数据<br>• `results/j11/j11_2a/` 早期零增益粗测与本地调试数据<br>• `results/j11/m2_pid/` 中的中间调参目录 |
+| **Smoke Test / Debug**<br>*(Demo 冒烟与故障证据)* | Demo smoke-test 与运行时故障的 raw telemetry。长期信息由 `agent_docs/` 中的对应 audit 文档保存，不要求全量 raw 上传。 | **LOCAL ONLY by default**<br>(默认不提交完整 raw) | • Demo A/B smoke-test 遥测<br>• 单次 USB-UART fault 的完整 raw CSV |
 
 ---
 
@@ -28,7 +29,7 @@
   - 包含硬件前置检查通过标记（Preflight Check 1..10 PASS，0 timeout，0 fault，`hardware_write_count > 0` 经明确书面授权）。
 - **仿真与无实机测试数据集 (Simulation / Mock / Dry-Run Evidence)**：
   - 基于模型计算或 FakeBus 生成；
-  - 严格记录 $\mathbf{\text{hardware\_write\_count} = 0}$；
+  - 严格记录 **`hardware_write_count = 0`**；
   - 仅用于算法逻辑、坐标变换与调度确定性证明，严禁将仿真或软件调度结果表述为真实物理平台性能。
 
 ---
@@ -51,7 +52,7 @@
   - `recorder_summary.json`: 记录器退出统计与各时序刷盘确认元数据
 - **对应分析与报告**：
   - 权威准入报告：[`agent_docs/decisions/J8_FINAL_HARDWARE_QUALIFICATION.md`](../agent_docs/decisions/J8_FINAL_HARDWARE_QUALIFICATION.md)
-  - 教学透视追踪：[`6PUS_ROS2_CODE_LEARNING_TUTORIAL.md#9`](../6PUS_ROS2_CODE_LEARNING_TUTORIAL.md)
+  - 教学透视追踪：[`docs/整体学习参考/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md#9`](../docs/整体学习参考/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md)
 
 ### 3.2 J10 单轴 6 自由度实机安全运行包络边界基准
 - **数据集路径**：[`results/j10/`](./j10/)

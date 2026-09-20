@@ -141,7 +141,7 @@ Asynchronous Telemetry Publisher Worker (Pus6TelemetryThread)
 ### Phase 2: ONE-SHOT Physical Hardware Static Home Validation
 - **Target Command**:
   ```bash
-  ./j11_video_start.sh --duration 300.0 --servo-scheduler-mode dedicated_thread --telemetry-publish-mode async_latest
+  ./bone_ws/scripts/j11/j11_video_start.sh --duration 300.0 --servo-scheduler-mode dedicated_thread --telemetry-publish-mode async_latest
   ```
 - **Execution Rules**:
   - Base completely static (user does NOT move Base).

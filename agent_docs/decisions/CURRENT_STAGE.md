@@ -1,19 +1,35 @@
 # 6PUS 当前开发阶段状态卡 (Current Stage State Sheet)
 
-**最后更新时间**: 2026-09-18  
-**当前冻结状态**: $\mathbf{J11\text{-}M1\ Base\text{-}IMU\ Full\ SO(3)\ Feedforward\ Attitude\ Hold\ +\ Driver\ Runtime\ QUALIFIED\ (COMPLETE\ /\ FROZEN)}$  
-*(官方 Release Tag: `v1.0-j11-m1-feedforward-hardware-qualified`)*
+**最后更新时间**: 2026-09-20
+
+**当前状态**: **J11 FINAL FREEZE READY** / Controller development CLOSED / pending **Task 4 Final Git Freeze**
+
+**下一研究阶段**: **J12 ADRC**
 
 ---
 
 ## 1. 阶段导航 (Stage Status)
 
-* **当前推进阶段**: **$\mathbf{J11\text{-}M1\ COMPLETE\ /\ FROZEN}$**
-  - **下一阶段**: **$\mathbf{J11\text{-}M2\ Dual\text{-}IMU\ PID\ Residual\ Attitude\ Stabilization}$**
-  - **阶段权威结论**:
-    - **`J11-M1 FEEDFORWARD ATTITUDE HOLD = PASS`**
+* **当前推进阶段**: **J11 FINAL FREEZE READY**
+  - **最终控制器**: Base-IMU SO(3) Feedforward + Platform-IMU Classical P/PD Attitude Feedback
+  - **最终参数**: `Kp=[0.05,0.05,0.025]`, `Kd=[0,0.0015,0.0015] s`, `Ki=[0,0,0]`, `fc=5 Hz`
+  - **实际反馈**: Roll=P, Pitch=PD, Yaw=PD
+  - **Roll-D**: `Kd_roll=0.0010 s` qualified repeat 已完成但未保留；`Kd_roll=0`，调参 CLOSED
+  - **Demo 状态**:
+    1. **Demo A — Feedforward Only: PASS**
+    2. **Demo B — Feedforward + P/PD: PASS ON REPEAT**
+    3. **首次 Demo B anomaly**: TRANSIENT MOTOR USB-UART TRANSPORT LOSS（motor CH340 `usb 3-2` 瞬时 disconnect/re-enumeration → `motion_write_failure`）— **NON-BLOCKING ENGINEERING OBSERVATION**，见 [`agent_docs/j11/J11_DEMO_B_USB_UART_FAULT_AUDIT.md`](../j11/J11_DEMO_B_USB_UART_FAULT_AUDIT.md)
+  - **下一执行步骤**: **TASK 4 — FINAL GIT FREEZE**（commit / tag / push；需用户明确确认）
+  - **下一研究阶段**: **J12 External Payload / Force Disturbance + ADRC**
+  - **权威入口**:
+    - [`agent_docs/j11/J11_FINAL_SUMMARY.md`](../j11/J11_FINAL_SUMMARY.md)
+    - [`docs/j11/J11_FINAL_CONTROL_COMPARISON.md`](../../docs/j11/J11_FINAL_CONTROL_COMPARISON.md)
+    - [`agent_docs/j11/J11_TO_J12_HANDOFF.md`](../j11/J11_TO_J12_HANDOFF.md)
+    - [`agent_docs/j11/J11_DEMO_B_USB_UART_FAULT_AUDIT.md`](../j11/J11_DEMO_B_USB_UART_FAULT_AUDIT.md)
+  - **冻结结论仍有效**:
+    - **`J11-M1 FEEDFORWARD ATTITUDE HOLD = PASS / FROZEN`**
     - **`J11 DRIVER RUNTIME = QUALIFIED FOR CONTROL RESEARCH`**
-    - **`STOP ALL DRIVER RUNTIME OPTIMIZATION`**
+    - **`STOP ALL DRIVER / UART OPTIMIZATION`**
   - **最新实机验证**:
     1. **`J11 FINAL STATIC HOME 300s QUALIFICATION = PASS`** (2026-09-18 11:15:27):
        - 完整运行 300.0s，`hardware_write_count`: 14,944；
@@ -64,6 +80,6 @@
 2. **J10 收口与交接文档**: [`agent_docs/stages/J10/J10_FINAL_SUMMARY.md`](file:///home/lyapunov/bone_drill/agent_docs/stages/J10/J10_FINAL_SUMMARY.md) / [`agent_docs/stages/J10/J10_TO_J11_HANDOFF.md`](file:///home/lyapunov/bone_drill/agent_docs/stages/J10/J10_TO_J11_HANDOFF.md)
 3. **J9 收口与交接文档**: [`agent_docs/stages/J9/J9_FINAL_SUMMARY.md`](file:///home/lyapunov/bone_drill/agent_docs/stages/J9/J9_FINAL_SUMMARY.md) / [`agent_docs/stages/J9/J9_TO_J10_HANDOFF.md`](file:///home/lyapunov/bone_drill/agent_docs/stages/J9/J9_TO_J10_HANDOFF.md)
 4. **J8 最终硬件准入报告**: [`agent_docs/decisions/J8_FINAL_HARDWARE_QUALIFICATION.md`](file:///home/lyapunov/bone_drill/agent_docs/decisions/J8_FINAL_HARDWARE_QUALIFICATION.md)
-5. **唯一日常实机操作指南**: [`6PUS_SERVO_OPERATION_GUIDE.md`](file:///home/lyapunov/bone_drill/6PUS_SERVO_OPERATION_GUIDE.md)
-6. **ROS 2 架构与教学教程**: [`6PUS_ROS2_CODE_LEARNING_TUTORIAL.md`](file:///home/lyapunov/bone_drill/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md)
+5. **唯一日常实机操作指南**: [`docs/整体学习参考/6PUS_SERVO_OPERATION_GUIDE.md`](../../docs/整体学习参考/6PUS_SERVO_OPERATION_GUIDE.md)
+6. **ROS 2 架构与教学教程**: [`docs/整体学习参考/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md`](../../docs/整体学习参考/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md)
 7. **J7 基线设计与决策**: [`agent_docs/decisions/J7_C0_SERVO_ARCHITECTURE_DESIGN.md`](file:///home/lyapunov/bone_drill/agent_docs/decisions/J7_C0_SERVO_ARCHITECTURE_DESIGN.md)

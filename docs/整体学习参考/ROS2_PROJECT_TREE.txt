@@ -1,0 +1,201 @@
+bone_ws/src
+├── h30_imu
+│   ├── CMakeLists.txt
+│   ├── config
+│   │   ├── h30_relative_attitude.yaml
+│   │   └── h30.yaml
+│   ├── include
+│   │   └── h30_imu
+│   │       ├── h30_protocol.hpp
+│   │       └── source_capture_writer.hpp
+│   ├── launch
+│   │   ├── h30_dual.launch.py
+│   │   ├── h30.launch.py
+│   │   ├── h30_relative.launch.py
+│   │   ├── h30_visual.launch.py
+│   │   └── visualize.launch.py
+│   ├── msg
+│   │   ├── RelativeAttitude.msg
+│   │   └── TimedImu.msg
+│   ├── package.xml
+│   ├── rviz
+│   │   └── h30.rviz
+│   ├── scripts
+│   │   ├── imu_csv_visualizer.py
+│   │   ├── j9_e1a_platform_orientation_calibrator.py
+│   │   ├── j9_e1b_r2_nomotion_qualification.py
+│   │   ├── j9_e1b_r3_platform_orientation_hardware_recalibration.py
+│   │   ├── j9_e1b_r4_active_load_qualification.py
+│   │   ├── j9_e1b_r4a_feedback_fk_qualification.py
+│   │   ├── j9_e1b_r4c_canonical_qualification.py
+│   │   ├── j9_e1c1b_consistency_audit.py
+│   │   ├── j9_e1c1c_dynamic_consistency_audit.py
+│   │   ├── j9_e1c1_offline_analysis.py
+│   │   ├── j9_e1c_1_platform_orientation_calibration.py
+│   │   ├── j9_e1c_2_platform_orientation_calibration.py
+│   │   ├── j9_e1d_1_static_gravity_calibration.py
+│   │   ├── j9_e1d_rx2b_handoff_qualification.py
+│   │   ├── j9_e2b_dual_imu_vibration_identification.py
+│   │   ├── j9_e2d_1a_pitch_only_active_damping.py
+│   │   ├── j9_e2d_1_pitch_only_active_damping_qualification.py
+│   │   ├── j9_e2d_3a_open_loop_pitch_frf.py
+│   │   ├── j9_e2d_3a_software_qualification_runner.py
+│   │   ├── j9_e2d_multi_topic_recorder.py
+│   │   ├── j9_e2d_pitch_damping_node.py
+│   │   └── j9_e2d_stress_test.py
+│   ├── src
+│   │   ├── h30_imu_node.cpp
+│   │   ├── h30_protocol.cpp
+│   │   ├── h30_relative_attitude_node.cpp
+│   │   └── source_capture_writer.cpp
+│   └── test
+│       ├── test_h30_protocol.cpp
+│       ├── test_j6_phase8_imu_preparation.py
+│       ├── test_j9_b_h30_integration.py
+│       ├── test_j9_b_timed_interfaces.cpp
+│       ├── test_j9_e1a_platform_orientation_calibrator.py
+│       ├── test_j9_e1b_r4a_qualification.py
+│       ├── test_j9_e1c_1_teardown.py
+│       ├── test_j9_e1d_1_static_gravity_runner.py
+│       ├── test_j9_e2b_dual_imu_vibration_identification.py
+│       ├── test_j9_e2d_1a_pitch_only_active_damping.py
+│       ├── test_j9_e2d_1_pitch_only_active_damping_qualification.py
+│       ├── test_j9_e2d_1r2_timing_isolation.py
+│       ├── test_j9_e2d_1r3_isolated_integration.py
+│       ├── test_j9_e2d_3a_open_loop_pitch_frf.py
+│       ├── test_j9_e2d_3a_software_qualification_runner.py
+│       └── test_source_capture_writer.cpp
+├── pus6_bringup
+│   ├── config
+│   │   └── system_params.yaml
+│   ├── launch
+│   │   └── pus6_system.launch.py
+│   ├── package.xml
+│   ├── pus6_bringup
+│   │   ├── __init__.py
+│   │   └── j2_f0_auditor_node.py
+│   ├── resource
+│   │   └── pus6_bringup
+│   ├── scripts
+│   │   └── j2_f0_auditor_node.py
+│   ├── setup.cfg
+│   ├── setup.py
+│   └── test
+│       └── test_launch.py
+├── pus6_control
+│   ├── config
+│   ├── launch
+│   ├── package.xml
+│   ├── pus6_control
+│   │   ├── controller_interface.py
+│   │   ├── control_node.py
+│   │   ├── __init__.py
+│   │   └── joint_trajectory_controller.py
+│   ├── README.md
+│   ├── resource
+│   │   └── pus6_control
+│   ├── setup.cfg
+│   ├── setup.py
+│   └── test
+│       ├── test_controller.py
+│       └── test_j4_continuous_pipeline_mock.py
+├── pus6_kinematics
+│   ├── config
+│   │   └── 6pus_geometry.yaml
+│   ├── launch
+│   ├── package.xml
+│   ├── pus6_kinematics
+│   │   ├── analytical_6pus.py
+│   │   ├── fk_node.py
+│   │   ├── geometry_config.py
+│   │   ├── __init__.py
+│   │   ├── kinematics_interface.py
+│   │   ├── kinematics_node.py
+│   │   └── state_synchronizer.py
+│   ├── resource
+│   │   └── pus6_kinematics
+│   ├── setup.cfg
+│   ├── setup.py
+│   └── test
+│       ├── test_fk_ik_consistency.py
+│       ├── test_fk_node_pipeline.py
+│       ├── test_fk_node_realtime_executor.py
+│       ├── test_geometry_config.py
+│       ├── test_j3_ik_driver_integration.py
+│       ├── test_j5_c2_hw_acceptance.py
+│       ├── test_j6_phase6_geometry_tools.py
+│       ├── test_j6_phase7_fk_acceptance.py
+│       ├── test_kinematics.py
+│       └── test_state_synchronizer.py
+├── pus6_motor_driver
+│   ├── config
+│   │   └── motors.yaml
+│   ├── launch
+│   │   └── motor_driver.launch.py
+│   ├── package.xml
+│   ├── pus6_motor_driver
+│   │   ├── benchmark_stats.py
+│   │   ├── fake_bus.py
+│   │   ├── __init__.py
+│   │   ├── j7_ab_benchmark_runner.py
+│   │   ├── j7_c10_read_only_preflight.py
+│   │   ├── j7_real_single_axis_runner.py
+│   │   ├── j7_real_six_axis_park_home_runner.py
+│   │   ├── j7_real_six_axis_runner.py
+│   │   ├── j7_real_uart_adapter.py
+│   │   ├── j7_servo_experiment_runner.py
+│   │   ├── j7_servo_feedback_scheduler.py
+│   │   ├── j7_servo_transport.py
+│   │   ├── j7_six_axis_servo_transport.py
+│   │   ├── j9_uart3e_harness.py
+│   │   ├── motor_driver_node.py
+│   │   ├── motor.py
+│   │   ├── protocol.py
+│   │   ├── safety.py
+│   │   ├── six_motor_controller.py
+│   │   └── uart_bus.py
+│   ├── resource
+│   │   └── pus6_motor_driver
+│   ├── setup.cfg
+│   ├── setup.py
+│   └── test
+│       ├── test_j2_b2_tracking.py
+│       ├── test_j2_b_bringup.py
+│       ├── test_j2_c_vector.py
+│       ├── test_j2_c_vector.py.orig
+│       ├── test_j2_f0_benchmark.py
+│       ├── test_j3_cartesian_matrix.py
+│       ├── test_j3_large_displacement.py
+│       ├── test_j3_startup_homing.py
+│       ├── test_j6_hardware_connection.py
+│       ├── test_j6_phase1_readonly.py
+│       ├── test_j6_phase2_axis_mapping.py
+│       ├── test_j6_phase3_cartesian_commissioning.py
+│       ├── test_j6_phase3_first_motion_probe.py
+│       ├── test_j6_phase3_single_axis_micro_jog.py
+│       ├── test_j6_phase4_home_park.py
+│       ├── test_j6_phase5_small_cartesian.py
+│       ├── test_j7_c10_read_only_preflight.py
+│       ├── test_j7_c1_servo_mock.py
+│       ├── test_j7_c2_4_servo_transport.py
+│       ├── test_j7_c5_six_axis_servo_transport.py
+│       ├── test_j7_c6_feedback_scheduler.py
+│       ├── test_j7_c7_servo_experiment_runner.py
+│       ├── test_j7_c9_real_uart_adapter.py
+│       ├── test_j7_servo_home_park.py
+│       ├── test_j8_mock_pipeline.py
+│       ├── test_j9_uart3e_harness.py
+│       ├── test_motor_driver_node.py
+│       ├── test_safety.py
+│       └── test_six_motor_controller.py
+└── pus6_msgs
+    ├── CMakeLists.txt
+    ├── msg
+    │   ├── FkStateStamped.msg
+    │   ├── TimedJointCommand.msg
+    │   └── TimedJointFeedback.msg
+    └── package.xml
+
+38 directories, 159 files
+HISTORICAL / QUERY SNAPSHOT
+This tree is a point-in-time repository reference and is not an authoritative live inventory.

@@ -1,6 +1,6 @@
 # J5 教程逐章执行性与代码一致性审计报告 (J5 Tutorial Execution Audit Report)
 
-> **审计对象**: [`6PUS_ROS2_CODE_LEARNING_TUTORIAL.md`](file:///home/lyapunov/bone_drill/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md)  
+> **审计对象**: [`docs/整体学习参考/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md`](../../../docs/整体学习参考/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md)
 > **审计日期**: 2026-08-20  
 > **审计环境**: Ubuntu 24.04 / ROS 2 Jazzy / Python 3.12 / 工作空间源码核对  
 > **审计结论**: $\mathbf{ALL\ 12\ CHAPTERS\ PASS\ (100\%\ 一致性与可执行性)}$

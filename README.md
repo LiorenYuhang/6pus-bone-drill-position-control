@@ -12,7 +12,7 @@
 ### Key Milestones:
 - **J1–J10 (Completed & Frozen)**: Comprehensive real-hardware foundation covering low-level multi-actuator UART communication, analytical inverse kinematics, $C^2$ jerk-limited trajectory shaping, 50 Hz continuous servo streaming, dual-IMU microsecond clock synchronization, numerical forward kinematics, and complete 6-DOF single-axis operational workspace qualification on the physical platform.
 - **J11-M1 (Completed & Frozen)**: Base-IMU full-$SO(3)$ feedforward attitude hold, dedicated driver runtime qualification, two-tier safety policy, 300s static home qualification, and low-speed dynamic base disturbance rejection on real physical hardware (`v1.0-j11-m1-feedforward-hardware-qualified`).
-- **J11-M2+ (Active Research Phase)**: Stage J11-M2-6 (3DOF Yaw-D tuning sweep) completed; frozen working baseline retained at $K_p = [0.05, 0.05, 0.025]$, $K_d = [0.0, 0.0, 0.0015]\,\text{s}$, $K_i = 0$, $f_c = 5.0\,\text{Hz}$. Next: Roll/Pitch D or PID (M2-7) and task-space ADRC (J12).
+- **J11 (Final Freeze Ready)**: Retained Base-IMU SO(3) Feedforward + Platform-IMU Classical P/PD Attitude Feedback with $K_p=[0.05,0.05,0.025]$, $K_d=[0,0.0015,0.0015]\,\text{s}$, $K_i=0$, and $f_c=5\,\text{Hz}$ (Roll=P, Pitch=PD, Yaw=PD). Roll-D tuning is closed. Demo A (Feedforward) PASS; Demo B (Feedforward + P/PD) PASS ON REPEAT. Next research stage: J12 ADRC.
 
 ---
 
@@ -42,11 +42,11 @@ The development of the 6PUS robotic platform is organized into two distinct over
 │                       [STATUS: ACTIVE ROADMAP]                          │
 │  • J11-M1: Base-IMU Feedforward Attitude Hold & Driver Runtime Qualified│
 │            [STATUS: COMPLETED & FROZEN — Tag: v1.0-j11-m1]              │
-│  • J11-M2-6: 3DOF Yaw-D Tuning Sweep Completed                          │
-│              (Frozen Baseline: Kp=[0.05, 0.05, 0.025],                  │
-│               Kd=[0, 0, 0.0015] s, fc=5.0 Hz, Ki=0)                     │
-│  • J11-M2-7: 3DOF PID (Integral Bias Elimination) [NEXT]                │
-│  • Future Research Roadmap:                                             │
+│  • J11-M2 Final: Roll=P, Pitch=PD, Yaw=PD                               │
+│             Kp=[0.05, 0.05, 0.025], Kd=[0, 0.0015, 0.0015] s, Ki=0     │
+│             fc=5.0 Hz; qualified Roll-D repeat not retained             │
+│  • Current: FINAL FREEZE READY; Demo A PASS, Demo B PASS ON REPEAT     │
+│  • Next J12: ADRC under external payload / force disturbance           │
 │    - Active Disturbance Rejection Control (ADRC) & Extended State Obs   │
 │    - IMU Acceleration Feedforward & Disturbance Observer (DOB)          │
 │    - Learning-Based Adaptive Trajectory & Stiffness Compensation        │
@@ -54,7 +54,7 @@ The development of the 6PUS robotic platform is organized into two distinct over
 ```
 
 > [!IMPORTANT]
-> **Honesty & Verification Boundary**: Stages J1 through J10 as well as Stage J11-M1 are fully qualified on real physical hardware and frozen (Official Release Tag: `v1.0-j11-m1-feedforward-hardware-qualified`). Stage J11-M2 (Dual-IMU PID Residual Attitude Stabilization) is the active next stage. No unverified claims are made for future phases.
+> **Honesty & Verification Boundary**: J1-J10 and J11-M1 are frozen; the final J11-M2 P/PD controller is supported by existing qualified hardware evidence. Both final Demo smoke tests have been executed (Demo A PASS; Demo B PASS ON REPEAT — the first Demo B run was interrupted by a transient motor CH340 USB-UART disconnect, see [`agent_docs/j11/J11_DEMO_B_USB_UART_FAULT_AUDIT.md`](./agent_docs/j11/J11_DEMO_B_USB_UART_FAULT_AUDIT.md)). No unverified J12 ADRC performance claim is made.
 
 ### J10 Single-Axis Operational Workspace Envelope (HOME-Centered)
 
@@ -69,24 +69,69 @@ The development of the 6PUS robotic platform is organized into two distinct over
 
 *(Note: These ranges represent independent single-axis explorations centered at `OPERATING_HOME = [1000]*6` steps. Full details are documented in [`agent_docs/stages/J10/J10_FINAL_SUMMARY.md`](./agent_docs/stages/J10/J10_FINAL_SUMMARY.md)).*
 
-### J11 Attitude Stabilization — Hardware Results (M1 vs. Qualified 3DOF P Baseline)
+### J11 Dual-IMU Attitude Stabilization (Stage Result)
 
-Stage J11-M2 introduces the **Task-Space $SO(3)$ Attitude PID control architecture**. Simultaneous 3DOF closed-loop proportional attitude feedback (**J11-M2-4 3DOF P Integration**) has been verified on the physical parallel robot under dynamic base disturbance.
+**Objective**: when the Base is disturbed in attitude, use the dual IMUs + 6PUS active compensation to keep the Platform as close as possible to its initial 3-axis attitude.
 
-> [!NOTE]
-> **Active Control Status in J11-M2**:
-> - **Structure**: $\mathbf{\text{3DOF Base-IMU } SO(3) \text{ Feedforward}} + \mathbf{\text{3DOF Platform-IMU } SO(3) \text{ P Feedback}}$
-> - **Current Qualified Baseline**: $K_{p\_roll} = 0.05, K_{p\_pitch} = 0.05, K_{p\_yaw} = 0.05$ ($K_i = 0, K_d = 0$, limits $\pm 0.5^\circ$)
-> - **Tuning Status**: M2-5 gain tuning active. Candidate 1 ($K_{p\_yaw} = 0.10$) tested on hardware and not retained due to degraded system-level performance.
-> - *Cross-controller comparison uses normalized Platform/Base rejection metrics ($G_{\text{Peak}}, G_{\text{RMS}}$) to account for natural variations in manual Base disturbance.*
+**Approach**:
 
-| Axis | Metric | M1 Pure Feedforward (`20260918_112354`) | M2 Qualified 3DOF P Baseline (`20260918_152354`) | Normalized Improvement |
-| :--- | :--- | :---: | :---: | :---: |
-| **Roll** | $G_{\text{Peak}}$ / $G_{\text{RMS}}$ | 0.4778 / 0.4071 | 0.4900 / 0.3066 | -2.55% (Peak) / **+24.68% (RMS)** |
-| **Pitch** | $G_{\text{Peak}}$ / $G_{\text{RMS}}$ | 0.5946 / 0.4153 | 0.3110 / 0.2705 | **+47.69% (Peak)** / **+34.87% (RMS)** |
-| **Yaw** | $G_{\text{Peak}}$ / $G_{\text{RMS}}$ | 0.7983 / 0.2912 | 0.9030 / 0.3374 | -13.12% (Peak) / -15.87% (RMS) *(Tuning Target)* |
+- **M1 (Feedforward, frozen)**: Base-IMU full SO(3) Feedforward; Platform IMU is observer/validation only.
+- **M2 (Feedforward + Feedback, final)**: Base-IMU SO(3) Feedforward + Platform-IMU Classical P/PD Attitude Feedback (Roll=P, Pitch=PD, Yaw=PD).
 
-*Detailed canonical comparison archive, Lie-algebra error derivations, and full 50 Hz telemetry archives:* [`agent_docs/j11/J11_M1_M2_CONTROL_COMPARISON.md`](./agent_docs/j11/J11_M1_M2_CONTROL_COMPARISON.md).
+**Final gains**:
+
+```text
+Kp = [0.05, 0.05, 0.025]
+Ki = [0.0, 0.0, 0.0]
+Kd = [0.0, 0.0015, 0.0015] s
+Derivative LPF fc = 5 Hz
+Residual limit = ±0.5° / axis
+```
+
+**Metrics**: `Peak = max_k |θ_k|` (worst-case deviation) and `RMS = sqrt((1/N) Σ θ_k²)` (overall error level). `G_Peak = Platform Peak / Base Peak` and `G_RMS = Platform RMS / Base RMS` are the normalized Platform/Base attitude-response ratios — smaller G means stronger attitude-disturbance rejection. Roll/Pitch/Yaw describe individual attitude components; the SO(3) attitude error describes the overall 3-D rotational error relative to the target attitude.
+
+**Final result**:
+
+| Metric | M1 Feedforward | M2 Feedforward + P/PD | Reduction |
+|---|---:|---:|---:|
+| Roll G_RMS | 0.4071 | 0.2662 | 34.6% |
+| Pitch G_RMS | 0.4153 | 0.2607 | 37.2% |
+| Yaw G_RMS | 0.2912 | 0.2297 | 21.1% |
+| SO(3) G_Peak | 0.7353 | 0.3063 | 58.3% |
+| SO(3) G_RMS | 0.3713 | 0.2575 | 30.6% |
+
+`Reduction = (1 - G_M2 / G_M1) × 100%`. Full 8-metric table and calculation details: [`docs/j11/J11_FINAL_CONTROL_COMPARISON.md`](./docs/j11/J11_FINAL_CONTROL_COMPARISON.md).
+
+> These percentages reflect the observed normalized attitude-response reductions in two representative real-hardware experiments. Because the two manual Base disturbance trajectories were not strictly identical, the result is a normalized hardware characterization rather than a strict identical-input transfer-function gain.
+
+**Canonical datasets**:
+
+- M1: `results/j11/runtime_validation/20260918_112354/J11_DISTURB_QUAL_feedforward_powered.csv`
+- M2: `results/j11/m2_pid/20260920_095850/j11_m2_7a_pitchd_cand2_repeat_phaseB_dynamic_telemetry_powered.csv`
+
+These raw CSVs are the starting point for any future re-plotting or re-computation of Peak / RMS / G_Peak / G_RMS.
+
+### J11 Demos
+
+No manual ROS 2 or workspace sourcing is required in a fresh terminal. Both wrappers load ROS 2 Jazzy and `bone_ws/install/setup.bash` themselves, while remaining compatible with an already-sourced development terminal.
+
+Feedforward only:
+
+```bash
+cd /home/lyapunov/bone_drill
+bash bone_ws/scripts/run_j11_demo_feedforward.sh
+```
+
+Feedforward + P/PD:
+
+```bash
+cd /home/lyapunov/bone_drill
+bash bone_ws/scripts/run_j11_demo_feedforward_pd.sh
+```
+
+Press `Ctrl+C` once to stop the demo cleanly and return to `OPERATING_HOME`. Developers may still source `/opt/ros/jazzy/setup.bash` and `/home/lyapunov/bone_drill/bone_ws/install/setup.bash` explicitly for diagnostics, but this is not required for the final demos.
+
+**Status**: J11 FINAL FREEZE READY — Demo A (Feedforward) PASS; Demo B (Feedforward + P/PD) PASS ON REPEAT (the first P/PD Demo run hit a one-off motor USB-UART transient disconnect and passed on repeat; this is archived as a non-blocking hardware-robustness item). **Next**: J12 ADRC disturbance rejection under external payload/force disturbance.
 
 ---
 
@@ -106,7 +151,7 @@ The repository is structured with a strict separation of concerns between code, 
 │   │   └── h30_imu/                       # Yesense H30 IMU C++ driver & SO(3) relative attitude estimator
 │   └── scripts/                           # Reproducible experiment runners & verification scripts
 │
-├── agent_docs/                            <-- [Project Knowledge Base] Human/Agent-readable technical documentation
+├── agent_docs/                            <-- [Agent-facing internal docs] stage history, decisions, tuning, handoff
 │   ├── stages/                            # Stage plans (J1..J11), final closure summaries, cross-stage handoffs
 │   ├── reports/                           # Empirical analysis reports (J10 workspace characterization, J9.1 lever arm)
 │   ├── decisions/                         # Architecture Decision Records (ADRs) & hardware qualification logs
@@ -122,13 +167,14 @@ The repository is structured with a strict separation of concerns between code, 
 │
 ├── hardware/                              <-- [Hardware Specs] Actuator datasheets, wiring pinouts, CAD geometry
 ├── up/                                    <-- [Low-Level UART Baseline] Standalone multi-actuator serial validation bench
-├── STM32/ / teach/                        <-- [Firmware & Pendant] Embedded controller firmware and teaching pendant tools
-├── 6PUS_REAL_HARDWARE_OPERATION_GUIDE.md  <-- [Real-Hardware Guide] Operational checklist for physical power/homing/shutdown
+├── STM32/                                 <-- [Firmware] Embedded controller sources
+├── docs/                                 <-- [Human-facing docs] tutorials, operation guide, final results
 └── AGENTS.md                              <-- [Agent Operational Rules] Global safety guardrails and engineering invariants
 ```
 
 > **Separation of Concerns**:
-> - `agent_docs/` = Human/Agent-readable knowledge, architectures, and design decisions.
+> - `docs/` = Human-facing documentation (tutorials, operation guide, final technical results).
+> - `agent_docs/` = Agent-facing internal documentation (stage history, decisions, tuning history, handoff, fault audits).
 > - `results/` = Machine-generated experimental evidence, CSVs, telemetry JSONs, and raw execution logs.
 
 ---
@@ -138,9 +184,9 @@ The repository is structured with a strict separation of concerns between code, 
 For engineers, researchers, and automated agents engaging with this repository for the first time:
 
 1. **System Overview & Baseline**: Read this [`README.md`](./README.md) (or [`README_CN.md`](./README_CN.md)) for the high-level architecture and current status.
-2. **Full-Stack Tutorial**: Work through [`6PUS_ROS2_CODE_LEARNING_TUTORIAL.md`](./6PUS_ROS2_CODE_LEARNING_TUTORIAL.md) for an in-depth breakdown of the dual-pipeline architecture, inverse/forward kinematics, and 50Hz servo driver.
+2. **Full-Stack Tutorial**: Work through [`docs/整体学习参考/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md`](./docs/整体学习参考/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md) for an in-depth breakdown of the dual-pipeline architecture, inverse/forward kinematics, and 50Hz servo driver.
 3. **Documentation Navigation**: Consult [`agent_docs/README.md`](./agent_docs/README.md) to locate specific stage implementation plans, closure reports, and cross-stage handoff contracts.
-4. **Physical Hardware Operations**: If operating real actuators, review [`6PUS_REAL_HARDWARE_OPERATION_GUIDE.md`](./6PUS_REAL_HARDWARE_OPERATION_GUIDE.md) before powering on.
+4. **Physical Hardware Operations**: If operating real actuators, review [`docs/整体学习参考/6PUS_SERVO_OPERATION_GUIDE.md`](./docs/整体学习参考/6PUS_SERVO_OPERATION_GUIDE.md) before powering on.
 5. **Canonical Datasets & Evidence**: Explore [`results/README.md`](./results/README.md) to inspect real 50Hz Cartesian flight data (such as the 9-phase J8 demonstration dataset).
 
 ---
@@ -171,7 +217,7 @@ source install/setup.bash
 ```
 
 ### 3. Run Offline Unit & Integration Tests (Mock Mode)
-The test suite executes with `hardware_mode:=mock` and **strictly asserts $\mathbf{\text{hardware\_write\_count} = 0}$**:
+The test suite executes with `hardware_mode:=mock` and **strictly asserts **`hardware_write_count = 0`****:
 ```bash
 # Run all 346+ package tests across bone_ws
 colcon test --ctest-args -R test

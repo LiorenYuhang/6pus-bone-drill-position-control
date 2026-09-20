@@ -1,13 +1,18 @@
 # J11 Canonical System-Level Controller Performance Comparison Archive
 
-**Current Status**: Canonical Comparison Archive & Active Baseline  
-**Last Updated**: 2026-09-19  
+**Current Status**: J11 Tuning Archive — Final Retained Classical Baseline
+
+**Last Updated**: 2026-09-20
+
 **Scope**: Authoritative performance comparison of multi-axis control architectures on the 6PUS parallel surgical robot:
 - **J11-M1**: 3DOF Base-IMU $SO(3)$ Pure Feedforward (*Frozen Baseline*)
 - **J11-M2**: 3DOF Base-IMU $SO(3)$ Feedforward + 3DOF Platform-IMU $SO(3)$ P-only Feedback (*Qualified Baseline: $K_p = [0.05, 0.05, 0.05]$*)
 - **J11-M2-5**: 3DOF P Gain Tuning (*Coarse sweep completed; Candidate 2 retained as BEST TESTED P-ONLY CONFIGURATION: $K_p = [0.05, 0.05, 0.025]$*)
 - **J11-M2-6**: 3DOF Yaw-D Gain Tuning (*Univariate sweep completed; Candidate 2 retained as CURRENT FROZEN YAW-D WORKING BASELINE: $K_p = [0.05, 0.05, 0.025], K_d = [0, 0, 0.0015]\,\text{s}, f_c = 5.0\,\text{Hz}$*)
-- **Subsequent Stages**: 3DOF PID (M2-7) $\to$ Active Disturbance Rejection Control (J12 ADRC).
+- **J11-M2-7A**: 3DOF Pitch-D Gain Tuning (*Univariate sweep completed; Candidate 2 retained as CURRENT FROZEN PITCH-D WORKING BASELINE: $K_p = [0.05, 0.05, 0.025], K_d = [0, 0.0015, 0.0015]\,\text{s}, f_c = 5.0\,\text{Hz}$*)
+- **J11-M2-7B**: Roll-D $K_{d\_roll}=0.0010\,\text{s}$ qualified repeat completed but **NOT RETAINED**; final $K_{d\_roll}=0$ and Roll-D tuning CLOSED.
+- **Final Retained Controller**: $K_p=[0.05,0.05,0.025]$, $K_d=[0,0.0015,0.0015]\,\text{s}$, $K_i=0$, $f_c=5\,\text{Hz}$ (Roll=P, Pitch=PD, Yaw=PD).
+- **Next Research Stage**: J12 Active Disturbance Rejection Control (ADRC).
 
 ---
 
@@ -46,9 +51,17 @@ The objective of Stage J11 is active attitude vibration suppression on a 6PUS pa
                                         │
                                         ▼
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│ Progression Roadmap:                                                            │
-│   • J11-M2-7: 3DOF PID Feedback (Integral action only if steady bias persists)  │
-│   • J12: Extended State Observer & ADRC (Task-space total disturbance rejection)│
+│ J11-M2-7A: 3DOF Feedforward + Pitch-D Gain Sweep Complete (Pitch-D Retained)    │
+│ Retained Working Baseline: Cand 2 (Kp=[0.05, 0.05, 0.025],                      │
+│                                    Kd=[0.0, 0.0015, 0.0015] s, fc=5.0 Hz, Ki=0) │
+└───────────────────────────────────────┬─────────────────────────────────────────┘
+                                        │
+                                        ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ J11 Final Retained Classical Controller                                         │
+│   • Roll-D qualified repeat completed but NOT RETAINED; Kd_roll=0               │
+│   • Roll=P, Pitch=PD, Yaw=PD; Ki=0; tuning CLOSED                               │
+│   • Next: J12 ESO/ADRC task-space disturbance rejection                         │
 └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -71,7 +84,7 @@ All comparative metrics are computed directly from machine-generated, timestampe
 | **Evidence Directory** | [`results/j11/runtime_validation/20260918_112354/`](../../results/j11/runtime_validation/20260918_112354/) | [`results/j11/m2_pid/20260918_152354/`](../../results/j11/m2_pid/20260918_152354/) | [`results/j11/m2_pid/20260918_160014/`](../../results/j11/m2_pid/20260918_160014/) | [`results/j11/m2_pid/20260919_152543/`](../../results/j11/m2_pid/20260919_152543/) | [`results/j11/m2_pid/20260919_153847/`](../../results/j11/m2_pid/20260919_153847/) |
 | **Primary Telemetry CSV** | `J11_DISTURB_QUAL_feedforward_powered.csv` | `j11_m2_4_phaseB_dynamic_telemetry_powered.csv` | `j11_m2_5_phaseB_dynamic_telemetry_powered.csv` | `j11_m2_5_cand2_phaseB_dynamic_telemetry_powered.csv` | `j11_m2_5_cand3_phaseB_dynamic_telemetry_powered.csv` |
 | **Duration / Rate** | 120.0 s (5999 rows @ 50 Hz) | 60.0 s (2999 rows @ 50 Hz) | 60.0 s (2997 rows @ 50 Hz) | 60.0 s (2999 rows @ 50 Hz) | 60.0 s (2999 rows @ 50 Hz) |
-| **Active Gains** | None ($K_p=0, K_i=0, K_d=0$) | $K_p = [0.05, 0.05, 0.05]$ | $K_p = [0.05, 0.05, 0.10]$ | $K_p = [0.05, 0.05, 0.025]$ | $K_p = [0.05, 0.05, 0.0125]$ |
+| **Active Gains** | N/A / Platform feedback disabled | $K_p = [0.05, 0.05, 0.05]$ | $K_p = [0.05, 0.05, 0.10]$ | $K_p = [0.05, 0.05, 0.025]$ | $K_p = [0.05, 0.05, 0.0125]$ |
 | **Residual Limits** | N/A | $\pm 0.5^\circ$ per axis | $\pm 0.5^\circ$ per axis | $\pm 0.5^\circ$ per axis | $\pm 0.5^\circ$ per axis |
 | **Classification** | **FROZEN BASELINE** | **QUALIFIED BASELINE** | **NOT RETAINED (Degraded)** | **BEST TESTED P-ONLY CONFIGURATION** | **NOT RETAINED (Rebound)** |
 
@@ -91,11 +104,44 @@ All comparative metrics are computed directly from machine-generated, timestampe
 | **Disturbance Protocol** | Continuous multi-axis circular manual excitation | Continuous multi-axis circular manual excitation | Approx. 5 continuous circles of smooth, low-speed multi-axis manual excitation ($49.10\,\text{s}$ effective duration) |
 | **Classification** | **VALID / STRONG LOW-D CANDIDATE** | **CURRENT FROZEN YAW-D WORKING BASELINE** | **NOT RETAINED (PERFORMANCE REBOUND AT HIGHER TESTED Kd)** |
 
+### Table 2.3: Pitch Derivative (PD) Tuning Datasets (J11-M2-7A)
+
+| Attribute | J11-M2-7A Pitch-D Candidate 1 | J11-M2-7A Pitch-D Candidate 2 (Retained) | J11-M2-7A Pitch-D Candidate 3 |
+| :--- | :--- | :--- | :--- |
+| **Run Timestamp** | `20260920_094056` | `20260920_095850` | `20260920_100514` |
+| **Stage Identifier** | `j11_m2_7a_pitchd_cand1_repeat_phaseB_dynamic` | `j11_m2_7a_pitchd_cand2_repeat_phaseB_dynamic` | `j11_m2_7a_pitchd_cand3_phaseB_dynamic` |
+| **Evidence Directory** | [`results/j11/m2_pid/20260920_094056/`](../../results/j11/m2_pid/20260920_094056/) | [`results/j11/m2_pid/20260920_095850/`](../../results/j11/m2_pid/20260920_095850/) | [`results/j11/m2_pid/20260920_100514/`](../../results/j11/m2_pid/20260920_100514/) |
+| **Primary Telemetry CSV** | `j11_m2_7a_pitchd_cand1_repeat_phaseB_dynamic_telemetry_powered.csv` | `j11_m2_7a_pitchd_cand2_repeat_phaseB_dynamic_telemetry_powered.csv` | `j11_m2_7a_pitchd_cand3_phaseB_dynamic_telemetry_powered.csv` |
+| **Duration / Rate** | 60.0 s (2999 rows @ 50 Hz, effective 48.0 s) | 60.0 s (2999 rows @ 50 Hz, effective 52.0 s) | 33.18 s early-stop (1660 rows @ 50 Hz, effective 23.0 s) |
+| **Active Proportional Gains** | $K_p = [0.05, 0.05, 0.025]$ | $K_p = [0.05, 0.05, 0.025]$ | $K_p = [0.05, 0.05, 0.025]$ |
+| **Active Derivative Gains** | $K_d = [0.0, 0.0010, 0.0015]\,\text{s}$ | $K_d = [0.0, 0.0015, 0.0015]\,\text{s}$ | $K_d = [0.0, 0.0020, 0.0015]\,\text{s}$ |
+| **Derivative LPF Cutoff** | $f_c = 5.0\,\text{Hz}$ | $f_c = 5.0\,\text{Hz}$ | $f_c = 5.0\,\text{Hz}$ |
+| **Residual Limits** | $\pm 0.5^\circ$ per axis | $\pm 0.5^\circ$ per axis | $\pm 0.5^\circ$ per axis |
+| **Disturbance Protocol** | Continuous multi-axis manual excitation | Continuous multi-axis manual excitation | Continuous multi-axis manual excitation |
+| **Classification** | **VALID / PROMISING PITCH-D CANDIDATE** | **CURRENT FROZEN PITCH-D WORKING BASELINE** | **NOT RETAINED — PARTIAL DYNAMIC CHARACTERIZATION / EARLY DRIVER SAFETY LATCH** |
+
+### Table 2.4: Roll Derivative Closure Dataset (J11-M2-7B)
+
+| Attribute | Roll-D Initial Dynamic Run | Roll-D Qualified Repeat |
+| :--- | :--- | :--- |
+| **Run Timestamp** | `20260920_101856` | `20260920_102755` |
+| **Stage Identifier** | `j11_m2_7b_rolld_cand1_phaseB_dynamic` | `j11_m2_7b_rolld_cand1_repeat_phaseB_dynamic` |
+| **Evidence Directory** | [`results/j11/m2_pid/20260920_101856/`](../../results/j11/m2_pid/20260920_101856/) | [`results/j11/m2_pid/20260920_102755/`](../../results/j11/m2_pid/20260920_102755/) |
+| **Primary Telemetry CSV** | `j11_m2_7b_rolld_cand1_phaseB_dynamic_telemetry_powered.csv` | `j11_m2_7b_rolld_cand1_repeat_phaseB_dynamic_telemetry_powered.csv` |
+| **Summary JSON** | `j11_m2_7b_rolld_cand1_phaseB_dynamic_summary_powered.json` | `j11_m2_7b_rolld_cand1_repeat_phaseB_dynamic_summary_powered.json` |
+| **Active Derivative Gains** | $K_d=[0.0010,0.0015,0.0015]\,\text{s}$ | $K_d=[0.0010,0.0015,0.0015]\,\text{s}$ |
+| **Classification** | Valid characterization; not retained | **QUALIFIED REPEAT; NOT RETAINED** |
+
+The repeat completed 2999 cycles with 2946 hardware writes, final state `ACTIVE`, and an empty fault reason. Its normalized metrics did not justify retaining Roll-D over the balanced `095850` controller, so the final value is $K_{d\_roll}=0$; no further Roll-D gain is authorized.
+
 > [!WARNING]
 > **Documentation of Excluded and Non-Qualified Runs**:
 > - `20260918_150445` & `20260919_153610`: Formally classified as **NON-QUALIFIED / INVALID (NO-DISTURBANCE RUNS)**; excluded from dynamic evaluations because manual base disturbance was not applied.
 > - `20260919_160521` (Cand 1 Repeat 1): Experienced an actuator overcurrent stop event on ID3 at $t \approx 24.7\,\text{s}$. Formally classified as **REPEATABILITY INCONCLUSIVE / RUN INVALIDATED BY EARLY HARDWARE FAULT**. Control parameters were frozen without modification.
 > - `20260919_161729` (Cand 1 Repeat 2): Fully completed 60 s execution without hardware faults, but operator manual base disturbance was applied only between $t \approx 54.88\,\text{s} \sim 58.24\,\text{s}$ ($\approx 3.38\,\text{s}$ duration). Reclassified as **NON-QUALIFIED FOR DYNAMIC PERFORMANCE / INSUFFICIENT DISTURBANCE DURATION**; retained as extended static hold and short transient checkout evidence.
+> - `20260920_093216` (Pitch-D Cand 1 Strong Run): Characterized strong-amplitude manual excitation (Base $SO(3)$ Peak $19.31^\circ$). Retained as **VALID STRONG-DISTURBANCE CHARACTERIZATION RUN**.
+> - `20260920_093916` & `20260920_095706`: Excluded as **NON-QUALIFIED (NO-DISTURBANCE / SETUP TRANSITIONS)** where disturbance was not applied or operator prompt was delayed.
+> - `20260920_100514` (Pitch-D Cand 3): Terminated at $t \approx 33.18\,\text{s}$ by driver-side safety latch (`max jump 84 steps > limit 80 steps`). Classified as **PARTIAL DYNAMIC CHARACTERIZATION / EARLY-TERMINATED DRIVER-SAFETY RUN** with pre-trip degraded metrics; NOT RETAINED.
 
 ---
 
@@ -138,7 +184,7 @@ $$G_{SO(3)\_\text{Peak}} = \frac{\text{Peak}(\text{Platform } SO(3) \text{ Error
 | **Yaw Residual Peak / RMS** | $0.0900^\circ$ / $0.0143^\circ$ | $0.1252^\circ$ / $0.0232^\circ$ | $0.1268^\circ$ / $0.0208^\circ$ | $0.1724^\circ$ / $0.0426^\circ$ | Well within $\pm 0.50^\circ$ limit |
 | **Saturation Cycles (R / P / Y)** | **0 / 0 / 0** ($0.0\%$) | **0 / 0 / 0** ($0.0\%$) | **0 / 0 / 0** ($0.0\%$) | **0 / 0 / 0** ($0.0\%$) | Zero saturation in all qualified runs |
 | **Max Tracking Error** | 74 steps | 100 steps | 74 steps | 83 steps | Smooth tracking, well below trip threshold |
-| **Max Joint Current** | $451\,\text{mA}$ | $180\,\text{mA}$ | $165\,\text{mA}$ | $369\,\text{mA}$ | Safely below $500\,\text{mA}$ trip limit |
+| **Max Joint Current** | $451\,\text{mA}$ | $180\,\text{mA}$ | $165\,\text{mA}$ | $369\,\text{mA}$ | Measured maximum currents; no hardware overcurrent fault |
 | **Hardware Faults** | `0x0000` (0 faults) | `0x0000` (0 faults) | `0x0000` (0 faults) | `0x0000` (0 faults) | Zero motor faults |
 | **Safety Aborts (WH / HS)** | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | Zero safety aborts |
 | **Base IMU Age (Mean / Max)** | $3.36\,\text{ms}$ / $51.2\,\text{ms}$ | $2.64\,\text{ms}$ / $38.9\,\text{ms}$ | $3.61\,\text{ms}$ / $56.0\,\text{ms}$ | $2.75\,\text{ms}$ / $37.8\,\text{ms}$ | Healthy sensor latency |
@@ -179,21 +225,50 @@ The univariate Yaw-D sweep evaluated three derivative gain candidates with $f_c 
 > [!NOTE]
 > Candidate 2 is designated as the **CURRENT FROZEN YAW-D WORKING BASELINE** within the tested discrete parameter sweep. It is not claimed to be a mathematically unique optimum, globally best across continuous parameter space, or an absolute physical performance limit.
 
-### 5.3 System-Level Metrics vs. Frozen Baselines
+### 5.3 J11-M2-7A Pitch-D Sweep Assessment & Retention Decision
+The univariate Pitch-D sweep evaluated three derivative gain candidates with $f_c = 5.0\,\text{Hz}$ 1st-order LPF, superimposed on the retained P baseline ($K_p = [0.05, 0.05, 0.025]$) and frozen Yaw-D baseline ($K_{d\_yaw} = 0.0015\,\text{s}$):
 
-| Comparison | M1 Pure Feedforward (`112354`) | Candidate 2 Best P-Only (`152543`) | Candidate 2 Frozen Yaw-PD (`163119`) | Comparative Assessment |
-| :--- | :---: | :---: | :---: | :--- |
-| **Roll ($G_{\text{Peak}} / G_{\text{RMS}}$)** | 0.4778 / 0.4071 | 0.4584 / 0.2724 | **0.3476 / 0.3451** | Stable Roll tracking across all configurations |
-| **Pitch ($G_{\text{Peak}} / G_{\text{RMS}}$)** | 0.5946 / 0.4153 | **0.3951 / 0.2794** | 0.5135 / 0.3545 | Pitch variance remains substantially suppressed |
-| **Yaw ($G_{\text{Peak}} / G_{\text{RMS}}$)** | 0.7983 / 0.2912 | 0.8274 / 0.3075 | **0.6478 / 0.1781** | **Yaw RMS improved by ~42% vs. P-only, ~39% vs. M1** |
-| **Overall $SO(3)$ ($G_{\text{Peak}} / G_{\text{RMS}}$)** | 0.7353 / 0.3713 | **0.4334 / 0.2789** | 0.5182 / 0.2985 | Multi-axis $SO(3)$ variance clearly superior to M1 |
+1. **Candidate 1 ($K_{d\_pitch} = 0.0010\,\text{s}$)**:
+   - **Classification**: **VALID / PROMISING PITCH-D CANDIDATE**
+   - Qualified Repeat Run (`20260920_094056`, 48.0 s active duration): Pitch $G_{\text{RMS}} = 0.2832$, Pitch $G_{\text{Peak}} = 0.2799$, $SO(3)$ $G_{\text{RMS}} = 0.2889$.
+   - Confirmed tangible Pitch RMS reduction compared to the pure P baseline ($0.3543$).
 
-### 5.4 Core Engineering Conclusions
+2. **Candidate 2 ($K_{d\_pitch} = 0.0015\,\text{s}$)**:
+   - **Classification**: **RETAINED — CURRENT FROZEN PITCH-D WORKING BASELINE** (or **CURRENT RETAINED 2-AXIS PD WORKING BASELINE**)
+   - Qualified Dynamic Run (`20260920_095850`, 52.0 s active duration): Pitch $G_{\text{RMS}} = 0.2607$, Pitch $G_{\text{Peak}} = 0.3279$, $SO(3)$ $G_{\text{RMS}} = 0.2575$, Roll $G_{\text{RMS}} = 0.2662$, Yaw $G_{\text{RMS}} = 0.2297$.
+   - Best tested working Pitch-D candidate within the completed discrete hardware gain sweep, achieving both the lowest Pitch RMS and lowest multi-axis $SO(3)$ RMS among all evaluated configurations.
+   - Retained as the frozen working baseline for Stage J11-M2.
 
-1. **Yaw-D Tuning Sweep Concluded**: The univariate sweep over $K_{d\_yaw} \in \{0.0, 0.0010, 0.0015, 0.0020\}\,\text{s}$ with $f_c = 5.0\,\text{Hz}$ LPF is complete.
-2. **Yaw Suppression Verified**: Adding filtered derivative action on the platform orientation rate error resolved the Yaw performance limitation observed during P-only feedback, achieving Yaw $G_{\text{RMS}} = 0.1781$ (compared to $0.3075$ in P-only and $0.2912$ in M1 Pure Feedforward).
-3. **Observation of Gain Rebound**: Increasing $K_{d\_yaw}$ from $0.0015\,\text{s}$ to $0.0020\,\text{s}$ led to a noticeable rebound in Yaw disturbance ratio ($G_{\text{RMS}} \to 0.4342$, $G_{\text{Peak}} \to 0.7907$), identifying a performance turning point within the tested gain window.
-4. **Parameter Freeze**: The controller parameters are frozen at $K_p = [0.05, 0.05, 0.025]$, $K_d = [0.0, 0.0, 0.0015]\,\text{s}$, $K_i = [0, 0, 0]$, $f_c = 5.0\,\text{Hz}$, with residual limits at $\pm 0.5^\circ$ per axis. No further real-hardware motion is scheduled for this phase.
+3. **Candidate 3 ($K_{d\_pitch} = 0.0020\,\text{s}$)**:
+   - **Classification**: **NOT RETAINED — PARTIAL DYNAMIC CHARACTERIZATION / EARLY DRIVER SAFETY LATCH**
+   - Dynamic Run (`20260920_100514`, terminated at $t \approx 33.18\,\text{s}$): Pre-trip partial active window ($\approx 23.0\,\text{s}$) showed Pitch $G_{\text{RMS}} = 0.2970$, Pitch $G_{\text{Peak}} = 0.4424$, $SO(3)$ $G_{\text{RMS}} = 0.3255$, Yaw $G_{\text{RMS}} = 0.5398$.
+   - The run terminated early due to a driver-side safety latch (`Timeout recovery target rejected: max jump 84 steps > limit 80 steps`). Zero residual saturation was observed ($0 / 1151$ cycles).
+   - Pre-trip normalized metrics exhibited a clear performance rebound and cross-axis degradation. Concludes the Pitch-D sweep without further increasing $K_d$.
+
+> [!NOTE]
+> Candidate 2 ($K_{d\_pitch} = 0.0015\,\text{s}$) is designated as the **CURRENT FROZEN PITCH-D WORKING BASELINE** within the tested discrete parameter sweep. It is not claimed to be a mathematically unique optimum, globally best across continuous parameter space, or an absolute physical performance limit.
+
+### 5.4 J11-M2-7B Roll-D Closure Decision
+
+$K_{d\_roll}=0.0010\,\text{s}$ was tested and repeated with the retained Pitch/Yaw derivative gains. The qualified repeat (`20260920_102755`) completed without a recorded fault, but its representative normalized system response did not improve the balance achieved by final retained run `20260920_095850`. The Roll-D candidate is therefore **NOT RETAINED**. Final $K_{d\_roll}=0$ and Roll-D tuning is CLOSED; no `0.0005`, `0.0015`, or other Roll-D gain is scheduled.
+
+### 5.5 System-Level Metrics vs. Frozen Baselines
+
+| Comparison | M1 Pure Feedforward (`112354`) | Best P-Only Cand 2 (`152543`) | Frozen Yaw-PD Cand 2 (`163119`) | Frozen Pitch-PD Cand 2 (`095850`) | Comparative Assessment |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| **Roll ($G_{\text{Peak}} / G_{\text{RMS}}$)** | 0.4778 / 0.4071 | 0.4584 / 0.2724 | 0.3476 / 0.3451 | **0.3107 / 0.2662** | Lowest Roll rejection ratio observed |
+| **Pitch ($G_{\text{Peak}} / G_{\text{RMS}}$)** | 0.5946 / 0.4153 | 0.3951 / 0.2794 | 0.5135 / 0.3545 | **0.3279 / 0.2607** | **Pitch RMS reduced by ~26% vs. pure P baseline** |
+| **Yaw ($G_{\text{Peak}} / G_{\text{RMS}}$)** | 0.7983 / 0.2912 | 0.8274 / 0.3075 | 0.6478 / 0.1781 | **0.4424 / 0.2297** | Balanced multi-axis suppression maintained |
+| **Overall $SO(3)$ ($G_{\text{Peak}} / G_{\text{RMS}}$)** | 0.7353 / 0.3713 | 0.4334 / 0.2789 | 0.5182 / 0.2985 | **0.3063 / 0.2575** | **Best tested multi-axis $SO(3)$ variance across runs** |
+
+### 5.5 Core Engineering Conclusions
+
+1. **Pitch-D Tuning Sweep Concluded**: The univariate sweep over $K_{d\_pitch} \in \{0.0, 0.0010, 0.0015, 0.0020\}\,\text{s}$ with $f_c = 5.0\,\text{Hz}$ LPF is officially closed.
+2. **Pitch Damping Benefit Verified**: Adding filtered derivative action on Pitch orientation rate error consistently reduced platform Pitch variance ($G_{\text{RMS}}: 0.3545 \to 0.2832 \to \mathbf{0.2607}$) while enhancing total $SO(3)$ rejection ($G_{\text{RMS}}: 0.2985 \to \mathbf{0.2575}$).
+3. **Gain Limit & Safety Latch Identified**: At $K_{d\_pitch} = 0.0020\,\text{s}$, pre-trip rejection ratios rebounded ($G_{\text{RMS}} \to 0.2970$) and a driver-side max-jump safety latch halted the run at $t \approx 33.18\,\text{s}$, establishing $K_{d\_pitch} = 0.0015\,\text{s}$ as the empirical boundary.
+4. **Current Working Controller Freeze**: The controller configuration is frozen at $K_p = [0.05, 0.05, 0.025]$, $K_d = [0.0, 0.0015, 0.0015]\,\text{s}$, $K_i = [0, 0, 0]$, $f_c = 5.0\,\text{Hz}$, with residual limits at $\pm 0.5^\circ$ per axis (Roll = P, Pitch = PD, Yaw = PD).
+5. **Roll-D Tuning Closed**: $K_{d\_roll}=0.0010\,\text{s}$ completed a qualified repeat but was not retained. Final $K_{d\_roll}=0$.
+6. **ACTIVE-Gated Operator Prompt Standardized**: Operator dynamic disturbance is strictly gated by the creation of `/tmp/j11_active_signaled` and confirmed runner `ACTIVE` status to eliminate startup perception delays.
 
 ---
 
@@ -211,7 +286,11 @@ The canonical performance record tracks system-level controller evolution throug
 | **J11-M2-6** | PD Cand 1 Trial ($K_{d\_y}=0.0010\,\text{s}, f_c=5\text{Hz}$) | 0.6608 / 0.4274 / 0.4870 / 0.5439 | 0.3517 / 0.3230 / 0.1679 / 0.2891 | `20260919_155855` | **VALID / STRONG LOW-D CANDIDATE** |
 | **J11-M2-6** | PD Cand 2 Trial ($K_{d\_y}=0.0015\,\text{s}, f_c=5\text{Hz}$) | **0.3476 / 0.5135 / 0.6478 / 0.5182** | **0.3451 / 0.3545 / 0.1781 / 0.2985** | `20260919_163119` | **CURRENT FROZEN YAW-D WORKING BASELINE** |
 | **J11-M2-6** | PD Cand 3 Trial ($K_{d\_y}=0.0020\,\text{s}, f_c=5\text{Hz}$) | 0.5750 / 0.5790 / 0.7907 / 0.5918 | 0.3458 / 0.3365 / 0.4342 / 0.3563 | `20260919_163650` | **NOT RETAINED (Performance Rebound)** |
-| **J11-M2-7** | 3DOF FF + 3DOF PID ($K_p + K_d + K_i$) | *Pending* | *Pending* | TBD | *Roadmap* |
+| **J11-M2-7A** | Pitch-D Cand 1 ($K_{d\_p}=0.0010\,\text{s}$) | 0.5118 / 0.2799 / 0.5791 / 0.3800 | 0.3134 / 0.2832 / 0.2724 / 0.2889 | `20260920_094056` | **VALID / PROMISING PITCH-D CANDIDATE** |
+| **J11-M2-7A** | Pitch-D Cand 2 ($K_{d\_p}=0.0015\,\text{s}$) | **0.3107 / 0.3279 / 0.4424 / 0.3063** | **0.2662 / 0.2607 / 0.2297 / 0.2575** | `20260920_095850` | **CURRENT FROZEN PITCH-D WORKING BASELINE** |
+| **J11-M2-7A** | Pitch-D Cand 3 ($K_{d\_p}=0.0020\,\text{s}$) | 0.6100 / 0.4424 / 0.8551 / 0.5199 | 0.3221 / 0.2970 / 0.5398 / 0.3255 | `20260920_100514` | **NOT RETAINED (Early Driver Trip / Rebound)** |
+| **J11-M2-7B** | Roll-D qualified repeat ($K_{d\_r}=0.0010\,\text{s}$) | 0.6056 / 0.6715 / 0.5475 / 0.6370 | 0.3328 / 0.3290 / 0.1954 / 0.2933 | `20260920_102755` | **NOT RETAINED; ROLL-D CLOSED** |
+| **J11 FINAL** | Roll=P, Pitch=PD, Yaw=PD | **0.3107 / 0.3279 / 0.4424 / 0.3063** | **0.2662 / 0.2607 / 0.2297 / 0.2575** | `20260920_095850` | **FINAL RETAINED CLASSICAL BASELINE** |
 | **J12** | Task-Space ADRC (ESO + Disturbance Rejection) | *Pending* | *Pending* | TBD | *Roadmap* |
 
 ---

@@ -12,7 +12,7 @@
 ### 核心阶段划分：
 - **J1–J10（已完成并冻结）**：构建了坚实的真实物理硬件运动与感知基线，涵盖多电机底层串口通信、微秒级闭式解析逆解、三阶加加速度连续轨迹平滑整形、50Hz 连续流式伺服驱动、双 H30 IMU 微秒级时钟对齐解算、数值正运动学重构，以及在真实物理平台上完成的 6 自由度单轴安全运行包络边界全域测定。
 - **J11-M1（已完成并冻结）**：完成 Base-IMU 全 SO(3) 前馈姿态保持实机闭环、专用驱动层运行资格认证、两级安全策略 (Two-Tier Safety Policy)、300s 静态长周期达标以及真机低速动基座扰动防抖补偿验证（官方 Release Tag: `v1.0-j11-m1-feedforward-hardware-qualified`）。
-- **J11-M2+（前沿研究阶段）**：J11-M2-6 (3DOF Yaw-D 调参扫描) 已收口；正式保留冻结工作基线 $K_p = [0.05, 0.05, 0.025]$, $K_d = [0.0, 0.0, 0.0015]\,\text{s}$, $K_i = 0$, $f_c = 5.0\,\text{Hz}$。下一步推进：Roll/Pitch D 或 PID (M2-7) 与任务空间 ADRC (J12)。
+- **J11（最终冻结就绪）**：最终保留 Base-IMU SO(3) Feedforward + Platform-IMU Classical P/PD Attitude Feedback；$K_p=[0.05,0.05,0.025]$，$K_d=[0,0.0015,0.0015]\,\text{s}$，$K_i=0$，$f_c=5\,\text{Hz}$（Roll=P，Pitch=PD，Yaw=PD）。Roll-D 调参已关闭；Demo A（Feedforward）PASS，Demo B（Feedforward + P/PD）PASS ON REPEAT。下一阶段：J12 ADRC。
 
 ---
 
@@ -42,19 +42,19 @@
 │                        [状态：前沿研究路线图]                           │
 │  • J11-M1: 动基座全 SO(3) 前馈姿态保持与高可靠驱动运行资格认证          │
 │            [状态：已全面完成并冻结 — Release Tag: v1.0-j11-m1]          │
-│  • J11-M2-6: 3DOF Yaw-D 调参扫描完成                                    │
-│              (冻结工作基线: Kp=[0.05, 0.05, 0.025],                     │
-│               Kd=[0, 0, 0.0015] s, fc=5.0 Hz, Ki=0)                     │
-│  • J11-M2-7: 3DOF PID (积分稳态消偏) [下一步]                           │
-│  • 后续前沿研究路线 (Roadmap)：                                         │
-│    - 自抗扰控制 (ADRC) 与扩张状态观测器 (ESO) 总扰动实时估计与补偿      │
+│  • J11-M2 Final: Roll=P, Pitch=PD, Yaw=PD                                │
+│             Kp=[0.05, 0.05, 0.025], Kd=[0, 0.0015, 0.0015] s, Ki=0      │
+│             fc=5.0 Hz；Roll-D qualified repeat 未保留，调参关闭          │
+│  • 当前：FINAL FREEZE READY；Demo A PASS，Demo B PASS ON REPEAT         │
+│  • 下一阶段 J12：外部负载/力扰动下的 ADRC 抗扰                          │
+│    - ADRC 与扩张状态观测器 (ESO) 总扰动实时估计与补偿                    │
 │    - IMU 角加速度前馈与扰动观测器 (DOB) 抑制高频动基座振颤              │
 │    - 强化学习与自适应在线刚度自调优控制                                 │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
 > [!IMPORTANT]
-> **真实性与验证边界**：阶段 J1 至 J10 以及 J11-M1 阶段已全部在真实物理硬件上完成实机闭环验收并正式冻结（官方 Release Tag: `v1.0-j11-m1-feedforward-hardware-qualified`）。当前推进阶段为 J11-M2（双 IMU PID 残差姿态闭环控制）。严禁虚构或提前宣称未经验证的研究结论。
+> **真实性与验证边界**：J1 至 J10 与 J11-M1 已冻结；J11-M2 最终 P/PD 控制器具有已有 qualified hardware evidence。最终两个 Demo smoke test 均已执行（Demo A PASS；Demo B PASS ON REPEAT —— 首次 Demo B 因 motor CH340 USB-UART 瞬时 disconnect 提前结束，见 [`agent_docs/j11/J11_DEMO_B_USB_UART_FAULT_AUDIT.md`](./agent_docs/j11/J11_DEMO_B_USB_UART_FAULT_AUDIT.md)），也未宣称 J12 ADRC 的未验证性能。
 
 ### J10 单自由度实机安全运行包络边界（以 HOME 为基准）
 
@@ -69,24 +69,84 @@
 
 *(注：上述数据均为在 `OPERATING_HOME = [1000]*6` 步基准下独立单轴运动实测结果，详见 [`agent_docs/stages/J10/J10_FINAL_SUMMARY.md`](./agent_docs/stages/J10/J10_FINAL_SUMMARY.md))*。
 
-### J11 姿态防抖控制实机评定结果 (M1 vs. 达标 3DOF P 基线)
+### J11 — 双 IMU 三轴姿态稳定（阶段成果）
 
-J11-M2 阶段正式引入了**任务空间 $SO(3)$ 姿态 PID 控制框架**。三轴姿态同时闭环比例反馈（**J11-M2-4 3DOF P 集成验证**）已在真实六自由度并联机构上完成动基座低速自然扰动实机闭环验证。
+**目标**：当 Base（基座）发生姿态运动时，利用双 IMU + 6PUS 主动补偿，使 Platform（动平台）尽量保持初始三轴姿态。
 
-> [!NOTE]
-> **J11-M2 当前实际控制状态与基线**：
-> - **控制结构**：$\mathbf{\text{3DOF Base-IMU } SO(3) \text{ 前馈}} + \mathbf{\text{3DOF Platform-IMU } SO(3) \text{ P 反馈}}$
-> - **当前权威达标基线**：$K_{p\_roll} = 0.05, K_{p\_pitch} = 0.05, K_{p\_yaw} = 0.05$（$K_i = 0, K_d = 0$，残差限幅 $\pm 0.5^\circ$）
-> - **调参状态**：M2-5 增益整定进行中。Candidate 1（$K_{p\_yaw} = 0.10$）经实机验证因系统级性能退化而不予保留。
-> - *由于采用人工动基座扰动，输入扰动能量并非严格一致，因此控制器横向评定严格采用归一化抑制比（$G_{\text{Peak}}, G_{\text{RMS}}$）。*
+**方案**：
 
-| 旋转轴 | 评定指标 | M1 纯前馈 (`20260918_112354`) | M2 达标 3DOF P 基线 (`20260918_152354`) | 归一化抑制提升率 |
-| :--- | :--- | :---: | :---: | :---: |
-| **Roll** | $G_{\text{Peak}}$ / $G_{\text{RMS}}$ | 0.4778 / 0.4071 | 0.4900 / 0.3066 | -2.55% (峰值) / **+24.68% (RMS)** |
-| **Pitch** | $G_{\text{Peak}}$ / $G_{\text{RMS}}$ | 0.5946 / 0.4153 | 0.3110 / 0.2705 | **+47.69% (峰值)** / **+34.87% (RMS)** |
-| **Yaw** | $G_{\text{Peak}}$ / $G_{\text{RMS}}$ | 0.7983 / 0.2912 | 0.9030 / 0.3374 | -13.12% (峰值) / -15.87% (RMS) *(调参目标)* |
+- **M1（纯前馈，已冻结）**：Base-IMU full SO(3) Feedforward；Platform IMU 仅用于 Observer / Validation。
+- **M2（前馈 + 反馈，最终保留）**：Base-IMU SO(3) Feedforward + Platform-IMU Classical P/PD Attitude Feedback；Roll = P，Pitch = PD，Yaw = PD。
 
-*完整权威评定档案、李代数误差推导与 50Hz 实机遥测记录详见：* [`agent_docs/j11/J11_M1_M2_CONTROL_COMPARISON.md`](./agent_docs/j11/J11_M1_M2_CONTROL_COMPARISON.md)。
+**最终参数**：
+
+```text
+Kp = [0.05, 0.05, 0.025]
+Ki = [0.0, 0.0, 0.0]
+Kd = [0.0, 0.0015, 0.0015] s
+Derivative LPF fc = 5 Hz
+Residual limit = ±0.5° / axis
+```
+
+#### 评价指标
+
+- **Peak** $= \max_k |\theta_k|$：整个分析窗口内最大的绝对姿态偏差，回答「最坏时刻平台最大偏了多少」，反映最坏瞬时响应。
+- **RMS** $= \sqrt{\frac{1}{N}\sum_k \theta_k^2}$：整个分析时间段内姿态误差的均方根，回答「整个过程中总体抖动有多大」，反映整体持续误差水平。
+- **G_Peak** $=$ Platform Peak / Base Peak：Platform 最大姿态响应相对 Base 最大姿态扰动的比例。
+- **G_RMS** $=$ Platform RMS / Base RMS：Platform 整体姿态误差相对 Base 整体姿态扰动的比例。
+
+G 越小，表示 Platform 对 Base 扰动产生的姿态响应越小，即姿态扰动抑制越强。
+
+**Roll / Pitch / Yaw** 分别用于观察三个姿态分量；**SO(3) attitude error** 描述当前三维姿态相对目标姿态的整体旋转误差。因此 **SO(3) G_Peak** 是整体三维姿态的最坏归一化响应，**SO(3) G_RMS** 是整个动态过程中整体三维姿态的归一化总体误差水平。
+
+#### 最终结果
+
+| 指标 | M1 纯前馈 | M2 前馈 + P/PD | 代表性下降 |
+|---|---:|---:|---:|
+| Roll G_RMS | 0.4071 | 0.2662 | 34.6% |
+| Pitch G_RMS | 0.4153 | 0.2607 | 37.2% |
+| Yaw G_RMS | 0.2912 | 0.2297 | 21.1% |
+| SO(3) G_Peak | 0.7353 | 0.3063 | 58.3% |
+| SO(3) G_RMS | 0.3713 | 0.2575 | 30.6% |
+
+其中 `Reduction = (1 - G_M2 / G_M1) × 100%`。完整 8 项（含 Roll/Pitch/Yaw 的 G_Peak）与逐项计算口径见 [`docs/j11/J11_FINAL_CONTROL_COMPARISON.md`](./docs/j11/J11_FINAL_CONTROL_COMPARISON.md)。
+
+> 上述百分比表示两组代表性真机实验中观测到的归一化姿态响应指标下降。由于两次人工 Base 扰动轨迹并非严格一致，该结果用于硬件归一化表征，而不解释为严格同输入条件下的传递函数增益变化。
+
+#### 数据来源
+
+- M1 canonical：`results/j11/runtime_validation/20260918_112354/J11_DISTURB_QUAL_feedforward_powered.csv`
+- M2 representative：`results/j11/m2_pid/20260920_095850/j11_m2_7a_pitchd_cand2_repeat_phaseB_dynamic_telemetry_powered.csv`
+
+未来作图、重算 Peak / RMS / G_Peak / G_RMS 均可直接以上述 canonical raw CSV 为起点。
+
+### J11 演示
+
+从刚开机的新 Terminal 中运行时，无需提前手工 source ROS 2 或 workspace。两个 wrapper 会自行加载 ROS 2 Jazzy 与 `bone_ws/install/setup.bash`；已经手工 source 的开发 Terminal 也同样支持。
+
+纯前馈：
+
+```bash
+cd /home/lyapunov/bone_drill
+bash bone_ws/scripts/run_j11_demo_feedforward.sh
+```
+
+前馈 + P/PD：
+
+```bash
+cd /home/lyapunov/bone_drill
+bash bone_ws/scripts/run_j11_demo_feedforward_pd.sh
+```
+
+演示中只按一次 `Ctrl+C`，wrapper 会受控结束并返回 `OPERATING_HOME`。开发或排错时仍可显式 source `/opt/ros/jazzy/setup.bash` 与 `/home/lyapunov/bone_drill/bone_ws/install/setup.bash`，但这不是最终 Demo 的强制要求。
+
+**J11 状态**：FINAL FREEZE READY —— Demo A（Feedforward）PASS；Demo B（Feedforward + P/PD）PASS ON REPEAT。P/PD Demo 首次运行曾出现一次独立 motor USB-UART 瞬时掉线，repeat 正常；该事件作为非阻塞硬件可靠性事项归档。**下一阶段**：J12 外部负载/力扰动下的 ADRC disturbance rejection。
+
+### 文档
+
+详细技术结果（完整 8 项指标与计算口径）：[`docs/j11/J11_FINAL_CONTROL_COMPARISON.md`](./docs/j11/J11_FINAL_CONTROL_COMPARISON.md)
+
+学习 / ROS2 / 操作资料入口：[`docs/`](./docs/)（含 `docs/整体学习参考/` 下的 ROS2 全栈教程 `6PUS_ROS2_CODE_LEARNING_TUTORIAL.md` 与实机操作指南 `6PUS_SERVO_OPERATION_GUIDE.md`，以及 `docs/基础操作/` 下的基础操作资料）
 
 ---
 
@@ -106,7 +166,7 @@ J11-M2 阶段正式引入了**任务空间 $SO(3)$ 姿态 PID 控制框架**。�
 │   │   └── h30_imu/                       # Yesense H30 IMU C++ 驱动与 SO(3) 相对姿态解算
 │   └── scripts/                           # 可复现的实机/仿真运行脚本与验收工具链
 │
-├── agent_docs/                            <-- [项目知识与文档库] 人类与 Agent 可读的技术方案、架构与报告
+├── agent_docs/                            <-- [Agent 内部工作文档] stage 历史、决策、调参历史、交接、故障审计
 │   ├── stages/                            # 阶段实施方案 (J1..J11)、验收总结与跨阶段交接规范 (Handoff)
 │   ├── reports/                           # 深度实测分析报告 (J10 工作空间分析、J9.1 动平台力臂分析)
 │   ├── decisions/                         # 架构决策记录 (ADR) 与硬件准入测试报告
@@ -122,13 +182,14 @@ J11-M2 阶段正式引入了**任务空间 $SO(3)$ 姿态 PID 控制框架**。�
 │
 ├── hardware/                              <-- [硬件与几何数据] 电机选型表、电气接线图与 3D 机械结构
 ├── up/                                    <-- [UART 底层验证基线] 独立多电机串口测试台与基线驱动
-├── STM32/ / teach/                        <-- [固件与示教器] 下位机工程源码与示教工具
-├── 6PUS_REAL_HARDWARE_OPERATION_GUIDE.md  <-- [实机操作入口] 实机上电、回零、运动与关机速查指南
+├── STM32/                                 <-- [固件] 下位机工程源码
+├── docs/                                 <-- [用户文档] 用户主动查看的学习/操作/教程/技术结果
 └── AGENTS.md                              <-- [全局 Agent 规则] 操作规范、安全红线与工程不变量
 ```
 
 > **职责边界原则**：
-> - `agent_docs/` = 人类与 Agent 可读的架构知识、阶段方案与分析总结。
+> - `docs/` = 用户主动需要查看的文档（学习、操作、教程、最终技术结果与汇报入口）。
+> - `agent_docs/` = Agent 内部工作文档（stage 历史、决策、调参历史、交接、故障审计），用户正常不需要查看。
 > - `results/` = 机器程序运行、测试和实机实验产出的 CSV、遥测 JSON 与运行原始日志。
 
 ---
@@ -138,9 +199,9 @@ J11-M2 阶段正式引入了**任务空间 $SO(3)$ 姿态 PID 控制框架**。�
 对于首次接触本项目的工程师、研究者或智能体，建议按如下次序阅读：
 
 1. **宏观概览与基线**：首先通读本文档 [`README_CN.md`](./README_CN.md)（或 [`README.md`](./README.md)），掌握系统整体架构与阶段进展。
-2. **ROS 2 全栈技术教程**：研读 [`6PUS_ROS2_CODE_LEARNING_TUTORIAL.md`](./6PUS_ROS2_CODE_LEARNING_TUTORIAL.md)，掌握双链路解耦设计、闭式逆解、LM 数值正解及 50Hz 伺服驱动的详细实现。
+2. **ROS 2 全栈技术教程**：研读 [`docs/整体学习参考/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md`](./docs/整体学习参考/6PUS_ROS2_CODE_LEARNING_TUTORIAL.md)，掌握双链路解耦设计、闭式逆解、LM 数值正解及 50Hz 伺服驱动的详细实现。
 3. **权威文档检索地图**：参考 [`agent_docs/README.md`](./agent_docs/README.md)，快速定位具体阶段的技术方案、交接规范与硬件准入报告。
-4. **物理实机操作与安全**：若需操作物理样机，务必在操作前核对 [`6PUS_REAL_HARDWARE_OPERATION_GUIDE.md`](./6PUS_REAL_HARDWARE_OPERATION_GUIDE.md)。
+4. **物理实机操作与安全**：若需操作物理样机，务必在操作前核对 [`docs/整体学习参考/6PUS_SERVO_OPERATION_GUIDE.md`](./docs/整体学习参考/6PUS_SERVO_OPERATION_GUIDE.md)。
 5. **权威实验证据库**：查阅 [`results/README.md`](./results/README.md)，加载并验证物理样机真实飞行数据（如 J8 连续运动数据集）。
 
 ---
@@ -171,7 +232,7 @@ source install/setup.bash
 ```
 
 ### 3. 执行离线单元与集成测试 (Mock 模式)
-全部测试均在 `hardware_mode:=mock` 下运行，且**代码级严格断言 $\mathbf{\text{hardware\_write\_count} = 0}$**：
+全部测试均在 `hardware_mode:=mock` 下运行，且**代码级严格断言 **`hardware_write_count = 0`****：
 ```bash
 # 运行 bone_ws 下全部 6 个功能包的 346+ 项单元与集成测试
 colcon test --ctest-args -R test

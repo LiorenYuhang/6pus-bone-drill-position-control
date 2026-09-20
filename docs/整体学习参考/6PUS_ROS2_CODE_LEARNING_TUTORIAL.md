@@ -197,7 +197,7 @@ bone_ws/
    * 电机回传应答：`0xAA, 0x55` (`RSP_FRAME_HEADER`)
 2. **长度字段 (Length)**：值为 `3 + len(payload)`（包含 CMD 1字节 + Addr 2字节 + 数据体长度）。
 3. **累加和校验算法 (`calculate_checksum`)**：
-   $$\text{Checksum} = \left( \sum_{k=2}^{N-2} \text{Byte}[k] \right) \ \& \ \text{0xFF}$$
+   $$\text{Checksum} = \left( \sum_{k=2}^{N-2} \text{Byte}[k] \right) \mathbin{\text{\&}} \text{0xFF}$$
 
 ---
 

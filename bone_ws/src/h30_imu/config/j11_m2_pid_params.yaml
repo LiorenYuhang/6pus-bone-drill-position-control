@@ -1,6 +1,6 @@
 # J11-M2: Dual-IMU Task-Space Attitude PID Residual Stabilization Parameters
-# Stage: J11-M2-6 3DOF PD (Feedforward + PD Attitude Residual Stabilization)
-# Note: Retained P baseline Kp = [0.05, 0.05, 0.025], max_residual = 0.5 deg; Ki = 0, Kd = 0 initial baseline.
+# Stage: J11 final retained Classical P/PD attitude residual stabilization
+# Roll=P, Pitch=PD, Yaw=PD; Roll-D tuning CLOSED; max_residual = 0.5 deg/axis.
 
 j11_m2_attitude_pid:
   ros__parameters:
@@ -10,15 +10,15 @@ j11_m2_attitude_pid:
     kp_pitch: 0.05
     kp_yaw: 0.025
 
-    # 3-Axis Integral Gains [1/s^2] (strictly 0.0 in M2-6)
+    # Integral action is disabled in the final retained controller.
     ki_roll: 0.0
     ki_pitch: 0.0
     ki_yaw: 0.0
 
     # 3-Axis Derivative Gains [s]
-    # Retained Working Baseline: Kd = [0.0, 0.0, 0.0015] s
+    # Final Retained Controller: Kd = [0.0, 0.0015, 0.0015] s
     kd_roll: 0.0
-    kd_pitch: 0.0
+    kd_pitch: 0.0015
     kd_yaw: 0.0015
 
     # Derivative Control & LPF Configuration

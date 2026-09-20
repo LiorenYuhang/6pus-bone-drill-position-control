@@ -51,7 +51,7 @@ hardware/功能模块/**/*.zip
 hardware/功能模块/**/*.apk
 
 # Auto-Generated Project Tree Dumps
-ROS2_PROJECT_TREE.txt
+/ROS2_PROJECT_TREE.txt
 
 # Local-Only Intermediate Experiment Sweeps & Tuning Runs (Kept Locally, Excluded from Git)
 results/J10*/
@@ -60,3 +60,21 @@ results/j11/j11_2a/
 results/j9_1/translation_characterization/*20260903_203101*
 results/j9_1/translation_characterization/*20260904_092502*
 
+# J11-M2 intermediate tuning sweeps (2026-09-20) — LOCAL ONLY, not final canonical evidence
+results/j11/m2_pid/20260920_093044/
+results/j11/m2_pid/20260920_093216/
+results/j11/m2_pid/20260920_093916/
+results/j11/m2_pid/20260920_094056/
+results/j11/m2_pid/20260920_095502/
+results/j11/m2_pid/20260920_095706/
+results/j11/m2_pid/20260920_100402/
+results/j11/m2_pid/20260920_100514/
+results/j11/m2_pid/20260920_101756/
+results/j11/m2_pid/20260920_101856/
+results/j11/m2_pid/20260920_102755/
+results/j11/m2_pid/20260920_104213/
+
+# J11 Demo smoke-test / fault evidence — LOCAL ONLY by default (long-term info kept in agent_docs audit)
+results/j11/m2_pid/20260920_114722/
+results/j11/m2_pid/20260920_115754/
+results/j11/runtime_validation/20260920_114624/

@@ -37,7 +37,7 @@ Do not reopen these J9 topics unless new evidence invalidates the frozen assumpt
 ## 5. Preserved Excluded Artifacts
 
 Keep these out of the canonical history:
-- `ROS2_PROJECT_TREE.txt`
+- `docs/整体学习参考/ROS2_PROJECT_TREE.txt`（historical/query snapshot）
 - `results/j9_1/translation_characterization/j9_1_x_translation_pos05mm_20260903_203101.*`
 - `results/j9_1/translation_characterization/j9_1_y_translation_pos05mm_20260904_092502.*`
 

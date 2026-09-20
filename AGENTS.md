@@ -10,28 +10,29 @@
 
 ```
 /home/lyapunov/bone_drill/
-├── 6PUS_SERVO_OPERATION_GUIDE.md          <-- [根目录实机操作入口] 用户实机操作与命令速查指南
-├── AGENTS.md                              <-- [根目录 Agent 规则] 操作规则、安全约束、变更纪律与工程不变量 (本文档)
+├── AGENTS.md / README.md / README_CN.md   <-- [根目录入口] Agent 规则与项目总览
 ├── agent_docs/                            <-- [文档与方案唯一根] 架构、阶段方案、设计决策、分析报告与归档
 ├── results/                               <-- [机读实验与运行数据唯一根] 自动化测试与实机运行生成的 CSV、JSON、日志等证据
-├── bone_ws/                               <-- [正式 ROS2 工作空间] 源代码、测试与运行脚本
+├── bone_ws/                               <-- [正式 ROS2 工作空间] 源代码、测试与 bone_ws/scripts/ 运行脚本
+├── docs/                                 <-- [学习/查询/操作参考] 教程、操作指南与查询快照
 ├── hardware/                              <-- [硬件与几何数据] 硬件规格书与机构几何数据
 ├── up/                                    <-- [UART 底层验证基线] 原始独立串口测试代码与基线协议
-└── STM32/ / teach/                        <-- [固件与示教器] 下位机工程与示教工具
+└── STM32/                                 <-- [固件与下位机工程] 下位机工程
 ```
 
 ### 文档与数据资产存放治理规则 (Documentation & Artifact Location Policy)：
 1. **分类基准**：目录归属以**“资产用途 (Asset Purpose)”**为唯一判定依据，严禁仅凭文件扩展名作机械划分。
-2. **`agent_docs/` (文档与知识唯一根)**：定位为 **human/Agent-readable project knowledge and documentation**。负责系统架构、阶段方案、设计决策、分析与测试报告（如 `agent_docs/reports/`）、Frozen Manifest 与操作交接指南等所有人类或 Agent 撰写与维护的知识沉淀。
+2. **`agent_docs/` (Agent 内部工作文档唯一根)**：定位为 **agent-facing internal documentation**。负责 stage history、架构方案、设计决策、调参历史、实现交接、调试与故障审计、Frozen Manifest 等 Agent 正常工作所需知识沉淀；用户正常不需要查看。用户需要主动阅读的文档必须置于 `docs/`。
 3. **`results/` (运行数据与证据唯一根)**：定位为 **machine-generated / experiment-generated evidence and runtime artifacts**。专门存放程序运行、自动化测试、仿真评测及真实实机实验生成的各类数据证据与运行时产物（包括传感器遥测、电机反馈、轨迹 CSV、运行日志、环境元数据等）。`results/` 专用于存放数据产物，严禁在其中撰写独立的实验分析文档（`results/README.md` 作为数据集与证据清单的索引导航，为唯一允许的元数据说明例外）。
-4. **根目录整洁与禁令 (Root Hygiene)**：根目录 `reports/` 已正式废弃并移除。严禁 Agent 在根目录新建随意命名的文档或输出目录（例如根目录 `docs/`、`reports/`、`notes/`、`summaries/` 等）。
+4. **根目录整洁与禁令 (Root Hygiene)**：根目录 `reports/` 已正式废弃并移除。严禁 Agent 在根目录新建随意命名的文档或输出目录（例如 `notes/`、`summaries/`、`teach/` 等）。`docs/` 为用户文档唯一根、`agent_docs/` 为 Agent 文档唯一根，二者均为正式顶层目录。
 5. **资产隔离原则**：避免将知识库文档混入 `results/`，也避免将大体量机读证据/运行时日志倾倒至 `agent_docs/`。
 6. **创建与迁移纪律**：
    - Agent 产出任何新资产前，必须先查阅上述目录树规范，严禁直接在根目录下创建未知目录。
    - 迁移或调整旧数据前，必须先全局检索被引用的代码与文档，确保相对路径同步修正，杜绝破损链接。
 7. **`AGENTS.md` (本文档)**：仅负责 Agent 全局操作规则、安全约束、变更纪律与工程不变量。不得记录实验日志、数值结果、验证表格、阶段结论、控制器参数或具体算法设计细节。
 8. **设计文档与控制细节**：控制器、算法与其他研究设计细节统一放入 `agent_docs/`，不得写入 `AGENTS.md`。
-9. **`6PUS_SERVO_OPERATION_GUIDE.md`**：面向操作人员的实机开机、回零、运动与关机速查表，保留在根目录原位。
+9. **`docs/` (用户文档唯一根)**：用户需要主动阅读的文档统一放在此目录——学习资料、查询资料、操作指南、ROS2 教程、项目结构参考、最终控制结果、汇报资料、作图数据入口与技术说明。J-stage 研究文档进入 `agent_docs/jXX/`，决策文档进入 `agent_docs/decisions/`，runtime/demo/operator 脚本进入 `bone_ws/scripts/`。
+10. **文档职责分工（权威）**：`README.md`/`README_CN.md` = 项目首页/第一入口；`docs/` = human-facing 文档；`agent_docs/` = agent-facing 内部文档；`results/` = raw evidence；`bone_ws/scripts/` = runtime/operator/demo 脚本。禁止新增 `teach/`；禁止把用户主要文档只放 `agent_docs/`。
 
 ---
 
@@ -40,7 +41,7 @@
 1. **实机运动零误动原则**：
    - 默认任何代码运行、自动化测试、基准评测均必须在 **Mock / FakeBus 模式** 下进行（`hardware_mode:=mock`）。
    - 严禁在未经用户明确书面授权时执行任何带有 `--real-hardware` 或 `hardware_mode:=active` 的物理写操作。
-   - 每次无硬件验证必须显式核对并回报 $\mathbf{\text{hardware\_write\_count} = 0}$。
+   - 每次无硬件验证必须显式核对并回报 **`hardware_write_count = 0`**。
 2. **底层协议冻结**：
    - `pus6_motor_driver` 中对应底层 UART 通信的 `protocol.py`、`uart_bus.py`、`motor.py` 视为通信基线，严禁擅自修改。
 3. **零重试写命令 (Zero-Retry on Motion Command)**：

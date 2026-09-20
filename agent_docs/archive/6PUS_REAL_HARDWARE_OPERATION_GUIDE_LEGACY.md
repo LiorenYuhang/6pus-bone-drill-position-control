@@ -1,7 +1,7 @@
 > [!WARNING]
 > **文档状态：Historical / Legacy / Superseded（已归档）**  
 > 本文档已归档为历史资料，仅用于回溯 J6 定位模式、早期分阶段调试记录与安全回退方案，**不再作为日常实机操作依据**。  
-> 当前 6PUS 平台唯一权威日常实机操作指南请参阅：[`6PUS_SERVO_OPERATION_GUIDE.md`](file:///home/lyapunov/bone_drill/6PUS_SERVO_OPERATION_GUIDE.md)。
+> 当前 6PUS 平台唯一权威日常实机操作指南请参阅：[`docs/整体学习参考/6PUS_SERVO_OPERATION_GUIDE.md`](../../docs/整体学习参考/6PUS_SERVO_OPERATION_GUIDE.md)。
 
 ---
 

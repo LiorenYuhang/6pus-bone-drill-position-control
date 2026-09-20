@@ -26,7 +26,7 @@
 bone_ws/
 hardware/
 STM32/
-teach/
+docs/
 up/
 ```
 
@@ -58,7 +58,7 @@ bone_ws/
 │
 ├── hardware/              # 厂商资料、协议资料、硬件说明书
 ├── STM32/                 # STM32 / MCU 固件工程
-├── teach/                 # 教学、实验或其他已有内容，暂不调整
+├── docs/                 # 教学、实验或其他已有内容，暂不调整
 ├── up/                    # Hardware bring-up / 单模块实机验证区
 └── bone_ws/               # 正式 ROS2 机器人系统工作空间
 ```
