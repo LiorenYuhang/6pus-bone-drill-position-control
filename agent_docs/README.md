@@ -49,7 +49,7 @@ agent_docs/
 
 ## 3. 跨阶段性能总结 (Cross-Stage Performance Summary)
 
-- [`REAL_HARDWARE_ACCURACY_SUMMARY.md`](./reports/REAL_HARDWARE_ACCURACY_SUMMARY.md)：集中总结当前真机 HOME 附近的 positioning / attitude tracking performance、科学表述边界、已知限制以及 evidence traceability。
+- [`REAL_HARDWARE_PERFORMANCE_SUMMARY.md`](./reports/REAL_HARDWARE_PERFORMANCE_SUMMARY.md)：集中总结当前真机 HOME 附近的 positioning / attitude tracking performance、metric semantics、科学表述边界、已知限制以及 evidence traceability。
 
 ---
 

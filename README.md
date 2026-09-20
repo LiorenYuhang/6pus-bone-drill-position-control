@@ -73,19 +73,19 @@ The development of the 6PUS robotic platform is organized into two distinct over
 
 These results describe small-range, single-axis **command-to-feedback / FK / IMU tracking performance near HOME**. They are not whole-workspace absolute positioning accuracy, external-metrology calibration, or repeatability specifications.
 
-| Test | Condition | Observed performance | Supported engineering interpretation |
-| --- | --- | --- | --- |
-| Actuator position resolution | 1 step | approximately 0.025 mm | Joint/actuator quantization resolution; not TCP or Cartesian positioning accuracy |
-| X translation | +0.5 mm command | FK approximately +0.2385 mm; command-to-FK difference approximately 0.2615 mm | Local command-to-FK result; cross-axis details are retained in the evidence summary |
-| Y translation | +0.5 / -0.5 mm commands | FK approximately +0.5184 / -0.4957 mm; differences approximately 0.0184 / 0.0043 mm | Good local single-axis tracking in these two runs |
-| Z translation | +0.5 / -0.5 mm commands | FK approximately +0.4769 / -0.5018 mm; differences approximately 0.0231 / 0.0018 mm | Good local single-axis tracking in these two runs; the +Z run also shows cross-axis coupling |
-| Roll | +0.5 / -0.5 deg commands | IMU means approximately +0.4486 / -0.5083 deg; differences approximately 0.0514 / 0.0083 deg | Small-angle Roll performance is direction-dependent in the available runs |
-| Pitch | +0.5 / -0.5 deg commands | IMU means approximately +0.4995 / -0.5213 deg; differences approximately 0.0005 / 0.0213 deg | Small-angle Pitch performance spans approximately 0.0005-0.021 deg in the available runs |
-| Yaw | +2.0 deg command | IMU mean approximately +1.4825 deg; residual approximately 0.5175 deg | Materially weaker than Roll/Pitch; no uniform attitude-accuracy claim is supported |
-| Whole-workspace absolute positioning accuracy | No dedicated external calibration | Unknown | Not currently qualified |
-| Repeatability | No systematic repeated-point statistics | Unknown | Not currently qualified |
+| Test | Command / Condition | Measured Response | Metric | Interpretation |
+| --- | --- | --- | --- | --- |
+| Actuator position resolution | Configuration mapping: 40 steps/mm | 0.025 mm/step | Joint-command quantization from `steps_per_meter` / `meters_per_step` | Actuator/joint resolution; not TCP Cartesian positioning accuracy |
+| X translation | +0.5 / -0.5 mm | FK local displacement +0.3311 / -0.3991 mm; absolute command-response difference 0.1689 / 0.1009 mm | Mean of the last 100 action-stage FK samples minus mean of the last 100 pre-HOME FK samples | Local, model-based command-to-FK tracking in two runs |
+| Y translation | +0.5 / -0.5 mm | FK local displacement +0.5184 / -0.4957 mm; absolute difference 0.0184 / 0.0043 mm | Same last-100-sample action-minus-pre-HOME FK mean | Local, model-based command-to-FK tracking in two runs |
+| Z translation | +0.5 / -0.5 mm | FK local displacement +0.4769 / -0.5018 mm; absolute difference 0.0231 / 0.0018 mm | Same last-100-sample action-minus-pre-HOME FK mean | Local, model-based tracking; the +Z run also shows cross-axis coupling |
+| Roll | +0.5 / -0.5 deg | Platform-IMU mean +0.4486 / -0.5083 deg; signed mean command-minus-response error +0.0514 / +0.0083 deg | Arithmetic mean over the latter half of the action stage | Near-HOME small-angle tracking; direction-dependent in the available runs |
+| Pitch | +0.5 / -0.5 deg | Platform-IMU mean +0.4995 / -0.5213 deg; signed mean error +0.0005 / +0.0213 deg | Same latter-half action-stage mean | Near-HOME small-angle tracking; direction-dependent in the available runs |
+| Yaw | +2.0 deg | Platform-IMU mean +1.4825 deg; signed mean error +0.5175 deg | Same latter-half action-stage mean | Materially weaker than Roll/Pitch; no uniform attitude-accuracy claim is supported |
+| Whole-workspace absolute positioning accuracy | No dedicated external calibration | Unknown | Not measured | Not currently qualified |
+| Repeatability | No systematic repeated-point statistics | Unknown | Not measured | Not currently qualified |
 
-The available tests show materially different results by axis and direction: representative primary-axis translation differences range from approximately 0.002 mm to 0.262 mm, and the Roll/Pitch tracking errors shown above range from approximately 0.0005 deg to 0.051 deg. They support a local tracking characterization near HOME, not a single Cartesian or attitude accuracy specification. Whole-workspace absolute accuracy and repeatability remain to be established by dedicated external metrology and repeated-point statistics. See the [`detailed evidence summary`](./agent_docs/reports/REAL_HARDWARE_ACCURACY_SUMMARY.md).
+The axis- and direction-dependent results above use explicitly defined, internally consistent metric families: one for J9.1 translation and one for J9.1 attitude. They support a local command-to-feedback characterization near HOME, not a single Cartesian or attitude accuracy specification. Whole-workspace absolute accuracy and repeatability remain to be established by dedicated external metrology and repeated-point statistics. See the [`detailed evidence summary`](./agent_docs/reports/REAL_HARDWARE_PERFORMANCE_SUMMARY.md).
 
 ### J11 Dual-IMU Attitude Stabilization (Stage Result)
 
