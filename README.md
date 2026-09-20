@@ -12,7 +12,7 @@
 ### Key Milestones:
 - **J1–J10 (Completed & Frozen)**: Comprehensive real-hardware foundation covering low-level multi-actuator UART communication, analytical inverse kinematics, $C^2$ jerk-limited trajectory shaping, 50 Hz continuous servo streaming, dual-IMU microsecond clock synchronization, numerical forward kinematics, and complete 6-DOF single-axis operational workspace qualification on the physical platform.
 - **J11-M1 (Completed & Frozen)**: Base-IMU full-$SO(3)$ feedforward attitude hold, dedicated driver runtime qualification, two-tier safety policy, 300s static home qualification, and low-speed dynamic base disturbance rejection on real physical hardware (`v1.0-j11-m1-feedforward-hardware-qualified`).
-- **J11 (Final Freeze Ready)**: Retained Base-IMU SO(3) Feedforward + Platform-IMU Classical P/PD Attitude Feedback with $K_p=[0.05,0.05,0.025]$, $K_d=[0,0.0015,0.0015]\,\text{s}$, $K_i=0$, and $f_c=5\,\text{Hz}$ (Roll=P, Pitch=PD, Yaw=PD). Roll-D tuning is closed. Demo A (Feedforward) PASS; Demo B (Feedforward + P/PD) PASS ON REPEAT. Next research stage: J12 ADRC.
+- **J11 (Final Freeze Ready)**: Retained Base-IMU SO(3) Feedforward + Platform-IMU Classical P/PD Attitude Feedback. Roll / Pitch / Yaw gains: `Kp = [0.05, 0.05, 0.025]`, `Kd = [0, 0.0015, 0.0015] s`, `Ki = 0`; low-pass filter cutoff: `fc = 5 Hz` (Roll=P, Pitch=PD, Yaw=PD). Roll-D tuning is closed. Demo A (Feedforward) PASS; Demo B (Feedforward + P/PD) PASS ON REPEAT. Next research stage: J12 ADRC.
 
 ---
 
@@ -54,7 +54,7 @@ The development of the 6PUS robotic platform is organized into two distinct over
 ```
 
 > [!IMPORTANT]
-> **Honesty & Verification Boundary**: J1-J10 and J11-M1 are frozen; the final J11-M2 P/PD controller is supported by existing qualified hardware evidence. Both final Demo smoke tests have been executed (Demo A PASS; Demo B PASS ON REPEAT — the first Demo B run was interrupted by a transient motor CH340 USB-UART disconnect, see [`agent_docs/j11/J11_DEMO_B_USB_UART_FAULT_AUDIT.md`](./agent_docs/j11/J11_DEMO_B_USB_UART_FAULT_AUDIT.md)). No unverified J12 ADRC performance claim is made.
+> **Honesty & Verification Boundary**: J1-J10 and J11-M1 are frozen; the final J11-M2 P/PD controller is supported by existing qualified hardware evidence. Both final Demo smoke tests have been executed (Demo A PASS; Demo B PASS ON REPEAT). No unverified J12 ADRC performance claim is made.
 
 ### J10 Single-Axis Operational Workspace Envelope (HOME-Centered)
 
@@ -68,6 +68,24 @@ The development of the 6PUS robotic platform is organized into two distinct over
 | **Yaw** | `[-90.0, +90.0] deg` | Full qualified rotational envelope |
 
 *(Note: These ranges represent independent single-axis explorations centered at `OPERATING_HOME = [1000]*6` steps. Full details are documented in [`agent_docs/stages/J10/J10_FINAL_SUMMARY.md`](./agent_docs/stages/J10/J10_FINAL_SUMMARY.md)).*
+
+### Real-Hardware Positioning & Attitude Tracking Performance Near HOME
+
+These results describe small-range, single-axis **command-to-feedback / FK / IMU tracking performance near HOME**. They are not whole-workspace absolute positioning accuracy, external-metrology calibration, or repeatability specifications.
+
+| Test | Condition | Observed performance | Supported engineering interpretation |
+| --- | --- | --- | --- |
+| Actuator position resolution | 1 step | approximately 0.025 mm | Joint/actuator quantization resolution; not TCP or Cartesian positioning accuracy |
+| X translation | +0.5 mm command | FK approximately +0.2385 mm; command-to-FK difference approximately 0.2615 mm | Local command-to-FK result; cross-axis details are retained in the evidence summary |
+| Y translation | +0.5 / -0.5 mm commands | FK approximately +0.5184 / -0.4957 mm; differences approximately 0.0184 / 0.0043 mm | Good local single-axis tracking in these two runs |
+| Z translation | +0.5 / -0.5 mm commands | FK approximately +0.4769 / -0.5018 mm; differences approximately 0.0231 / 0.0018 mm | Good local single-axis tracking in these two runs; the +Z run also shows cross-axis coupling |
+| Roll | +0.5 / -0.5 deg commands | IMU means approximately +0.4486 / -0.5083 deg; differences approximately 0.0514 / 0.0083 deg | Small-angle Roll performance is direction-dependent in the available runs |
+| Pitch | +0.5 / -0.5 deg commands | IMU means approximately +0.4995 / -0.5213 deg; differences approximately 0.0005 / 0.0213 deg | Small-angle Pitch performance spans approximately 0.0005-0.021 deg in the available runs |
+| Yaw | +2.0 deg command | IMU mean approximately +1.4825 deg; residual approximately 0.5175 deg | Materially weaker than Roll/Pitch; no uniform attitude-accuracy claim is supported |
+| Whole-workspace absolute positioning accuracy | No dedicated external calibration | Unknown | Not currently qualified |
+| Repeatability | No systematic repeated-point statistics | Unknown | Not currently qualified |
+
+The available tests show materially different results by axis and direction: representative primary-axis translation differences range from approximately 0.002 mm to 0.262 mm, and the Roll/Pitch tracking errors shown above range from approximately 0.0005 deg to 0.051 deg. They support a local tracking characterization near HOME, not a single Cartesian or attitude accuracy specification. Whole-workspace absolute accuracy and repeatability remain to be established by dedicated external metrology and repeated-point statistics. See the [`detailed evidence summary`](./agent_docs/reports/REAL_HARDWARE_ACCURACY_SUMMARY.md).
 
 ### J11 Dual-IMU Attitude Stabilization (Stage Result)
 
@@ -104,10 +122,10 @@ Residual limit = ±0.5° / axis
 
 > These percentages reflect the observed normalized attitude-response reductions in two representative real-hardware experiments. Because the two manual Base disturbance trajectories were not strictly identical, the result is a normalized hardware characterization rather than a strict identical-input transfer-function gain.
 
-**Canonical datasets**:
+**Data Sources**:
 
-- M1: `results/j11/runtime_validation/20260918_112354/J11_DISTURB_QUAL_feedforward_powered.csv`
-- M2: `results/j11/m2_pid/20260920_095850/j11_m2_7a_pitchd_cand2_repeat_phaseB_dynamic_telemetry_powered.csv`
+- M1 reference dataset: `results/j11/runtime_validation/20260918_112354/J11_DISTURB_QUAL_feedforward_powered.csv`
+- M2 reference dataset: `results/j11/m2_pid/20260920_095850/j11_m2_7a_pitchd_cand2_repeat_phaseB_dynamic_telemetry_powered.csv`
 
 These raw CSVs are the starting point for any future re-plotting or re-computation of Peak / RMS / G_Peak / G_RMS.
 
@@ -131,7 +149,7 @@ bash bone_ws/scripts/run_j11_demo_feedforward_pd.sh
 
 Press `Ctrl+C` once to stop the demo cleanly and return to `OPERATING_HOME`. Developers may still source `/opt/ros/jazzy/setup.bash` and `/home/lyapunov/bone_drill/bone_ws/install/setup.bash` explicitly for diagnostics, but this is not required for the final demos.
 
-**Status**: J11 FINAL FREEZE READY — Demo A (Feedforward) PASS; Demo B (Feedforward + P/PD) PASS ON REPEAT (the first P/PD Demo run hit a one-off motor USB-UART transient disconnect and passed on repeat; this is archived as a non-blocking hardware-robustness item). **Next**: J12 ADRC disturbance rejection under external payload/force disturbance.
+**Status**: J11 FINAL FREEZE READY — Demo A (Feedforward) PASS; Demo B (Feedforward + P/PD) PASS ON REPEAT. **Next**: J12 ADRC disturbance rejection under external payload/force disturbance.
 
 ---
 

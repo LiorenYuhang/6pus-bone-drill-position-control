@@ -3,6 +3,8 @@
 本文档为 `/home/lyapunov/bone_drill/results` 的**数据集与实验证据索引清单**。  
 根据 [`AGENTS.md`](../AGENTS.md) 规定，`results/` 专用于存放程序运行、自动化测试、仿真评测以及实机实验生成的各类机读数据证据与运行时产物（machine-generated / experiment-generated evidence and runtime artifacts）。本文档是 `results/` 目录下唯一允许的索引元数据例外，所有人类与 Agent 撰写的深度分析与结论报告统一归档于 [`agent_docs/reports/`](../agent_docs/reports/)。
 
+**Performance Summary**：原始 evidence 保存在本目录；HOME 附近定位与姿态跟踪性能的详细工程解释、限制与证据追溯见 [`agent_docs/reports/REAL_HARDWARE_ACCURACY_SUMMARY.md`](../agent_docs/reports/REAL_HARDWARE_ACCURACY_SUMMARY.md)。
+
 ---
 
 ## 1. 证据分级体系 (Evidence Hierarchy)

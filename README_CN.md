@@ -12,7 +12,7 @@
 ### 核心阶段划分：
 - **J1–J10（已完成并冻结）**：构建了坚实的真实物理硬件运动与感知基线，涵盖多电机底层串口通信、微秒级闭式解析逆解、三阶加加速度连续轨迹平滑整形、50Hz 连续流式伺服驱动、双 H30 IMU 微秒级时钟对齐解算、数值正运动学重构，以及在真实物理平台上完成的 6 自由度单轴安全运行包络边界全域测定。
 - **J11-M1（已完成并冻结）**：完成 Base-IMU 全 SO(3) 前馈姿态保持实机闭环、专用驱动层运行资格认证、两级安全策略 (Two-Tier Safety Policy)、300s 静态长周期达标以及真机低速动基座扰动防抖补偿验证（官方 Release Tag: `v1.0-j11-m1-feedforward-hardware-qualified`）。
-- **J11（最终冻结就绪）**：最终保留 Base-IMU SO(3) Feedforward + Platform-IMU Classical P/PD Attitude Feedback；$K_p=[0.05,0.05,0.025]$，$K_d=[0,0.0015,0.0015]\,\text{s}$，$K_i=0$，$f_c=5\,\text{Hz}$（Roll=P，Pitch=PD，Yaw=PD）。Roll-D 调参已关闭；Demo A（Feedforward）PASS，Demo B（Feedforward + P/PD）PASS ON REPEAT。下一阶段：J12 ADRC。
+- **J11（最终冻结就绪）**：最终保留 Base-IMU SO(3) Feedforward + Platform-IMU Classical P/PD Attitude Feedback。Roll / Pitch / Yaw 参数：`Kp = [0.05, 0.05, 0.025]`，`Kd = [0, 0.0015, 0.0015] s`，`Ki = 0`；低通滤波截止频率：`fc = 5 Hz`（Roll=P，Pitch=PD，Yaw=PD）。Roll-D 调参已关闭；Demo A（Feedforward）PASS，Demo B（Feedforward + P/PD）PASS ON REPEAT。下一阶段：J12 ADRC。
 
 ---
 
@@ -54,7 +54,7 @@
 ```
 
 > [!IMPORTANT]
-> **真实性与验证边界**：J1 至 J10 与 J11-M1 已冻结；J11-M2 最终 P/PD 控制器具有已有 qualified hardware evidence。最终两个 Demo smoke test 均已执行（Demo A PASS；Demo B PASS ON REPEAT —— 首次 Demo B 因 motor CH340 USB-UART 瞬时 disconnect 提前结束，见 [`agent_docs/j11/J11_DEMO_B_USB_UART_FAULT_AUDIT.md`](./agent_docs/j11/J11_DEMO_B_USB_UART_FAULT_AUDIT.md)），也未宣称 J12 ADRC 的未验证性能。
+> **真实性与验证边界**：J1 至 J10 与 J11-M1 已冻结；J11-M2 最终 P/PD 控制器具有已有 qualified hardware evidence。最终两个 Demo smoke test 均已执行（Demo A PASS；Demo B PASS ON REPEAT），也未宣称 J12 ADRC 的未验证性能。
 
 ### J10 单自由度实机安全运行包络边界（以 HOME 为基准）
 
@@ -68,6 +68,24 @@
 | **Yaw** | `[-90.0, +90.0] deg` | 完整测试旋转角包络 |
 
 *(注：上述数据均为在 `OPERATING_HOME = [1000]*6` 步基准下独立单轴运动实测结果，详见 [`agent_docs/stages/J10/J10_FINAL_SUMMARY.md`](./agent_docs/stages/J10/J10_FINAL_SUMMARY.md))*。
+
+### 真机定位与姿态跟踪性能（HOME 附近）
+
+以下结果表示 HOME 附近、小范围、单轴条件下的 **command-to-feedback / FK / IMU 跟踪表现**，不等同于全工作空间绝对定位精度、外部计量系统标定精度或重复定位精度。
+
+| 测试项目 | 测试条件 | 实测表现 | 当前可支持的工程描述 |
+| --- | --- | --- | --- |
+| 执行器位置分辨率 | 1 step | 约 0.025 mm | 关节/执行器量化分辨率，不是 TCP 或笛卡尔定位精度 |
+| X 平移 | +0.5 mm 指令 | FK 约 +0.2385 mm；command-to-FK 差值约 0.2615 mm | 局部 command-to-FK 结果；跨轴细节保留在完整证据总结中 |
+| Y 平移 | +0.5 / -0.5 mm 指令 | FK 约 +0.5184 / -0.4957 mm；差值约 0.0184 / 0.0043 mm | 这两次实验中的局部单轴跟踪表现较好 |
+| Z 平移 | +0.5 / -0.5 mm 指令 | FK 约 +0.4769 / -0.5018 mm；差值约 0.0231 / 0.0018 mm | 这两次实验中的局部单轴跟踪表现较好；+Z 实验同时存在跨轴耦合 |
+| Roll | +0.5 / -0.5 deg 指令 | IMU 均值约 +0.4486 / -0.5083 deg；差值约 0.0514 / 0.0083 deg | 现有实验中的小角度 Roll 表现具有方向差异 |
+| Pitch | +0.5 / -0.5 deg 指令 | IMU 均值约 +0.4995 / -0.5213 deg；差值约 0.0005 / 0.0213 deg | 现有实验中的小角度 Pitch 表现约跨越 0.0005-0.021 deg |
+| Yaw | +2.0 deg 指令 | IMU 均值约 +1.4825 deg；残余约 0.5175 deg | 明显弱于 Roll/Pitch，不能据此给出统一姿态精度声明 |
+| 全工作空间绝对定位精度 | 尚未专项外部标定 | 未知 | 当前未完成资格认证 |
+| 重复定位精度 | 尚未做系统同点重复统计 | 未知 | 当前未完成资格认证 |
+
+现有实验在不同轴向和方向上的表现差异明显：上述代表性主轴平移差值约为 0.002-0.262 mm，Roll/Pitch 跟踪误差约为 0.0005-0.051 deg。这些结果支持 HOME 附近的局部跟踪表征，但不支持归纳为单一的笛卡尔或姿态精度规格。整机全工作空间绝对精度和重复定位精度尚需通过专项外部计量与同点重复统计进一步确定。详见[`完整证据总结`](./agent_docs/reports/REAL_HARDWARE_ACCURACY_SUMMARY.md)。
 
 ### J11 — 双 IMU 三轴姿态稳定（阶段成果）
 
@@ -115,10 +133,10 @@ G 越小，表示 Platform 对 Base 扰动产生的姿态响应越小，即姿�
 
 #### 数据来源
 
-- M1 canonical：`results/j11/runtime_validation/20260918_112354/J11_DISTURB_QUAL_feedforward_powered.csv`
-- M2 representative：`results/j11/m2_pid/20260920_095850/j11_m2_7a_pitchd_cand2_repeat_phaseB_dynamic_telemetry_powered.csv`
+- M1 参考数据集：`results/j11/runtime_validation/20260918_112354/J11_DISTURB_QUAL_feedforward_powered.csv`
+- M2 参考数据集：`results/j11/m2_pid/20260920_095850/j11_m2_7a_pitchd_cand2_repeat_phaseB_dynamic_telemetry_powered.csv`
 
-未来作图、重算 Peak / RMS / G_Peak / G_RMS 均可直接以上述 canonical raw CSV 为起点。
+后续图表重绘以及 Peak / RMS / G_Peak / G_RMS 重算，均可直接以上述原始 CSV 为数据来源。
 
 ### J11 演示
 
@@ -140,7 +158,7 @@ bash bone_ws/scripts/run_j11_demo_feedforward_pd.sh
 
 演示中只按一次 `Ctrl+C`，wrapper 会受控结束并返回 `OPERATING_HOME`。开发或排错时仍可显式 source `/opt/ros/jazzy/setup.bash` 与 `/home/lyapunov/bone_drill/bone_ws/install/setup.bash`，但这不是最终 Demo 的强制要求。
 
-**J11 状态**：FINAL FREEZE READY —— Demo A（Feedforward）PASS；Demo B（Feedforward + P/PD）PASS ON REPEAT。P/PD Demo 首次运行曾出现一次独立 motor USB-UART 瞬时掉线，repeat 正常；该事件作为非阻塞硬件可靠性事项归档。**下一阶段**：J12 外部负载/力扰动下的 ADRC disturbance rejection。
+**J11 状态**：FINAL FREEZE READY —— Demo A（Feedforward）PASS；Demo B（Feedforward + P/PD）PASS ON REPEAT。**下一阶段**：J12 外部负载/力扰动下的 ADRC disturbance rejection。
 
 ### 文档
 

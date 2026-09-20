@@ -47,7 +47,13 @@ agent_docs/
 
 ---
 
-## 3. 跨阶段交接规范 (Handoff Navigation)
+## 3. 跨阶段性能总结 (Cross-Stage Performance Summary)
+
+- [`REAL_HARDWARE_ACCURACY_SUMMARY.md`](./reports/REAL_HARDWARE_ACCURACY_SUMMARY.md)：集中总结当前真机 HOME 附近的 positioning / attitude tracking performance、科学表述边界、已知限制以及 evidence traceability。
+
+---
+
+## 4. 跨阶段交接规范 (Handoff Navigation)
 
 跨阶段交接文档用于确保上一阶段的物理事实、不可动基线与安全限制完整传递至下一阶段：
 - **J9 $\to$ J10 交接**：[`agent_docs/stages/J9/J9_TO_J10_HANDOFF.md`](./stages/J9/J9_TO_J10_HANDOFF.md)（交付 IMU 静态/动态标定与姿态精度限制）。
@@ -56,7 +62,7 @@ agent_docs/
 
 ---
 
-## 4. 文档维护准则
+## 5. 文档维护准则
 
 1. **唯一事实源 (Single Source of Truth)**：
    - 机构几何参数与物理换算系数唯一来源于 [`bone_ws/src/pus6_kinematics/config/6pus_geometry.yaml`](../bone_ws/src/pus6_kinematics/config/6pus_geometry.yaml)。
