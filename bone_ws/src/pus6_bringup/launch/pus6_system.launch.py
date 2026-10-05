@@ -59,6 +59,12 @@ def generate_launch_description():
         description="Feedback loss policy: 'default' (J7/J8 strict 4-miss gate) or 'age_based' (J11 research mode: per-axis age gate)",
     )
 
+    enable_runtime_diagnostics_arg = DeclareLaunchArgument(
+        "enable_runtime_diagnostics",
+        default_value="false",
+        description="Whether to enable J11/J12 in-memory runtime diagnostics (default: false)",
+    )
+
     motor_driver_node = Node(
         package="pus6_motor_driver",
         executable="motor_driver_node",
@@ -71,6 +77,7 @@ def generate_launch_description():
                 "servo_scheduler_mode": LaunchConfiguration("servo_scheduler_mode"),
                 "telemetry_publish_mode": LaunchConfiguration("telemetry_publish_mode"),
                 "feedback_loss_policy": LaunchConfiguration("feedback_loss_policy"),
+                "enable_runtime_diagnostics": LaunchConfiguration("enable_runtime_diagnostics"),
             },
         ],
     )
@@ -120,6 +127,7 @@ def generate_launch_description():
         servo_scheduler_mode_arg,
         telemetry_publish_mode_arg,
         feedback_loss_policy_arg,
+        enable_runtime_diagnostics_arg,
         motor_driver_node,
         kinematics_node,
         control_node,

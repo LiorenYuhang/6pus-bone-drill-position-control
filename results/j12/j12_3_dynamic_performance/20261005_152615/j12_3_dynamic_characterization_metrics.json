@@ -1,0 +1,156 @@
+{
+  "dataset_summary": {
+    "csv_file": "j12_3_dynamic_screening_telemetry_powered.csv",
+    "total_rows": 2078,
+    "active_rows": 2007,
+    "duration_s": 40.139993389000004,
+    "overall_peak_current_mA": 468,
+    "peak_motor_id": 6
+  },
+  "segment_metrics": [
+    {
+      "name": "Slow",
+      "start_time_s": 1.66022289,
+      "end_time_s": 15.580012516000002,
+      "duration_s": 13.919789626000002,
+      "base_so3_rms_deg": 9.74448822671892,
+      "base_so3_peak_deg": 15.637665899297161,
+      "angular_rate_rms_deg_s": 12.33973996550581,
+      "angular_rate_peak_deg_s": 34.6452349998143,
+      "angular_rate_min_deg_s": 0.008107748514676737,
+      "platform_so3_error_rms_deg": 4.411709725701687,
+      "platform_so3_error_peak_deg": 10.443180227698504,
+      "max_tracking_error_steps": 67,
+      "tracking_error_per_motor_max": [
+        54,
+        64,
+        39,
+        57,
+        67,
+        37
+      ],
+      "peak_motor_current_mA": 224,
+      "peak_motor_id": 4,
+      "motor_current_per_axis_max_mA": [
+        149,
+        182,
+        128,
+        224,
+        219,
+        164
+      ]
+    },
+    {
+      "name": "Medium",
+      "start_time_s": 15.800126164000002,
+      "end_time_s": 30.279887545,
+      "duration_s": 14.479761381,
+      "base_so3_rms_deg": 11.268802208058897,
+      "base_so3_peak_deg": 18.15973768681264,
+      "angular_rate_rms_deg_s": 17.39001187461479,
+      "angular_rate_peak_deg_s": 51.76190210358563,
+      "angular_rate_min_deg_s": 0.018889903925617575,
+      "platform_so3_error_rms_deg": 12.523652925430039,
+      "platform_so3_error_peak_deg": 23.12962145109606,
+      "max_tracking_error_steps": 163,
+      "tracking_error_per_motor_max": [
+        139,
+        163,
+        157,
+        135,
+        163,
+        154
+      ],
+      "peak_motor_current_mA": 468,
+      "peak_motor_id": 6,
+      "motor_current_per_axis_max_mA": [
+        159,
+        378,
+        387,
+        138,
+        373,
+        468
+      ]
+    },
+    {
+      "name": "Fast",
+      "start_time_s": 30.53995782,
+      "end_time_s": 40.139993389000004,
+      "duration_s": 9.600035569000003,
+      "base_so3_rms_deg": 12.33261796739967,
+      "base_so3_peak_deg": 21.512170200557065,
+      "angular_rate_rms_deg_s": 47.540187026869305,
+      "angular_rate_peak_deg_s": 639.8279542946466,
+      "angular_rate_min_deg_s": 0.012811931623173999,
+      "platform_so3_error_rms_deg": 13.662145174203404,
+      "platform_so3_error_peak_deg": 29.133098779280367,
+      "max_tracking_error_steps": 93,
+      "tracking_error_per_motor_max": [
+        84,
+        93,
+        60,
+        93,
+        90,
+        58
+      ],
+      "peak_motor_current_mA": 225,
+      "peak_motor_id": 3,
+      "motor_current_per_axis_max_mA": [
+        144,
+        178,
+        225,
+        132,
+        160,
+        188
+      ]
+    }
+  ],
+  "high_current_events": [],
+  "high_current_threshold_counts": {
+    "500": 0,
+    "800": 0,
+    "1000": 0,
+    "1200": 0,
+    "1400": 0
+  },
+  "audit_questions_answers": {
+    "q1_slow_rate_range_deg_s": [
+      0.008107748514676737,
+      34.6452349998143
+    ],
+    "q2_medium_rate_range_deg_s": [
+      0.018889903925617575,
+      51.76190210358563
+    ],
+    "q3_fast_rate_range_deg_s": [
+      0.012811931623173999,
+      639.8279542946466
+    ],
+    "q4_full_run_max_motor_current_mA": 468,
+    "q5_peak_current_motor_id": 6,
+    "q6_peak_current_condition": {
+      "timestamp_s": 25.059943557,
+      "base_so3_deg": 12.008633267721386,
+      "base_angular_rate_deg_s": 25.271563579776263,
+      "platform_so3_error_deg": 10.99053613715045
+    },
+    "q7_threshold_exceedances": {
+      ">500_mA": false,
+      ">800_mA": false,
+      ">1000_mA": false,
+      ">1200_mA": false,
+      ">1400_mA": false,
+      "counts": {
+        "500": 0,
+        "800": 0,
+        "1000": 0,
+        "1200": 0,
+        "1400": 0
+      }
+    },
+    "q8_actuator_internal_1500_protection_tripped": false,
+    "q9_platform_error_deterioration_rate_deg_s": 22.850998367665948,
+    "q10_tracking_error_deterioration_rate_deg_s": 22.850998367665948,
+    "q11_effective_dynamic_range_deg_s": 22.850998367665948
+  }
+}

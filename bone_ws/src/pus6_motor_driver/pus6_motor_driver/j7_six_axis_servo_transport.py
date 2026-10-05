@@ -106,6 +106,11 @@ class SixAxisTxRecord:
     retry_count: int
     residual_frames_before: int
     residual_frames_after: int
+    duration_ns: int = 0
+    cpu_duration_ns: int = 0
+    requested_bytes: int = 0
+    written_bytes: int = 0
+    error: str | None = None
 
 
 @dataclass(frozen=True)
@@ -121,6 +126,16 @@ class SixAxisCycleAudit:
     batch_complete_ns: int
     deadline_miss: bool
     feedbacks: dict[int, StatusFeedback] = field(default_factory=dict)
+    prior_rx_drain_wall_ns: int = 0
+    prior_rx_drain_cpu_ns: int = 0
+    prior_rx_drained_frames: int = 0
+    inter_frame_wait_total_ns: int = 0
+    motion_drain_wall_ns: int = 0
+    motion_drain_cpu_ns: int = 0
+    rx_drain_metrics: Any = None
+    error_phase: str | None = None
+    error_motor_id: int | None = None
+    error_class: str | None = None
 
 
 @dataclass(frozen=True)
@@ -300,12 +315,18 @@ class J7SixAxisServoTransport:
             if not isinstance(timestamp_ns, int) or timestamp_ns < 0:
                 raise ValueError("target_timestamp_ns must be a non-negative integer")
 
+            t_drain_start_ns = self._clock_ns()
+            t_drain_cpu_start = time.thread_time_ns()
             try:
                 residual_before = self._prepare_motion_rx_locked()
             except RxSafetyError:
                 self._delivery_uncertain = True
                 self.stop("rx_safety_failure")
                 raise
+            t_drain_end_ns = self._clock_ns()
+            t_drain_cpu_end = time.thread_time_ns()
+            prior_rx_drain_wall_ns = t_drain_end_ns - t_drain_start_ns
+            prior_rx_drain_cpu_ns = t_drain_cpu_end - t_drain_cpu_start
 
             cycle_start_ns = self._clock_ns()
             if self._last_cycle_start_ns is None:
@@ -316,19 +337,29 @@ class J7SixAxisServoTransport:
                 )
 
             records: list[SixAxisTxRecord] = []
+            inter_frame_wait_total_ns = 0
+            transport_err_phase: str | None = None
+            transport_err_mid: int | None = None
+            transport_err_cls: str | None = None
+
             try:
                 for motor_id, target in zip(MOTOR_IDS, targets):
+                    t_w_start = self._clock_ns()
                     self._wait_for_frame_interval_locked()
+                    inter_frame_wait_total_ns += (self._clock_ns() - t_w_start)
+
                     frame = pack_write_register_cmd(
                         motor_id, TARGET_POSITION_ADDR, [target]
                     )
                     tx_start_ns = self._clock_ns()
+                    tx_cpu_start = time.thread_time_ns()
                     written = self.bus.write(frame)
                     if written is not None and written != len(frame):
                         raise ServoTransportError(
                             f"short Servo write on ID{motor_id}: {written}/{len(frame)} bytes"
                         )
                     tx_end_ns = self._clock_ns()
+                    tx_cpu_end = time.thread_time_ns()
                     self._last_tx_end_ns = tx_end_ns
                     records.append(
                         SixAxisTxRecord(
@@ -344,16 +375,26 @@ class J7SixAxisServoTransport:
                                 residual_before if not records else len(self._residual)
                             ),
                             residual_frames_after=len(self._residual),
+                            duration_ns=tx_end_ns - tx_start_ns,
+                            cpu_duration_ns=tx_cpu_end - tx_cpu_start,
+                            requested_bytes=len(frame),
+                            written_bytes=len(frame) if written is None else written,
+                            error=None,
                         )
                     )
-            except Exception:
+            except Exception as exc:
                 self._delivery_uncertain = True
+                transport_err_phase = f"write_id{motor_id}"
+                transport_err_mid = motor_id
+                transport_err_cls = type(exc).__name__
                 self.stop("motion_write_failure")
                 raise
 
             # Ingest and unmarshal 0x29 StatusFeedback responses directly from the bus
             feedbacks: dict[int, StatusFeedback] = {}
             drain_fn = getattr(self.bus, "drain_motion_feedbacks", None)
+            t_motion_drain_start_ns = self._clock_ns()
+            t_motion_drain_cpu_start = time.thread_time_ns()
             if drain_fn is not None:
                 deadline_ns = self._clock_ns() + int(self.rx_drain_budget_s * 1e9)
                 while True:
@@ -362,6 +403,11 @@ class J7SixAxisServoTransport:
                     if len(feedbacks) >= len(MOTOR_IDS) or self._clock_ns() >= deadline_ns:
                         break
                     pass
+            t_motion_drain_end_ns = self._clock_ns()
+            t_motion_drain_cpu_end = time.thread_time_ns()
+            motion_drain_wall_ns = t_motion_drain_end_ns - t_motion_drain_start_ns
+            motion_drain_cpu_ns = t_motion_drain_cpu_end - t_motion_drain_cpu_start
+            rx_metrics = getattr(self.bus, "last_rx_drain_metrics", None)
 
             batch_complete_ns = self._clock_ns()
             cycle_end_ns = batch_complete_ns
@@ -379,6 +425,16 @@ class J7SixAxisServoTransport:
                 batch_complete_ns=batch_complete_ns,
                 deadline_miss=(batch_complete_ns - cycle_start_ns) > self.period_ns,
                 feedbacks=feedbacks,
+                prior_rx_drain_wall_ns=prior_rx_drain_wall_ns,
+                prior_rx_drain_cpu_ns=prior_rx_drain_cpu_ns,
+                prior_rx_drained_frames=residual_before,
+                inter_frame_wait_total_ns=inter_frame_wait_total_ns,
+                motion_drain_wall_ns=motion_drain_wall_ns,
+                motion_drain_cpu_ns=motion_drain_cpu_ns,
+                rx_drain_metrics=rx_metrics,
+                error_phase=transport_err_phase,
+                error_motor_id=transport_err_mid,
+                error_class=transport_err_cls,
             )
             self._cycles.append(audit)
             self._last_cycle_start_ns = cycle_start_ns

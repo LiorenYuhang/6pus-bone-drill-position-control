@@ -10,6 +10,7 @@ from pus6_motor_driver.protocol import StatusFeedback
 from pus6_motor_driver.safety import (
     MOTOR_IDS,
     NUM_MOTORS,
+    MAX_CURRENT_MA,
     SafetyViolation,
     TargetValidationError,
     validate_status_feedback,
@@ -104,13 +105,13 @@ def test_validate_status_feedback_overcurrent():
     status = StatusFeedback(
         target_position=100,
         current_position=100,
-        current_mA=501,
+        current_mA=1501,
         force_g=100,
         force_adc=200,
         temperature=30,
         error_code=0,
     )
-    with pytest.raises(SafetyViolation, match="exceeds threshold 500mA"):
+    with pytest.raises(SafetyViolation, match=f"exceeds threshold {MAX_CURRENT_MA}mA"):
         validate_status_feedback(status, motor_id=1)
 
 

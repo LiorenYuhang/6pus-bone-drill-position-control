@@ -1,0 +1,8 @@
+{
+  "stage": "j12_3_dynamic_screening",
+  "mode": "POWERED REAL EXECUTION",
+  "hardware_write_count": 4442,
+  "total_cycles": 4497,
+  "final_state": "ACTIVE",
+  "fault_reason": ""
+}

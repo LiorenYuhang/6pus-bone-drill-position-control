@@ -1,0 +1,344 @@
+[
+  {
+    "segment_index": 1,
+    "name": "Roll_Slow",
+    "start_time_s": 2.67982302,
+    "end_time_s": 11.799841500000001,
+    "duration_s": 9.12001848,
+    "sample_count": 457,
+    "input_disturbance": {
+      "amplitude_base_deg": 15.100637128116759,
+      "dominant_frequency_hz": 0.0,
+      "peak_angular_rate_deg_s": 17.187533845120882,
+      "rms_angular_rate_deg_s": 7.738345260877381
+    },
+    "platform_stabilization": {
+      "amplitude_plat_deg": 4.064794903583388,
+      "so3_error_rms_deg": 1.9850166777918625,
+      "so3_error_peak_deg": 4.406976935452426,
+      "so3_error_p95_deg": 3.8166741096003873,
+      "attenuation_ratio": 0.2691803576959616,
+      "attenuation_db": -11.399132682088144
+    },
+    "controller": {
+      "p_residual_rms_deg": [
+        0.09131959486926004,
+        0.02280450300144086,
+        0.015743365773804315
+      ],
+      "p_residual_peak_deg": [
+        0.2168564604380249,
+        0.07384190148144168,
+        0.05284443562779825
+      ],
+      "d_residual_rms_deg": [
+        0.0,
+        0.004665883806208779,
+        0.007260491028258278
+      ],
+      "d_residual_peak_deg": [
+        0.0,
+        0.015238767221683932,
+        0.03031007010028226
+      ],
+      "total_residual_rms_deg": [
+        0.09131959486926004,
+        0.024566091637097477,
+        0.019418227389275667
+      ],
+      "total_residual_peak_deg": [
+        0.2168564604380249,
+        0.08522500161130232,
+        0.0750578050809793
+      ],
+      "saturation_counts": [
+        0,
+        0,
+        0
+      ],
+      "saturation_ratios_pct": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "actuators": {
+      "ID1": {
+        "peak_cmd_rate_steps_s": 400.3196953086735,
+        "peak_fb_rate_steps_s": 753.3622179104232,
+        "tracking_error_rms": 12.108553498816365,
+        "tracking_error_peak": 36,
+        "current_max_mA": 132,
+        "current_p95_mA": 112.19999999999999
+      },
+      "ID2": {
+        "peak_cmd_rate_steps_s": 200.15984765433674,
+        "peak_fb_rate_steps_s": 349.6332172734193,
+        "tracking_error_rms": 4.522494228646405,
+        "tracking_error_peak": 18,
+        "current_max_mA": 96,
+        "current_p95_mA": 52.19999999999999
+      },
+      "ID3": {
+        "peak_cmd_rate_steps_s": 400.3196953086735,
+        "peak_fb_rate_steps_s": 801.016530027431,
+        "tracking_error_rms": 10.916933226516047,
+        "tracking_error_peak": 34,
+        "current_max_mA": 117,
+        "current_p95_mA": 95.0
+      },
+      "ID4": {
+        "peak_cmd_rate_steps_s": 400.3196953086735,
+        "peak_fb_rate_steps_s": 750.9529969007166,
+        "tracking_error_rms": 11.365712959256452,
+        "tracking_error_peak": 33,
+        "current_max_mA": 100,
+        "current_p95_mA": 81.0
+      },
+      "ID5": {
+        "peak_cmd_rate_steps_s": 200.15984765433674,
+        "peak_fb_rate_steps_s": 351.56903502486415,
+        "tracking_error_rms": 4.863565251790553,
+        "tracking_error_peak": 17,
+        "current_max_mA": 99,
+        "current_p95_mA": 63.19999999999999
+      },
+      "ID6": {
+        "peak_cmd_rate_steps_s": 400.3196953086735,
+        "peak_fb_rate_steps_s": 851.0800631541455,
+        "tracking_error_rms": 11.57328471252648,
+        "tracking_error_peak": 36,
+        "current_max_mA": 124,
+        "current_p95_mA": 109.0
+      }
+    }
+  },
+  {
+    "segment_index": 2,
+    "name": "Roll_Medium",
+    "start_time_s": 13.819805075000001,
+    "end_time_s": 31.419814497,
+    "duration_s": 17.600009422,
+    "sample_count": 881,
+    "input_disturbance": {
+      "amplitude_base_deg": 17.83737680277553,
+      "dominant_frequency_hz": 0.0852272271016515,
+      "peak_angular_rate_deg_s": 17.297759022988714,
+      "rms_angular_rate_deg_s": 7.871858069009974
+    },
+    "platform_stabilization": {
+      "amplitude_plat_deg": 4.425239662263843,
+      "so3_error_rms_deg": 2.494960545383301,
+      "so3_error_peak_deg": 5.752899544603518,
+      "so3_error_p95_deg": 4.665099594628991,
+      "attenuation_ratio": 0.24808802948958658,
+      "attenuation_db": -12.107883807827735
+    },
+    "controller": {
+      "p_residual_rms_deg": [
+        0.118246260901939,
+        0.024248230652316457,
+        0.015747344224432018
+      ],
+      "p_residual_peak_deg": [
+        0.2831557930931212,
+        0.06596153275012395,
+        0.04757507883750016
+      ],
+      "d_residual_rms_deg": [
+        0.0,
+        0.0038527417728442723,
+        0.00706729047108238
+      ],
+      "d_residual_peak_deg": [
+        0.0,
+        0.01698786178337211,
+        0.031194587220093883
+      ],
+      "total_residual_rms_deg": [
+        0.118246260901939,
+        0.025380108893581377,
+        0.019194148483508214
+      ],
+      "total_residual_peak_deg": [
+        0.2831557930931212,
+        0.0731345104243025,
+        0.05889979638640185
+      ],
+      "saturation_counts": [
+        0,
+        0,
+        0
+      ],
+      "saturation_ratios_pct": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "actuators": {
+      "ID1": {
+        "peak_cmd_rate_steps_s": 209.61381170558982,
+        "peak_fb_rate_steps_s": 1213.4452770308208,
+        "tracking_error_rms": 24.43344407891203,
+        "tracking_error_peak": 70,
+        "current_max_mA": 128,
+        "current_p95_mA": 102.0
+      },
+      "ID2": {
+        "peak_cmd_rate_steps_s": 101.11542958258286,
+        "peak_fb_rate_steps_s": 351.67928617545203,
+        "tracking_error_rms": 4.801626663455832,
+        "tracking_error_peak": 13,
+        "current_max_mA": 60,
+        "current_p95_mA": 47.0
+      },
+      "ID3": {
+        "peak_cmd_rate_steps_s": 209.61381170558982,
+        "peak_fb_rate_steps_s": 1112.3248372782523,
+        "tracking_error_rms": 26.126341076973915,
+        "tracking_error_peak": 84,
+        "current_max_mA": 141,
+        "current_p95_mA": 99.0
+      },
+      "ID4": {
+        "peak_cmd_rate_steps_s": 209.61381170558982,
+        "peak_fb_rate_steps_s": 1213.4452770308208,
+        "tracking_error_rms": 25.277708412062726,
+        "tracking_error_peak": 77,
+        "current_max_mA": 135,
+        "current_p95_mA": 90.0
+      },
+      "ID5": {
+        "peak_cmd_rate_steps_s": 99.6589173553513,
+        "peak_fb_rate_steps_s": 351.54609974668585,
+        "tracking_error_rms": 4.837542363437004,
+        "tracking_error_peak": 12,
+        "current_max_mA": 74,
+        "current_p95_mA": 59.0
+      },
+      "ID6": {
+        "peak_cmd_rate_steps_s": 212.72144435308056,
+        "peak_fb_rate_steps_s": 1060.10085294705,
+        "tracking_error_rms": 26.059806357261742,
+        "tracking_error_peak": 81,
+        "current_max_mA": 174,
+        "current_p95_mA": 108.0
+      }
+    }
+  },
+  {
+    "segment_index": 3,
+    "name": "Roll_Fast",
+    "start_time_s": 31.519721904,
+    "end_time_s": 38.139656969,
+    "duration_s": 6.619935065,
+    "sample_count": 332,
+    "input_disturbance": {
+      "amplitude_base_deg": 16.87943267715275,
+      "dominant_frequency_hz": 0.15105888353604266,
+      "peak_angular_rate_deg_s": 34.338077615052306,
+      "rms_angular_rate_deg_s": 14.96748962196534
+    },
+    "platform_stabilization": {
+      "amplitude_plat_deg": 18.156158470096468,
+      "so3_error_rms_deg": 9.715983450692912,
+      "so3_error_peak_deg": 19.24127789755146,
+      "so3_error_p95_deg": 17.929682895909878,
+      "attenuation_ratio": 1.0756379564031104,
+      "attenuation_db": 0.6333223783807569
+    },
+    "controller": {
+      "p_residual_rms_deg": [
+        0.47503594399959054,
+        0.04002740147349798,
+        0.04674263331008348
+      ],
+      "p_residual_peak_deg": [
+        0.959819005253523,
+        0.0988124988020637,
+        0.0899963776479629
+      ],
+      "d_residual_rms_deg": [
+        0.0,
+        0.003911864433447287,
+        0.009167167522311281
+      ],
+      "d_residual_peak_deg": [
+        0.0,
+        0.018575179338284297,
+        0.040764517355813074
+      ],
+      "total_residual_rms_deg": [
+        0.3434407703311286,
+        0.04083855297883184,
+        0.0489745460099369
+      ],
+      "total_residual_peak_deg": [
+        0.5,
+        0.10335406450989379,
+        0.09427554214117406
+      ],
+      "saturation_counts": [
+        113,
+        0,
+        0
+      ],
+      "saturation_ratios_pct": [
+        34.036144578313255,
+        0.0,
+        0.0
+      ]
+    },
+    "actuators": {
+      "ID1": {
+        "peak_cmd_rate_steps_s": 209.02455139673341,
+        "peak_fb_rate_steps_s": 1149.8753535116794,
+        "tracking_error_rms": 51.606627247899226,
+        "tracking_error_peak": 111,
+        "current_max_mA": 143,
+        "current_p95_mA": 116.44999999999999
+      },
+      "ID2": {
+        "peak_cmd_rate_steps_s": 99.98908619124222,
+        "peak_fb_rate_steps_s": 400.30347006065296,
+        "tracking_error_rms": 5.93158789362166,
+        "tracking_error_peak": 15,
+        "current_max_mA": 55,
+        "current_p95_mA": 46.0
+      },
+      "ID3": {
+        "peak_cmd_rate_steps_s": 209.02455139673341,
+        "peak_fb_rate_steps_s": 1099.880772924215,
+        "tracking_error_rms": 52.476787754320945,
+        "tracking_error_peak": 109,
+        "current_max_mA": 121,
+        "current_p95_mA": 106.44999999999999
+      },
+      "ID4": {
+        "peak_cmd_rate_steps_s": 258.1982061627987,
+        "peak_fb_rate_steps_s": 1049.8861923367506,
+        "tracking_error_rms": 50.722253380067876,
+        "tracking_error_peak": 110,
+        "current_max_mA": 125,
+        "current_p95_mA": 105.44999999999999
+      },
+      "ID5": {
+        "peak_cmd_rate_steps_s": 100.45394636090761,
+        "peak_fb_rate_steps_s": 400.30347006065296,
+        "tracking_error_rms": 5.749803558718804,
+        "tracking_error_peak": 15,
+        "current_max_mA": 69,
+        "current_p95_mA": 47.0
+      },
+      "ID6": {
+        "peak_cmd_rate_steps_s": 209.02455139673341,
+        "peak_fb_rate_steps_s": 949.6176839204535,
+        "tracking_error_rms": 53.07868108329529,
+        "tracking_error_peak": 111,
+        "current_max_mA": 161,
+        "current_p95_mA": 140.45
+      }
+    }
+  }
+]

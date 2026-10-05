@@ -1,0 +1,8 @@
+{
+  "stage": "j12_3_dynamic_screening",
+  "mode": "POWERED REAL EXECUTION",
+  "hardware_write_count": 1908,
+  "total_cycles": 1979,
+  "final_state": "FAULT",
+  "fault_reason": "Driver fatal latch detected via /rosout: J7 driver STOP latched: overcurrent_ID6"
+}

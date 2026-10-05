@@ -114,6 +114,23 @@
   - J11 阶段研发主案：[`agent_docs/stages/J11/README.md`](../agent_docs/stages/J11/README.md)
   - 当前状态卡：[`agent_docs/decisions/CURRENT_STAGE.md`](../agent_docs/decisions/CURRENT_STAGE.md)
 
+### 3.6 J12 经典前馈+P/PD动态性能与物理负载摸底基准
+- **数据集路径**：[`results/j12/`](./j12/)
+- **性质**：真实物理样机实机测试（Real-Hardware Dynamic Performance & Load Characterization）
+- **官方 Release Tag**：`v1.0-j12-classical-dynamic-performance-frozen`
+- **核心基准清单**：
+  1. **J12-1 大角度静态负载边界** ([`results/j12/j12_1_large_angle_static_load/`](./j12/j12_1_large_angle_static_load/)):
+     - `20261005_104403`: Roll $\approx -25.6^\circ$ 静态台阶，跟踪正常，稳态电流 $<15\text{ mA}$；
+     - `20261005_110720`: Roll $+32.3^\circ$ 静态稳定台阶与深倾角负载测试。
+  2. **J12-2 组合姿态准静态筛选** ([`results/j12/j12_2_combined_quasistatic/20261005_122117/`](./j12/j12_2_combined_quasistatic/20261005_122117/)):
+     - 4 组代表性 3DOF 复合姿态准静态筛选，3584 周期 0 故障退出，稳态电流 $20 \sim 150\text{ mA}$。
+  3. **J12-3 手持高动态性能表征** ([`results/j12/j12_3_dynamic_performance/20261005_152615/`](./j12/j12_3_dynamic_performance/20261005_152615/)):
+     - 2007 闭环有效周期，Base 实测有效峰值角速度 $92.33^\circ/\text{s}$（P95 = $46.16^\circ/\text{s}$），电机电流峰值仅 $468\text{ mA}$（0 次 $>500\text{ mA}$），证实机构非电流受限。
+- **对应分析与报告**：
+  - 权威总结报告：[`agent_docs/J12_FINAL_SUMMARY.md`](../agent_docs/J12_FINAL_SUMMARY.md)
+  - 阶段交接规范：[`agent_docs/J12_TO_J13_HANDOFF.md`](../agent_docs/J12_TO_J13_HANDOFF.md)
+  - 当前状态卡：[`agent_docs/decisions/CURRENT_STAGE.md`](../agent_docs/decisions/CURRENT_STAGE.md)
+
 ---
 
 ## 4. 离线复现与数据查看指引

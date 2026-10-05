@@ -1,0 +1,274 @@
+{
+  "stage": "J12_1B_STATIC_LOAD_NEG30DEG",
+  "title": "Sustained Base-IMU Feedforward Attitude Hold",
+  "execute_motion": true,
+  "dry_run": false,
+  "hardware_write_count": 1385,
+  "total_cycles": 1456,
+  "active_cycles": 1384,
+  "duration_s": 120.0,
+  "angular_clamp": "DISABLED (Full SO(3) Inverse Rotation)",
+  "feedforward_law": "R_BP_cmd = Delta_R_B^T @ R_BP0",
+  "platform_feedback_in_control": false,
+  "initial_operating_home_verified": true,
+  "base_attitude_excursions": {
+    "so3_max_deg": 45.38045586807806,
+    "roll_min_max_deg": [
+      -45.04606623561741,
+      32.49269416550403
+    ],
+    "pitch_min_max_deg": [
+      -3.1389370975717275,
+      2.627173618115472
+    ],
+    "yaw_min_max_deg": [
+      -4.001819912035626,
+      10.24928891791893
+    ]
+  },
+  "command_attitude_excursions": {
+    "roll_min_max_deg": [
+      -32.262558080246656,
+      45.10472653148796
+    ],
+    "pitch_min_max_deg": [
+      -6.402007855599057,
+      2.3381542272813
+    ],
+    "yaw_min_max_deg": [
+      -9.37043906978044,
+      4.8976546763912925
+    ]
+  },
+  "platform_world_attitude_errors": {
+    "so3_error_max_deg": 15.1721853872178,
+    "so3_error_rms_deg": 5.337445612006615,
+    "tilt_error_max_deg": 13.78439298766751,
+    "tilt_error_rms_deg": 4.41748461478061,
+    "roll_error_min_max_deg": [
+      -13.779403611737985,
+      2.78380169946902
+    ],
+    "pitch_error_min_max_deg": [
+      -5.414350141230075,
+      2.277269331379596
+    ],
+    "yaw_error_min_max_deg": [
+      -11.634488895863873,
+      2.6513380527956762
+    ]
+  },
+  "motor_feedback_ranges": {
+    "min_steps_axis_1_to_6": [
+      464,
+      909,
+      477,
+      461,
+      952,
+      551
+    ],
+    "max_steps_axis_1_to_6": [
+      1542,
+      1050,
+      1485,
+      1588,
+      1103,
+      1526
+    ]
+  },
+  "joint_currents_metrics_mA": {
+    "min_current_per_axis_mA": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "max_current_per_axis_mA": [
+      264,
+      156,
+      174,
+      366,
+      151,
+      185
+    ],
+    "mean_current_per_axis_mA": [
+      36.8,
+      12.7,
+      32.6,
+      33.7,
+      15.1,
+      32.5
+    ],
+    "rms_current_per_axis_mA": [
+      55.8,
+      27.4,
+      49.6,
+      55.9,
+      30.4,
+      52.5
+    ],
+    "overall_max_current_mA": 366
+  },
+  "slew_recovery_summary": {
+    "total_slew_events": 11,
+    "events": [
+      {
+        "timestamp_ns": 3015752011280,
+        "original_gap": 6,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.833,
+        "sent_gap": 5,
+        "remaining_gap": 1
+      },
+      {
+        "timestamp_ns": 3017615500053,
+        "original_gap": 6,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.833,
+        "sent_gap": 5,
+        "remaining_gap": 1
+      },
+      {
+        "timestamp_ns": 3020489417030,
+        "original_gap": 7,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.714,
+        "sent_gap": 5,
+        "remaining_gap": 2
+      },
+      {
+        "timestamp_ns": 3022996065570,
+        "original_gap": 9,
+        "allowance": 5,
+        "dt_ms": 22.5,
+        "alpha": 0.556,
+        "sent_gap": 5,
+        "remaining_gap": 4
+      },
+      {
+        "timestamp_ns": 3024359454926,
+        "original_gap": 7,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.714,
+        "sent_gap": 5,
+        "remaining_gap": 2
+      },
+      {
+        "timestamp_ns": 3030363637879,
+        "original_gap": 8,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.625,
+        "sent_gap": 5,
+        "remaining_gap": 3
+      },
+      {
+        "timestamp_ns": 3031485878357,
+        "original_gap": 45,
+        "allowance": 20,
+        "dt_ms": 140.5,
+        "alpha": 0.444,
+        "sent_gap": 20,
+        "remaining_gap": 25
+      },
+      {
+        "timestamp_ns": 3034631944623,
+        "original_gap": 11,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.455,
+        "sent_gap": 5,
+        "remaining_gap": 6
+      },
+      {
+        "timestamp_ns": 3035650950883,
+        "original_gap": 18,
+        "allowance": 12,
+        "dt_ms": 60.5,
+        "alpha": 0.667,
+        "sent_gap": 12,
+        "remaining_gap": 6
+      },
+      {
+        "timestamp_ns": 3036689560338,
+        "original_gap": 25,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.2,
+        "sent_gap": 5,
+        "remaining_gap": 20
+      },
+      {
+        "timestamp_ns": 3037707561052,
+        "original_gap": 51,
+        "allowance": 5,
+        "dt_ms": 14.2,
+        "alpha": 0.098,
+        "sent_gap": 5,
+        "remaining_gap": 46
+      }
+    ]
+  },
+  "fault_window_audit_last_2s": {
+    "fault_state_triggered": true,
+    "fault_reason": "Driver fatal latch detected via /rosout: J7 driver STOP latched: overcurrent_ID4",
+    "window_cycle_count": 100,
+    "window_duration_s": 2.0,
+    "feedback_age_max_ms": 152.2,
+    "feedback_age_stall_confirmed": true,
+    "max_command_feedback_error_steps": [
+      119,
+      18,
+      116,
+      102,
+      20,
+      118
+    ],
+    "peak_currents_mA": [
+      140,
+      78,
+      174,
+      366,
+      151,
+      151
+    ],
+    "peak_current_axis": 4,
+    "peak_current_mA": 366,
+    "window_slew_event_count": 2,
+    "window_slew_events": [
+      {
+        "timestamp_ns": 3036689560338,
+        "original_gap": 25,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.2,
+        "sent_gap": 5,
+        "remaining_gap": 20
+      },
+      {
+        "timestamp_ns": 3037707561052,
+        "original_gap": 51,
+        "allowance": 5,
+        "dt_ms": 14.2,
+        "alpha": 0.098,
+        "sent_gap": 5,
+        "remaining_gap": 46
+      }
+    ],
+    "causal_chain_evaluation": {
+      "1_scheduler_stall": "CONFIRMED",
+      "2_target_feedback_gap_accumulation": "CONFIRMED",
+      "3_slew_recovery_triggered": "CONFIRMED",
+      "4_current_surge": "SUPPORTED",
+      "5_fault_latched": "CONFIRMED"
+    }
+  },
+  "final_fault_reason": "Driver fatal latch detected via /rosout: J7 driver STOP latched: overcurrent_ID4",
+  "verdict": "FAIL"
+}

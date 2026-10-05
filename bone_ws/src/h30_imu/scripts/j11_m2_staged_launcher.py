@@ -134,6 +134,7 @@ def run_m2_staged_session(
     max_residual_roll_deg: float = 0.5,
     max_residual_pitch_deg: float = 0.5,
     max_residual_yaw_deg: float = 0.5,
+    runtime_diagnostics: bool = False,
 ):
     cleanup_stale_processes_and_markers()
 
@@ -196,7 +197,8 @@ def run_m2_staged_session(
             f"maintenance_mode:=true "
             f"servo_scheduler_mode:={servo_scheduler_mode} "
             f"telemetry_publish_mode:={telemetry_publish_mode} "
-            f"feedback_loss_policy:={feedback_loss_policy}"
+            f"feedback_loss_policy:={feedback_loss_policy} "
+            f"enable_runtime_diagnostics:={'true' if runtime_diagnostics else 'false'}"
         ]
         robot_log = open("/tmp/j11_m2_robot.log", "w")
         robot_proc = subprocess.Popen(cmd_robot, stdout=robot_log, stderr=subprocess.STDOUT, preexec_fn=os.setsid)
@@ -407,6 +409,7 @@ def main():
     parser.add_argument("--max-residual-roll-deg", type=float, default=0.5, help="Roll max residual limit in degrees (default: 0.5)")
     parser.add_argument("--max-residual-pitch-deg", type=float, default=0.5, help="Pitch max residual limit in degrees (default: 0.5)")
     parser.add_argument("--max-residual-yaw-deg", type=float, default=0.5, help="Yaw max residual limit in degrees (default: 0.5)")
+    parser.add_argument("--runtime-diagnostics", action="store_true", default=False, help="Enable detailed in-memory runtime diagnostics (default: False)")
     args = parser.parse_args()
 
     run_m2_staged_session(
@@ -430,6 +433,7 @@ def main():
         max_residual_roll_deg=args.max_residual_roll_deg,
         max_residual_pitch_deg=args.max_residual_pitch_deg,
         max_residual_yaw_deg=args.max_residual_yaw_deg,
+        runtime_diagnostics=args.runtime_diagnostics,
     )
 
 

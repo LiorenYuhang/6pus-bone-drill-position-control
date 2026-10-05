@@ -35,7 +35,7 @@ PAUSE_ADDR: int = 0x1A
 
 SPEED_MODE: int = 2
 DEFAULT_SPEED: int = 50
-MAX_CURRENT_MA: int = 500
+MAX_CURRENT_MA: int = 1500
 # Formal control-layer deadband for static position checks.  This is an
 # acceptance band around the selected reference; raw register/status values
 # are never modified or normalized.

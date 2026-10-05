@@ -92,6 +92,7 @@ class FeedbackCycleAudit:
     rx_drain_end_ns: int = 0
     transaction_start_ns: int = 0
     transaction_end_ns: int = 0
+    scheduler_gap_ns: int = 0
 
 
 @dataclass(frozen=True)
@@ -226,10 +227,15 @@ class J7ServoFeedbackScheduler:
         self._last_servo_cycle_id: int | None = None
         self._last_feedback_cycle_id: int | None = None
         self._watchdog_stop_snapshot: FeedbackAgeWatchdogStopSnapshot | None = None
+        self._last_scheduler_gap_ns = 0
 
     @property
     def stopped(self) -> bool:
         return self._stopped or self.writer.stopped
+
+    @property
+    def last_scheduler_gap_ns(self) -> int:
+        return self._last_scheduler_gap_ns
 
     @property
     def feedback_age_watchdog_armed(self) -> bool:
@@ -369,8 +375,10 @@ class J7ServoFeedbackScheduler:
         now_ns = self._clock_ns()
 
         # Tier 2: Servo scheduler / deadline watchdog
+        scheduler_gap_ns = 0
         if self._feedback_age_watchdog_armed and self._last_poll_completion_ns > 0:
             scheduler_gap_ns = now_ns - self._last_poll_completion_ns
+            self._last_scheduler_gap_ns = scheduler_gap_ns
             if self.feedback_loss_policy == "age_based":
                 if scheduler_gap_ns > self.hard_stop_feedback_age_ns:
                     reason = "scheduler_deadline_exceeded"
@@ -501,6 +509,7 @@ class J7ServoFeedbackScheduler:
             rx_drain_end_ns=now_ns,
             transaction_start_ns=now_ns,
             transaction_end_ns=now_ns,
+            scheduler_gap_ns=scheduler_gap_ns,
         )
         if (
             not self._feedback_age_watchdog_armed

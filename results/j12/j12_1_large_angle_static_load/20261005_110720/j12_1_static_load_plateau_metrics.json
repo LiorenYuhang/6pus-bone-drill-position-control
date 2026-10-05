@@ -1,0 +1,210 @@
+[
+  {
+    "plateau_index": 1,
+    "nominal_roll_deg": 0.0,
+    "duration_s": 4.539938882,
+    "sample_count": 228,
+    "base_attitude": {
+      "roll_mean_deg": 0.00713048355960979,
+      "roll_std_deg": 0.007432842543160827,
+      "pitch_mean_deg": -0.0029716950955865342,
+      "yaw_mean_deg": -0.0042496116001881044,
+      "so3_mean_deg": 0.013638768811954138
+    },
+    "feedforward_command": {
+      "roll_mean_deg": -0.007130432803362171,
+      "pitch_mean_deg": 0.002971989210379475,
+      "yaw_mean_deg": 0.004249255912205081
+    },
+    "platform_attitude": {
+      "roll_error_mean_deg": 0.007083169311915175,
+      "pitch_error_mean_deg": -0.003750537309665656,
+      "yaw_error_mean_deg": -0.0015897817909799371,
+      "so3_error_mean_deg": 0.01780151691087751
+    },
+    "axis_metrics": {
+      "ID1": {
+        "cmd_steps_mean": 1000.0,
+        "fb_steps_mean": 999.0263157894736,
+        "tracking_error_mean": 0.9736842105263158,
+        "tracking_error_max": 2,
+        "current_instantaneous_mA": 0,
+        "current_mean_mA": 0.0,
+        "current_median_mA": 0.0,
+        "current_max_mA": 0,
+        "current_p95_mA": 0.0,
+        "current_p99_mA": 0.0
+      },
+      "ID2": {
+        "cmd_steps_mean": 1000.0,
+        "fb_steps_mean": 998.1578947368421,
+        "tracking_error_mean": 1.8421052631578947,
+        "tracking_error_max": 2,
+        "current_instantaneous_mA": 0,
+        "current_mean_mA": 0.0,
+        "current_median_mA": 0.0,
+        "current_max_mA": 0,
+        "current_p95_mA": 0.0,
+        "current_p99_mA": 0.0
+      },
+      "ID3": {
+        "cmd_steps_mean": 1000.0,
+        "fb_steps_mean": 1000.1052631578947,
+        "tracking_error_mean": -0.10526315789473684,
+        "tracking_error_max": 1,
+        "current_instantaneous_mA": 0,
+        "current_mean_mA": 0.7719298245614035,
+        "current_median_mA": 0.0,
+        "current_max_mA": 20,
+        "current_p95_mA": 0.0,
+        "current_p99_mA": 19.0
+      },
+      "ID4": {
+        "cmd_steps_mean": 1000.0,
+        "fb_steps_mean": 1000.0,
+        "tracking_error_mean": 0.0,
+        "tracking_error_max": 0,
+        "current_instantaneous_mA": 0,
+        "current_mean_mA": 0.0,
+        "current_median_mA": 0.0,
+        "current_max_mA": 0,
+        "current_p95_mA": 0.0,
+        "current_p99_mA": 0.0
+      },
+      "ID5": {
+        "cmd_steps_mean": 1000.0,
+        "fb_steps_mean": 1000.0,
+        "tracking_error_mean": 0.0,
+        "tracking_error_max": 0,
+        "current_instantaneous_mA": 0,
+        "current_mean_mA": 0.0,
+        "current_median_mA": 0.0,
+        "current_max_mA": 0,
+        "current_p95_mA": 0.0,
+        "current_p99_mA": 0.0
+      },
+      "ID6": {
+        "cmd_steps_mean": 1000.0,
+        "fb_steps_mean": 998.1140350877193,
+        "tracking_error_mean": 1.8859649122807018,
+        "tracking_error_max": 2,
+        "current_instantaneous_mA": 0,
+        "current_mean_mA": 0.0,
+        "current_median_mA": 0.0,
+        "current_max_mA": 0,
+        "current_p95_mA": 0.0,
+        "current_p99_mA": 0.0
+      }
+    },
+    "timing": {
+      "dt_mean_ms": 20.0,
+      "dt_max_ms": 20.0,
+      "feedback_age_mean_ms": 26.8841291754386,
+      "feedback_age_max_ms": 249.155769
+    }
+  },
+  {
+    "plateau_index": 2,
+    "nominal_roll_deg": 32.3,
+    "duration_s": 3.3000966840000014,
+    "sample_count": 166,
+    "base_attitude": {
+      "roll_mean_deg": 32.33977754187844,
+      "roll_std_deg": 0.11098321917088555,
+      "pitch_mean_deg": -1.3015970169190778,
+      "yaw_mean_deg": 10.111529543492628,
+      "so3_mean_deg": 33.97722773784891
+    },
+    "feedforward_command": {
+      "roll_mean_deg": -32.10668629662296,
+      "pitch_mean_deg": -4.302488182302032,
+      "yaw_mean_deg": -9.250387993161802
+    },
+    "platform_attitude": {
+      "roll_error_mean_deg": 1.6672424045165082,
+      "pitch_error_mean_deg": 0.1661690120035347,
+      "yaw_error_mean_deg": -2.4806516215701118,
+      "so3_error_mean_deg": 2.9984707596625633
+    },
+    "axis_metrics": {
+      "ID1": {
+        "cmd_steps_mean": 465.7409638554217,
+        "fb_steps_mean": 467.21084337349396,
+        "tracking_error_mean": -1.4698795180722892,
+        "tracking_error_max": 5,
+        "current_instantaneous_mA": 82,
+        "current_mean_mA": 34.355421686746986,
+        "current_median_mA": 22.0,
+        "current_max_mA": 167,
+        "current_p95_mA": 127.25,
+        "current_p99_mA": 160.0
+      },
+      "ID2": {
+        "cmd_steps_mean": 946.9096385542168,
+        "fb_steps_mean": 947.0301204819277,
+        "tracking_error_mean": -0.12048192771084337,
+        "tracking_error_max": 1,
+        "current_instantaneous_mA": 0,
+        "current_mean_mA": 3.4397590361445785,
+        "current_median_mA": 0.0,
+        "current_max_mA": 88,
+        "current_p95_mA": 0.0,
+        "current_p99_mA": 82.14999999999995
+      },
+      "ID3": {
+        "cmd_steps_mean": 1462.3253012048192,
+        "fb_steps_mean": 1459.3192771084337,
+        "tracking_error_mean": 3.0060240963855422,
+        "tracking_error_max": 6,
+        "current_instantaneous_mA": 0,
+        "current_mean_mA": 40.55421686746988,
+        "current_median_mA": 20.0,
+        "current_max_mA": 167,
+        "current_p95_mA": 133.25,
+        "current_p99_mA": 149.39999999999998
+      },
+      "ID4": {
+        "cmd_steps_mean": 1586.5903614457832,
+        "fb_steps_mean": 1583.5481927710844,
+        "tracking_error_mean": 3.0421686746987953,
+        "tracking_error_max": 6,
+        "current_instantaneous_mA": 0,
+        "current_mean_mA": 39.096385542168676,
+        "current_median_mA": 0.0,
+        "current_max_mA": 137,
+        "current_p95_mA": 129.0,
+        "current_p99_mA": 132.7
+      },
+      "ID5": {
+        "cmd_steps_mean": 1067.4819277108434,
+        "fb_steps_mean": 1066.55421686747,
+        "tracking_error_mean": 0.927710843373494,
+        "tracking_error_max": 3,
+        "current_instantaneous_mA": 0,
+        "current_mean_mA": 7.283132530120482,
+        "current_median_mA": 0.0,
+        "current_max_mA": 89,
+        "current_p95_mA": 50.0,
+        "current_p99_mA": 81.35
+      },
+      "ID6": {
+        "cmd_steps_mean": 601.8795180722891,
+        "fb_steps_mean": 602.4819277108434,
+        "tracking_error_mean": -0.6024096385542169,
+        "tracking_error_max": 3,
+        "current_instantaneous_mA": 0,
+        "current_mean_mA": 10.186746987951807,
+        "current_median_mA": 0.0,
+        "current_max_mA": 90,
+        "current_p95_mA": 60.75,
+        "current_p99_mA": 79.69999999999999
+      }
+    },
+    "timing": {
+      "dt_mean_ms": 20.0,
+      "dt_max_ms": 20.0,
+      "feedback_age_mean_ms": 19.84548078915662,
+      "feedback_age_max_ms": 134.228689
+    }
+  }
+]

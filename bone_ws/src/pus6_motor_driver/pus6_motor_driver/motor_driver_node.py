@@ -160,6 +160,7 @@ class Pus6MotorDriverNode(Node):
         self.declare_parameter("servo_scheduler_mode", "ros_timer")  # "ros_timer" (default) | "dedicated_thread"
         self.declare_parameter("telemetry_publish_mode", "auto")     # "auto" (default) | "inline" | "async_latest"
         self.declare_parameter("feedback_loss_policy", "default")    # "default" (J7/J8 strict 4-miss) | "age_based" (J11 research mode)
+        self.declare_parameter("enable_runtime_diagnostics", False)  # Runtime-Fix-1B: Default False (explicit flag required)
 
         p_port = port if port is not None else self.get_parameter("port").get_parameter_value().string_value
         p_baudrate = baudrate if baudrate is not None else self.get_parameter("baudrate").get_parameter_value().integer_value
@@ -292,7 +293,13 @@ class Pus6MotorDriverNode(Node):
         self._j7_fault_reason: str | None = None
         self._j7_fault_log_emitted = False
         self._consecutive_comm_failures: int = 0
-        self._stall_recorder = J11StallDiagnosticRecorder() if J11StallDiagnosticRecorder is not None else None
+        p_enable_diag = self.get_parameter("enable_runtime_diagnostics").get_parameter_value().bool_value
+        self.enable_runtime_diagnostics = p_enable_diag
+        self._stall_recorder = (
+            J11StallDiagnosticRecorder(enabled=self.enable_runtime_diagnostics)
+            if (J11StallDiagnosticRecorder is not None and self.enable_runtime_diagnostics)
+            else None
+        )
 
         # Segmented Timing and Contention Instrumentation
         self._last_worker_start_ns: int = 0
@@ -776,6 +783,7 @@ class Pus6MotorDriverNode(Node):
             self.runtime_error = DriverError(f"STOP: {self._j7_fault_reason}")
             if self._stall_recorder is not None:
                 try:
+                    self._stall_recorder.record_fault_cycle(reason, fault_phase="latch_j7_fault")
                     self._stall_recorder.dump()
                 except Exception as exc:
                     self.get_logger().warn(f"Error dumping stall diagnostics on latch: {exc}")
@@ -794,7 +802,8 @@ class Pus6MotorDriverNode(Node):
         while not self._servo_thread_stop_event.is_set():
             if self._j7_fault_latched:
                 break
-            self._execute_servo_cycle()
+            expected_start_ns = next_deadline_ns
+            self._execute_servo_cycle(expected_start_ns=expected_start_ns)
             next_deadline_ns += interval_ns
             now_ns = time.perf_counter_ns()
             sleep_ns = next_deadline_ns - now_ns
@@ -900,7 +909,7 @@ class Pus6MotorDriverNode(Node):
             if record_stall and self._stall_recorder is not None:
                 self._stall_recorder.mark_pub_benchmark((t_bench2 - t_bench1) / 1e6)
 
-    def _execute_servo_cycle(self) -> None:
+    def _execute_servo_cycle(self, expected_start_ns: int = 0) -> None:
         """High-rate UART worker: dispatches latest target with watchdog, preflight, and segmented telemetry."""
         if self.is_j7_servo_active and self.j7_writer is not None:
             if self._j7_fault_latched:
@@ -910,7 +919,7 @@ class Pus6MotorDriverNode(Node):
                 return
             t_entry_ns = time.perf_counter_ns()
             if self._stall_recorder is not None:
-                self._stall_recorder.start_cycle(self._uart_cycle_seq)
+                self._stall_recorder.start_cycle(self._uart_cycle_seq, expected_start_ns=expected_start_ns)
             if self._last_worker_start_ns > 0:
                 self._worker_start_to_start_ms = (t_entry_ns - self._last_worker_start_ns) / 1e6
             self._last_worker_start_ns = t_entry_ns
@@ -958,11 +967,11 @@ class Pus6MotorDriverNode(Node):
                 self._stall_recorder.mark_preflight_done()
             if not preflight_ok:
                 self.get_logger().error("Aborting J7 Servo UART write cycle due to safety preflight failure.")
+                if self._stall_recorder is not None:
+                    self._stall_recorder.record_fault_cycle("safety_preflight_failure", fault_phase="T3_preflight")
                 self._latch_j7_fault("safety_preflight_failure")
                 if self.j7_writer is not None:
                     self.j7_writer.stop("safety_preflight_failure")
-                if self._stall_recorder is not None:
-                    self._stall_recorder.finish_cycle("safety_preflight_failure")
                 return
 
             t_write_start_ns = time.perf_counter_ns()
@@ -972,7 +981,8 @@ class Pus6MotorDriverNode(Node):
                 tx_records = []
 
                 if self.hardware_mode != HardwareMode.READ_ONLY:
-                    # 1. 50Hz write-only 0x29 batch with integrated 0x29 StatusFeedback ingestion
+                    if self._stall_recorder is not None:
+                        self._stall_recorder.mark_transport_entry()
                     servo_audit = self.j7_writer.send_cycle(
                         dispatched_targets,
                         cycle_id=self._uart_cycle_seq,
@@ -990,7 +1000,7 @@ class Pus6MotorDriverNode(Node):
                     tx_records = servo_audit.tx_records
 
                     if self._stall_recorder is not None:
-                        self._stall_recorder.mark_uart_done(servo_audit)
+                        self._stall_recorder.mark_transport_exit(servo_audit)
                         self._stall_recorder.mark_ingest_start()
 
                     # 2. Design B: 50Hz primary feedback from 0x29 StatusFeedback (0x30 blocking poll eliminated)
@@ -1011,6 +1021,8 @@ class Pus6MotorDriverNode(Node):
 
                 if self._stall_recorder is not None:
                     gap_ms = getattr(feedback_audit, "scheduler_gap_ns", 0) / 1e6
+                    if gap_ms == 0.0 and self.j7_feedback is not None:
+                        gap_ms = getattr(self.j7_feedback, "last_scheduler_gap_ns", 0) / 1e6
                     self._stall_recorder.mark_ingest_done(gap_ms)
 
                 if self.j7_feedback.stopped or self.j7_writer.stopped:
@@ -1084,6 +1096,9 @@ class Pus6MotorDriverNode(Node):
                 else:
                     self._publish_telemetry_from_snapshot(snap, record_stall=True)
 
+                if self._stall_recorder is not None:
+                    self._stall_recorder.mark_telemetry_done()
+
                 self._worker_total_ms = (time.perf_counter_ns() - t_entry_ns) / 1e6
                 if self._stall_recorder is not None:
                     fb_age_max = max(getattr(feedback_audit, "per_axis_feedback_age_ms", [0.0])) if hasattr(feedback_audit, "per_axis_feedback_age_ms") else 0.0
@@ -1094,14 +1109,12 @@ class Pus6MotorDriverNode(Node):
 
             except Exception as exc:
                 self._worker_total_ms = (time.perf_counter_ns() - t_entry_ns) / 1e6
-                if self.j7_writer.stopped or (self.j7_feedback is not None and self.j7_feedback.stopped):
-                    self._latch_j7_fault(self._j7_stop_reason())
-                else:
-                    self._latch_j7_fault(f"worker_exception: {exc}")
-                    if self.j7_writer is not None:
-                        self.j7_writer.stop(self._j7_fault_reason or "worker_exception")
+                fault_reason = self._j7_stop_reason() if (self.j7_writer.stopped or (self.j7_feedback is not None and self.j7_feedback.stopped)) else f"worker_exception: {exc}"
                 if self._stall_recorder is not None:
-                    self._stall_recorder.finish_cycle(self._j7_fault_reason or str(exc))
+                    self._stall_recorder.record_fault_cycle(fault_reason, fault_phase="worker_exception")
+                self._latch_j7_fault(fault_reason)
+                if self.j7_writer is not None and not self.j7_writer.stopped:
+                    self.j7_writer.stop(self._j7_fault_reason or "worker_exception")
                 return
             return
 

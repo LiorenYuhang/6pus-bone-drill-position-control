@@ -230,7 +230,7 @@ def test_3_safety_stops_remain_immediate():
     clk.advance_ms(20.0)
     overcurrent_fbs = healthy_feedbacks()
     overcurrent_fbs[4] = StatusFeedback(
-        target_position=1000, current_position=1000, current_mA=501,
+        target_position=1000, current_position=1000, current_mA=MAX_CURRENT_MA + 1,
         force_g=0, force_adc=0, temperature=25, error_code=0
     )
     scheduler.ingest_cycle_feedback(overcurrent_fbs, servo_cycle_id=1, servo_cycle_timestamp_ns=clk.now_ns())

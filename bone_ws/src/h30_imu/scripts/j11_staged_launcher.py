@@ -120,6 +120,7 @@ def run_staged_session(
     servo_scheduler_mode: str = "dedicated_thread",
     telemetry_publish_mode: str = "async_latest",
     feedback_loss_policy: str = "age_based",
+    runtime_diagnostics: bool = False,
 ):
     cleanup_stale_processes_and_markers()
 
@@ -188,7 +189,7 @@ def run_staged_session(
         cmd_robot = [
             "bash", "-c",
             f"source {setup_bash} && "
-            f"exec ros2 launch pus6_bringup pus6_system.launch.py hardware_mode:=active config_file:={config_file} servo_scheduler_mode:={servo_scheduler_mode} telemetry_publish_mode:={telemetry_publish_mode} feedback_loss_policy:={feedback_loss_policy}"
+            f"exec ros2 launch pus6_bringup pus6_system.launch.py hardware_mode:=active config_file:={config_file} servo_scheduler_mode:={servo_scheduler_mode} telemetry_publish_mode:={telemetry_publish_mode} feedback_loss_policy:={feedback_loss_policy} enable_runtime_diagnostics:={'true' if runtime_diagnostics else 'false'}"
         ]
         robot_log = open("/tmp/j11_robot_launch.log", "w")
         robot_proc = subprocess.Popen(cmd_robot, stdout=robot_log, stderr=subprocess.STDOUT, preexec_fn=os.setsid)
@@ -363,6 +364,7 @@ def main():
     parser.add_argument("--servo-scheduler-mode", default="dedicated_thread", choices=["ros_timer", "dedicated_thread"], help="Servo loop scheduling mode")
     parser.add_argument("--telemetry-publish-mode", default="async_latest", choices=["auto", "inline", "async_latest"], help="Telemetry publication mode")
     parser.add_argument("--feedback-loss-policy", default="age_based", choices=["default", "consecutive_misses", "age_based"], help="Feedback loss safety policy")
+    parser.add_argument("--runtime-diagnostics", action="store_true", default=False, help="Enable detailed in-memory runtime diagnostics (default: False)")
     args = parser.parse_args()
 
     run_staged_session(
@@ -375,6 +377,7 @@ def main():
         servo_scheduler_mode=args.servo_scheduler_mode,
         telemetry_publish_mode=args.telemetry_publish_mode,
         feedback_loss_policy=args.feedback_loss_policy,
+        runtime_diagnostics=args.runtime_diagnostics,
     )
 
 

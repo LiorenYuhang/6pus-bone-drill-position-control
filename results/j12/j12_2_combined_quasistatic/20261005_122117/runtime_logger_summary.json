@@ -1,0 +1,41 @@
+{
+  "output_dir": "/home/lyapunov/bone_drill/results/j12/j12_2_combined_quasistatic/20261005_122117",
+  "total_current_samples": 3434,
+  "total_step_samples": 3433,
+  "total_slew_events": 27,
+  "total_current_spikes_ge_400mA": 0,
+  "max_current_per_axis_mA": [
+    143,
+    132,
+    139,
+    147,
+    146,
+    145
+  ],
+  "min_current_per_axis_mA": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "driver_stop_latched": false,
+  "driver_stop_reason": "",
+  "last_step_feedback": [
+    1067,
+    1070,
+    1044,
+    936,
+    935,
+    959
+  ],
+  "last_fault_codes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ]
+}

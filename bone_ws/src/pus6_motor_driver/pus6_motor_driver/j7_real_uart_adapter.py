@@ -80,6 +80,32 @@ class RxDrainAudit:
     motion_write_responses: int
     stale_responses: int
     residual_frames_after: int
+    wall_duration_ns: int = 0
+    cpu_duration_ns: int = 0
+
+
+@dataclass(frozen=True)
+class SerialWriteMetric:
+    timestamp_start_ns: int
+    timestamp_end_ns: int
+    wall_duration_ns: int
+    cpu_duration_ns: int
+    requested_bytes: int
+    written_bytes: int
+    error: str | None = None
+
+
+@dataclass(frozen=True)
+class RxDrainMetrics:
+    timestamp_start_ns: int
+    timestamp_end_ns: int
+    wall_duration_ns: int
+    cpu_duration_ns: int
+    in_waiting_calls: int
+    read_calls: int
+    bytes_read: int
+    max_read_latency_ns: int
+    feedbacks_extracted: int
 
 
 class J7RxOwner:
@@ -273,8 +299,23 @@ class J7UartAdapter:
         self._last_tx_end_ns: int | None = None
         self._request_audit: list[J7RequestAudit] = []
         self._last_drain_audit: RxDrainAudit | None = None
+        self._last_write_metric: SerialWriteMetric | None = None
+        self._last_rx_drain_metrics: RxDrainMetrics | None = None
+        self._in_waiting_call_count: int = 0
+        self._read_call_count: int = 0
+        self._total_bytes_read: int = 0
+        self._max_read_latency_ns: int = 0
+
+    @property
+    def last_write_metric(self) -> SerialWriteMetric | None:
+        return self._last_write_metric
+
+    @property
+    def last_rx_drain_metrics(self) -> RxDrainMetrics | None:
+        return self._last_rx_drain_metrics
 
     def _available(self) -> int:
+        self._in_waiting_call_count += 1
         value = getattr(self.serial, "in_waiting", 0)
         try:
             return max(0, int(value))
@@ -285,12 +326,19 @@ class J7UartAdapter:
         size = self._available()
         if size <= 0:
             return b""
+        t_r_start = time.perf_counter_ns()
         data = self.serial.read(size)
+        t_r_dur = time.perf_counter_ns() - t_r_start
+        self._read_call_count += 1
+        if t_r_dur > self._max_read_latency_ns:
+            self._max_read_latency_ns = t_r_dur
         if data is None:
             return b""
         if not isinstance(data, (bytes, bytearray)):
             raise J7AdapterRxError("serial.read() must return bytes-like data")
-        return bytes(data)
+        b = bytes(data)
+        self._total_bytes_read += len(b)
+        return b
 
     def _ingest_available_locked(self) -> tuple[Frame, ...]:
         frames: list[Frame] = []
@@ -317,14 +365,38 @@ class J7UartAdapter:
         """Write one frame without reading or waiting for a response."""
         with self.uart_lock:
             self._wait_frame_interval_locked()
-            start_ns = self._clock_ns()
+            t_w_wall_start = time.perf_counter_ns()
+            t_w_cpu_start = time.thread_time_ns()
+            written = None
             try:
                 written = self.serial.write(frame)
                 if written is not None and written != len(frame):
                     raise J7AdapterError(f"short UART write: {written}/{len(frame)} bytes")
             except Exception as exc:
+                t_w_wall_end = time.perf_counter_ns()
+                t_w_cpu_end = time.thread_time_ns()
+                self._last_write_metric = SerialWriteMetric(
+                    timestamp_start_ns=t_w_wall_start,
+                    timestamp_end_ns=t_w_wall_end,
+                    wall_duration_ns=t_w_wall_end - t_w_wall_start,
+                    cpu_duration_ns=t_w_cpu_end - t_w_cpu_start,
+                    requested_bytes=len(frame),
+                    written_bytes=0 if written is None else written,
+                    error=type(exc).__name__,
+                )
                 raise J7AdapterError(f"UART write failed: {exc}") from exc
+            t_w_wall_end = time.perf_counter_ns()
+            t_w_cpu_end = time.thread_time_ns()
             self._last_tx_end_ns = self._clock_ns()
+            self._last_write_metric = SerialWriteMetric(
+                timestamp_start_ns=t_w_wall_start,
+                timestamp_end_ns=t_w_wall_end,
+                wall_duration_ns=t_w_wall_end - t_w_wall_start,
+                cpu_duration_ns=t_w_cpu_end - t_w_cpu_start,
+                requested_bytes=len(frame),
+                written_bytes=len(frame) if written is None else written,
+                error=None,
+            )
             return written
 
     def read_available(self) -> bytes:
@@ -342,11 +414,13 @@ class J7UartAdapter:
         """Ingest and classify all currently available RX frames exactly once."""
         with self.uart_lock:
             start_ns = self._clock_ns()
+            t_cpu_start = time.thread_time_ns()
             before = self.rx_owner.audit_snapshot()
             self._ingest_available_locked()
             frames = self.rx_owner.drain()
             after = self.rx_owner.audit_snapshot()
             end_ns = self._clock_ns()
+            t_cpu_end = time.thread_time_ns()
             audit = RxDrainAudit(
                 timestamp_start_ns=start_ns,
                 timestamp_end_ns=end_ns,
@@ -358,6 +432,8 @@ class J7UartAdapter:
                 ),
                 stale_responses=after.stale_response_count - before.stale_response_count,
                 residual_frames_after=after.residual_frames,
+                wall_duration_ns=end_ns - start_ns,
+                cpu_duration_ns=t_cpu_end - t_cpu_start,
             )
             self._last_drain_audit = audit
             return audit
@@ -365,8 +441,28 @@ class J7UartAdapter:
     def drain_motion_feedbacks(self) -> dict[int, StatusFeedback]:
         """Ingest all available RX bytes and return all unpacked 0x29 StatusFeedback objects."""
         with self.uart_lock:
+            t_start = time.perf_counter_ns()
+            t_cpu_start = time.thread_time_ns()
+            self._in_waiting_call_count = 0
+            self._read_call_count = 0
+            self._total_bytes_read = 0
+            self._max_read_latency_ns = 0
             self._ingest_available_locked()
-            return self.rx_owner.take_motion_write_feedbacks()
+            feedbacks = self.rx_owner.take_motion_write_feedbacks()
+            t_end = time.perf_counter_ns()
+            t_cpu_end = time.thread_time_ns()
+            self._last_rx_drain_metrics = RxDrainMetrics(
+                timestamp_start_ns=t_start,
+                timestamp_end_ns=t_end,
+                wall_duration_ns=t_end - t_start,
+                cpu_duration_ns=t_cpu_end - t_cpu_start,
+                in_waiting_calls=self._in_waiting_call_count,
+                read_calls=self._read_call_count,
+                bytes_read=self._total_bytes_read,
+                max_read_latency_ns=self._max_read_latency_ns,
+                feedbacks_extracted=len(feedbacks),
+            )
+            return feedbacks
 
     def _request_once_locked(
         self,
@@ -569,7 +665,9 @@ __all__ = [
     "J7UartAdapter",
     "J7RequestAudit",
     "RxDrainAudit",
+    "RxDrainMetrics",
     "RxOwnerAudit",
+    "SerialWriteMetric",
     "StopAudit",
     "StopAxisRecord",
 ]

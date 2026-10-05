@@ -1,0 +1,145 @@
+{
+  "timestamp": "2026-10-05T14:45:54.332588",
+  "preflight": {
+    "reg_0x20": {
+      "1": 1500,
+      "2": 1500,
+      "3": 1500,
+      "4": 1500,
+      "5": 1500,
+      "6": 1500
+    },
+    "positions": {
+      "1": 899,
+      "2": 901,
+      "3": 901,
+      "4": 900,
+      "5": 901,
+      "6": 902
+    },
+    "currents": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0,
+      "6": 0
+    },
+    "faults": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0,
+      "6": 0
+    },
+    "speeds": {
+      "1": 500,
+      "2": 500,
+      "3": 500,
+      "4": 500,
+      "5": 500,
+      "6": 500
+    },
+    "all_1500": true,
+    "all_zero_fault": true,
+    "all_near_home": true
+  },
+  "speed_levels": [
+    {
+      "level": 1,
+      "name": "Level 1 (25% Vmax)",
+      "speed_steps_s": 100.0
+    },
+    {
+      "level": 2,
+      "name": "Level 2 (50% Vmax)",
+      "speed_steps_s": 200.0
+    },
+    {
+      "level": 3,
+      "name": "Level 3 (75% Vmax)",
+      "speed_steps_s": 300.0
+    },
+    {
+      "level": 4,
+      "name": "Level 4 (100% Vmax)",
+      "speed_steps_s": 400.0
+    }
+  ],
+  "level_summaries": [
+    {
+      "level": 1,
+      "speed_setting_steps_s": 100.0,
+      "measured_peak_speed_steps_s": 144.2,
+      "peak_current_overall_mA": 79,
+      "peak_current_axis": 2,
+      "peak_current_time_s": 14.84,
+      "peak_current_phase": "CRUISE",
+      "six_axis_peak_currents_mA": [
+        72,
+        79,
+        70,
+        54,
+        76,
+        69
+      ],
+      "six_axis_max_tracking_err": [
+        10,
+        9,
+        10,
+        9,
+        10,
+        11
+      ],
+      "max_tracking_err_overall": 11,
+      "fault": "NO"
+    },
+    {
+      "level": 2,
+      "speed_setting_steps_s": 200.0,
+      "measured_peak_speed_steps_s": 243.3,
+      "peak_current_overall_mA": 135,
+      "peak_current_axis": 2,
+      "peak_current_time_s": 62.92,
+      "peak_current_phase": "CRUISE",
+      "six_axis_peak_currents_mA": [
+        105,
+        135,
+        92,
+        88,
+        112,
+        99
+      ],
+      "six_axis_max_tracking_err": [
+        11,
+        11,
+        10,
+        11,
+        10,
+        11
+      ],
+      "max_tracking_err_overall": 11,
+      "fault": "NO"
+    }
+  ],
+  "high_current_events": [],
+  "final_positions": [
+    -4,
+    -6,
+    -6,
+    -4,
+    -5,
+    -5
+  ],
+  "final_faults": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "fatal_stopped": true,
+  "fatal_reason": "Exception: transport is stopped"
+}

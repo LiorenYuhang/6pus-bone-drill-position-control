@@ -1,0 +1,41 @@
+{
+  "output_dir": "/home/lyapunov/bone_drill/results/j12/j12_1_large_angle_static_load/20261005_110720",
+  "total_current_samples": 1457,
+  "total_step_samples": 1457,
+  "total_slew_events": 11,
+  "total_current_spikes_ge_400mA": 0,
+  "max_current_per_axis_mA": [
+    264,
+    156,
+    174,
+    366,
+    151,
+    185
+  ],
+  "min_current_per_axis_mA": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "driver_stop_latched": true,
+  "driver_stop_reason": "J7 driver STOP latched: overcurrent_ID4",
+  "last_step_feedback": [
+    1542,
+    982,
+    477,
+    461,
+    1014,
+    1526
+  ],
+  "last_fault_codes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ]
+}

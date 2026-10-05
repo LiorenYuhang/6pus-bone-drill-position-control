@@ -1,0 +1,12 @@
+timestamp_ns,original_gap,allowance,dt_ms,alpha,sent_gap,remaining_gap,log_msg
+3015751518903,6,5,10.0,0.833,5,1,Vector slew recovery active: original_gap=6 steps > allowance=5 steps (dt=10.0ms). Scaling 6-axis vector by alpha=0.833 -> sent_gap=5 steps (remaining=1 steps).
+3017615450284,6,5,10.0,0.833,5,1,Vector slew recovery active: original_gap=6 steps > allowance=5 steps (dt=10.0ms). Scaling 6-axis vector by alpha=0.833 -> sent_gap=5 steps (remaining=1 steps).
+3020489520701,7,5,10.0,0.714,5,2,Vector slew recovery active: original_gap=7 steps > allowance=5 steps (dt=10.0ms). Scaling 6-axis vector by alpha=0.714 -> sent_gap=5 steps (remaining=2 steps).
+3022995881696,9,5,22.5,0.556,5,4,Vector slew recovery active: original_gap=9 steps > allowance=5 steps (dt=22.5ms). Scaling 6-axis vector by alpha=0.556 -> sent_gap=5 steps (remaining=4 steps).
+3024359726217,7,5,10.0,0.714,5,2,Vector slew recovery active: original_gap=7 steps > allowance=5 steps (dt=10.0ms). Scaling 6-axis vector by alpha=0.714 -> sent_gap=5 steps (remaining=2 steps).
+3030363652092,8,5,10.0,0.625,5,3,Vector slew recovery active: original_gap=8 steps > allowance=5 steps (dt=10.0ms). Scaling 6-axis vector by alpha=0.625 -> sent_gap=5 steps (remaining=3 steps).
+3031485948455,45,20,140.5,0.444,20,25,Vector slew recovery active: original_gap=45 steps > allowance=20 steps (dt=140.5ms). Scaling 6-axis vector by alpha=0.444 -> sent_gap=20 steps (remaining=25 steps).
+3034631835171,11,5,10.0,0.455,5,6,Vector slew recovery active: original_gap=11 steps > allowance=5 steps (dt=10.0ms). Scaling 6-axis vector by alpha=0.455 -> sent_gap=5 steps (remaining=6 steps).
+3035650827622,18,12,60.5,0.667,12,6,Vector slew recovery active: original_gap=18 steps > allowance=12 steps (dt=60.5ms). Scaling 6-axis vector by alpha=0.667 -> sent_gap=12 steps (remaining=6 steps).
+3036689535130,25,5,10.0,0.2,5,20,Vector slew recovery active: original_gap=25 steps > allowance=5 steps (dt=10.0ms). Scaling 6-axis vector by alpha=0.200 -> sent_gap=5 steps (remaining=20 steps).
+3037707714347,51,5,14.2,0.098,5,46,Vector slew recovery active: original_gap=51 steps > allowance=5 steps (dt=14.2ms). Scaling 6-axis vector by alpha=0.098 -> sent_gap=5 steps (remaining=46 steps).

@@ -1,0 +1,365 @@
+{
+  "stage": "J12_2_COMBINED_SCREENING",
+  "title": "Sustained Base-IMU Feedforward Attitude Hold",
+  "execute_motion": true,
+  "dry_run": false,
+  "hardware_write_count": 3530,
+  "total_cycles": 3584,
+  "active_cycles": 3529,
+  "duration_s": 180.0,
+  "angular_clamp": "DISABLED (Full SO(3) Inverse Rotation)",
+  "feedforward_law": "R_BP_cmd = Delta_R_B^T @ R_BP0",
+  "platform_feedback_in_control": false,
+  "initial_operating_home_verified": true,
+  "base_attitude_excursions": {
+    "so3_max_deg": 27.233865129489654,
+    "roll_min_max_deg": [
+      -24.35919722313969,
+      18.678081222557257
+    ],
+    "pitch_min_max_deg": [
+      -12.730357622089304,
+      8.280499071082406
+    ],
+    "yaw_min_max_deg": [
+      -15.728467024493078,
+      7.960867994092733
+    ]
+  },
+  "command_attitude_excursions": {
+    "roll_min_max_deg": [
+      -18.666730392980416,
+      23.2091514355164
+    ],
+    "pitch_min_max_deg": [
+      -8.654288680293302,
+      13.440716401253823
+    ],
+    "yaw_min_max_deg": [
+      -10.590391405103883,
+      16.802572179974447
+    ]
+  },
+  "platform_world_attitude_errors": {
+    "so3_error_max_deg": 7.118018835015664,
+    "so3_error_rms_deg": 2.0998408715440506,
+    "tilt_error_max_deg": 5.7219710161802215,
+    "tilt_error_rms_deg": 1.4738053781818585,
+    "roll_error_min_max_deg": [
+      -5.618672942734384,
+      4.163172581793583
+    ],
+    "pitch_error_min_max_deg": [
+      -2.0055241681841363,
+      3.9072343335927915
+    ],
+    "yaw_error_min_max_deg": [
+      -6.963606271220193,
+      5.137775814066474
+    ]
+  },
+  "motor_feedback_ranges": {
+    "min_steps_axis_1_to_6": [
+      685,
+      822,
+      600,
+      654,
+      743,
+      676
+    ],
+    "max_steps_axis_1_to_6": [
+      1371,
+      1266,
+      1338,
+      1327,
+      1195,
+      1443
+    ]
+  },
+  "joint_currents_metrics_mA": {
+    "min_current_per_axis_mA": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "max_current_per_axis_mA": [
+      141,
+      126,
+      139,
+      147,
+      146,
+      145
+    ],
+    "mean_current_per_axis_mA": [
+      22.8,
+      16.9,
+      20.4,
+      16.6,
+      18.8,
+      23.0
+    ],
+    "rms_current_per_axis_mA": [
+      38.4,
+      31.0,
+      33.7,
+      29.1,
+      34.4,
+      39.7
+    ],
+    "overall_max_current_mA": 147
+  },
+  "slew_recovery_summary": {
+    "total_slew_events": 27,
+    "events": [
+      {
+        "timestamp_ns": 7455076011296,
+        "original_gap": 7,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.714,
+        "sent_gap": 5,
+        "remaining_gap": 2
+      },
+      {
+        "timestamp_ns": 7456726161821,
+        "original_gap": 12,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.417,
+        "sent_gap": 5,
+        "remaining_gap": 7
+      },
+      {
+        "timestamp_ns": 7458098963255,
+        "original_gap": 24,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.208,
+        "sent_gap": 5,
+        "remaining_gap": 19
+      },
+      {
+        "timestamp_ns": 7460239269810,
+        "original_gap": 8,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.625,
+        "sent_gap": 5,
+        "remaining_gap": 3
+      },
+      {
+        "timestamp_ns": 7461382773984,
+        "original_gap": 16,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.312,
+        "sent_gap": 5,
+        "remaining_gap": 11
+      },
+      {
+        "timestamp_ns": 7463745395034,
+        "original_gap": 9,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.556,
+        "sent_gap": 5,
+        "remaining_gap": 4
+      },
+      {
+        "timestamp_ns": 7469856536214,
+        "original_gap": 6,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.833,
+        "sent_gap": 5,
+        "remaining_gap": 1
+      },
+      {
+        "timestamp_ns": 7472760935271,
+        "original_gap": 6,
+        "allowance": 5,
+        "dt_ms": 13.1,
+        "alpha": 0.833,
+        "sent_gap": 5,
+        "remaining_gap": 1
+      },
+      {
+        "timestamp_ns": 7473777482879,
+        "original_gap": 18,
+        "allowance": 5,
+        "dt_ms": 13.4,
+        "alpha": 0.278,
+        "sent_gap": 5,
+        "remaining_gap": 13
+      },
+      {
+        "timestamp_ns": 7476353759977,
+        "original_gap": 6,
+        "allowance": 5,
+        "dt_ms": 25.0,
+        "alpha": 0.833,
+        "sent_gap": 5,
+        "remaining_gap": 1
+      },
+      {
+        "timestamp_ns": 7478821412856,
+        "original_gap": 8,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.625,
+        "sent_gap": 5,
+        "remaining_gap": 3
+      },
+      {
+        "timestamp_ns": 7481224306483,
+        "original_gap": 6,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.833,
+        "sent_gap": 5,
+        "remaining_gap": 1
+      },
+      {
+        "timestamp_ns": 7482752213366,
+        "original_gap": 7,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.714,
+        "sent_gap": 5,
+        "remaining_gap": 2
+      },
+      {
+        "timestamp_ns": 7486303989995,
+        "original_gap": 11,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.455,
+        "sent_gap": 5,
+        "remaining_gap": 6
+      },
+      {
+        "timestamp_ns": 7487316163047,
+        "original_gap": 46,
+        "allowance": 5,
+        "dt_ms": 12.2,
+        "alpha": 0.109,
+        "sent_gap": 5,
+        "remaining_gap": 41
+      },
+      {
+        "timestamp_ns": 7488798644801,
+        "original_gap": 6,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.833,
+        "sent_gap": 5,
+        "remaining_gap": 1
+      },
+      {
+        "timestamp_ns": 7489997320417,
+        "original_gap": 6,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.833,
+        "sent_gap": 5,
+        "remaining_gap": 1
+      },
+      {
+        "timestamp_ns": 7491227262678,
+        "original_gap": 12,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.417,
+        "sent_gap": 5,
+        "remaining_gap": 7
+      },
+      {
+        "timestamp_ns": 7492241374806,
+        "original_gap": 14,
+        "allowance": 5,
+        "dt_ms": 13.5,
+        "alpha": 0.357,
+        "sent_gap": 5,
+        "remaining_gap": 9
+      },
+      {
+        "timestamp_ns": 7494546417006,
+        "original_gap": 10,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.5,
+        "sent_gap": 5,
+        "remaining_gap": 5
+      },
+      {
+        "timestamp_ns": 7501199983031,
+        "original_gap": 12,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.417,
+        "sent_gap": 5,
+        "remaining_gap": 7
+      },
+      {
+        "timestamp_ns": 7502239022762,
+        "original_gap": 10,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.5,
+        "sent_gap": 5,
+        "remaining_gap": 5
+      },
+      {
+        "timestamp_ns": 7503398816108,
+        "original_gap": 7,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.714,
+        "sent_gap": 5,
+        "remaining_gap": 2
+      },
+      {
+        "timestamp_ns": 7504913384780,
+        "original_gap": 12,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.417,
+        "sent_gap": 5,
+        "remaining_gap": 7
+      },
+      {
+        "timestamp_ns": 7510856195303,
+        "original_gap": 8,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.625,
+        "sent_gap": 5,
+        "remaining_gap": 3
+      },
+      {
+        "timestamp_ns": 7511860531319,
+        "original_gap": 16,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.312,
+        "sent_gap": 5,
+        "remaining_gap": 11
+      },
+      {
+        "timestamp_ns": 7513337414849,
+        "original_gap": 8,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.625,
+        "sent_gap": 5,
+        "remaining_gap": 3
+      }
+    ]
+  },
+  "fault_window_audit_last_2s": null,
+  "final_fault_reason": "",
+  "verdict": "PASS"
+}

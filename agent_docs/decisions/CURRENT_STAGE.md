@@ -1,31 +1,30 @@
 # 6PUS 当前开发阶段状态卡 (Current Stage State Sheet)
 
-**最后更新时间**: 2026-09-20
+**最后更新时间**: 2026-10-05
 
-**当前状态**: **J11 FINAL FREEZE READY** / Controller development CLOSED / pending **Task 4 Final Git Freeze**
+**当前状态**: **J12 CLOSED / FROZEN** (`v1.0-j12-classical-dynamic-performance-frozen`)
 
-**下一研究阶段**: **J12 ADRC**
+**下一研究阶段**: **J13 ADRC Attitude Disturbance Rejection**
 
 ---
 
 ## 1. 阶段导航 (Stage Status)
 
-* **当前推进阶段**: **J11 FINAL FREEZE READY**
-  - **最终控制器**: Base-IMU SO(3) Feedforward + Platform-IMU Classical P/PD Attitude Feedback
-  - **最终参数**: `Kp=[0.05,0.05,0.025]`, `Kd=[0,0.0015,0.0015] s`, `Ki=[0,0,0]`, `fc=5 Hz`
-  - **实际反馈**: Roll=P, Pitch=PD, Yaw=PD
-  - **Roll-D**: `Kd_roll=0.0010 s` qualified repeat 已完成但未保留；`Kd_roll=0`，调参 CLOSED
-  - **Demo 状态**:
-    1. **Demo A — Feedforward Only: PASS**
-    2. **Demo B — Feedforward + P/PD: PASS ON REPEAT**
-    3. **首次 Demo B anomaly**: TRANSIENT MOTOR USB-UART TRANSPORT LOSS（motor CH340 `usb 3-2` 瞬时 disconnect/re-enumeration → `motion_write_failure`）— **NON-BLOCKING ENGINEERING OBSERVATION**，见 [`agent_docs/j11/J11_DEMO_B_USB_UART_FAULT_AUDIT.md`](../j11/J11_DEMO_B_USB_UART_FAULT_AUDIT.md)
-  - **下一执行步骤**: **TASK 4 — FINAL GIT FREEZE**（commit / tag / push；需用户明确确认）
-  - **下一研究阶段**: **J12 External Payload / Force Disturbance + ADRC**
-  - **权威入口**:
-    - [`agent_docs/j11/J11_FINAL_SUMMARY.md`](../j11/J11_FINAL_SUMMARY.md)
-    - [`docs/j11/J11_FINAL_CONTROL_COMPARISON.md`](../../docs/j11/J11_FINAL_CONTROL_COMPARISON.md)
-    - [`agent_docs/j11/J11_TO_J12_HANDOFF.md`](../j11/J11_TO_J12_HANDOFF.md)
-    - [`agent_docs/j11/J11_DEMO_B_USB_UART_FAULT_AUDIT.md`](../j11/J11_DEMO_B_USB_UART_FAULT_AUDIT.md)
+* **已完成阶段**: **J12 (Classical Dynamic Performance Characterization) = CLOSED / FROZEN**
+  - **核心定位**: Classical Feedforward + P/PD Dynamic Performance Characterization（经典姿态稳定控制性能与物理负载摸底）
+  - **J12-1 (大角度静态负载边界)**: Roll $\pm 30^\circ$ 区域已测定，$-38^\circ \sim -45^\circ$ 深倾角定性为 `configuration-dependent mechanical / kinematic loading with actuator tracking deterioration`，**CLOSED**
+  - **J12-2 (三轴组合姿态准静态筛选)**: 4 组代表性 3DOF 组合姿态通过（PASS），稳态电流正常（$20 \sim 150$ mA），**CLOSED**
+  - **J12-3 (手持快速高动态表征)**: 经历 Slow/Medium/Fast 三档手持动态，有效物理角速度峰值 $92.33^\circ/\text{s}$（P95 = $46.16^\circ/\text{s}$），全 Run 电流峰值仅 468 mA（无任何样本 $>500$ mA），最大跟踪误差 163 steps。核心瓶颈确认为 `Control Residual Saturation + Actuator Tracking Limitation`，非 Current-limited，**CLOSED**
+  - **生产安全门限修改**: 主机 `MAX_CURRENT_MA` 正式统一为 **1500 mA**（对齐执行器 0x20 硬件过流保护，废除历史 500 mA 门限）
+  - **权威总结**: [`agent_docs/J12_FINAL_SUMMARY.md`](../J12_FINAL_SUMMARY.md)
+  - **下一阶段交接**: [`agent_docs/J12_TO_J13_HANDOFF.md`](../J12_TO_J13_HANDOFF.md)
+* **前序冻结阶段**: **J11 (Feedforward + Classical P/PD Feedback) = FROZEN** (`v1.0-j11-attitude-stabilization-frozen`)
+  - **最终参数**: `Kp=[0.05, 0.05, 0.025]`, `Kd=[0, 0.0015, 0.0015] s`, `Ki=[0, 0, 0]`, `fc=5 Hz`, 残差限幅 $\pm 0.5^\circ$
+  - **权威入口**: [`agent_docs/j11/J11_FINAL_SUMMARY.md`](../j11/J11_FINAL_SUMMARY.md)
+* **下一研究主线**: **J13 ADRC Attitude Disturbance Rejection**
+  - 任务空间 ADRC 控制律与 ESO 扰动观测器设计
+  - 与 J11/J12 经典基线的同工况受控对比 (Matched-Condition Comparison)
+  - 严禁在 J13 重复 J12 的物理摸底实验（大角度、PARK/HOME、速度、工作空间）
   - **冻结结论仍有效**:
     - **`J11-M1 FEEDFORWARD ATTITUDE HOLD = PASS / FROZEN`**
     - **`J11 DRIVER RUNTIME = QUALIFIED FOR CONTROL RESEARCH`**

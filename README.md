@@ -12,7 +12,8 @@
 ### Key Milestones:
 - **J1–J10 (Completed & Frozen)**: Comprehensive real-hardware foundation covering low-level multi-actuator UART communication, analytical inverse kinematics, $C^2$ jerk-limited trajectory shaping, 50 Hz continuous servo streaming, dual-IMU microsecond clock synchronization, numerical forward kinematics, and complete 6-DOF single-axis operational workspace qualification on the physical platform.
 - **J11-M1 (Completed & Frozen)**: Base-IMU full-$SO(3)$ feedforward attitude hold, dedicated driver runtime qualification, two-tier safety policy, 300s static home qualification, and low-speed dynamic base disturbance rejection on real physical hardware (`v1.0-j11-m1-feedforward-hardware-qualified`).
-- **J11 (Final Freeze Ready)**: Retained Base-IMU SO(3) Feedforward + Platform-IMU Classical P/PD Attitude Feedback. Roll / Pitch / Yaw gains: `Kp = [0.05, 0.05, 0.025]`, `Kd = [0, 0.0015, 0.0015] s`, `Ki = 0`; low-pass filter cutoff: `fc = 5 Hz` (Roll=P, Pitch=PD, Yaw=PD). Roll-D tuning is closed. Demo A (Feedforward) PASS; Demo B (Feedforward + P/PD) PASS ON REPEAT. Next research stage: J12 ADRC.
+- **J11 (Completed & Frozen)**: Retained Base-IMU SO(3) Feedforward + Platform-IMU Classical P/PD Attitude Feedback. Roll / Pitch / Yaw gains: `Kp = [0.05, 0.05, 0.025]`, `Kd = [0, 0.0015, 0.0015] s`, `Ki = 0`; low-pass filter cutoff: `fc = 5 Hz` (Roll=P, Pitch=PD, Yaw=PD). Demo A and Demo B verified on real hardware (`v1.0-j11-attitude-stabilization-frozen`).
+- **J12 (Completed & Frozen)**: Classical Feedforward + P/PD Dynamic Performance Characterization. Comprehensive large-angle static load qualification (J12-1), 3DOF combined screening (J12-2), and handheld dynamic performance qualification up to observed effective peak angular rate of `92.33°/s` (J12-3). Max measured motor current `468 mA`. Host safety threshold unified with actuator register at `MAX_CURRENT_MA = 1500` (`v1.0-j12-classical-dynamic-performance-frozen`). Next research stage: J13 ADRC.
 
 ---
 
@@ -42,19 +43,21 @@ The development of the 6PUS robotic platform is organized into two distinct over
 │                       [STATUS: ACTIVE ROADMAP]                          │
 │  • J11-M1: Base-IMU Feedforward Attitude Hold & Driver Runtime Qualified│
 │            [STATUS: COMPLETED & FROZEN — Tag: v1.0-j11-m1]              │
-│  • J11-M2 Final: Roll=P, Pitch=PD, Yaw=PD                               │
-│             Kp=[0.05, 0.05, 0.025], Kd=[0, 0.0015, 0.0015] s, Ki=0     │
-│             fc=5.0 Hz; qualified Roll-D repeat not retained             │
-│  • Current: FINAL FREEZE READY; Demo A PASS, Demo B PASS ON REPEAT     │
-│  • Next J12: ADRC under external payload / force disturbance           │
-│    - Active Disturbance Rejection Control (ADRC) & Extended State Obs   │
+│  • J11: Base-IMU SO(3) Feedforward + Platform-IMU P/PD Attitude Feedback │
+│         [STATUS: COMPLETED & FROZEN — Tag: v1.0-j11]                     │
+│  • J12: Classical Dynamic Performance Characterization                   │
+│         [STATUS: COMPLETED & FROZEN — Tag: v1.0-j12]                     │
+│  • Current: J12 CLOSED / FROZEN                                          │
+│  • Next J13: ADRC Attitude Disturbance Rejection                         │
+│    - Active Disturbance Rejection Control (ADRC) & Extended State Obs    │
+│    - Matched-condition comparison against frozen J11/J12 classical baseline │
 │    - IMU Acceleration Feedforward & Disturbance Observer (DOB)          │
 │    - Learning-Based Adaptive Trajectory & Stiffness Compensation        │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
 > [!IMPORTANT]
-> **Honesty & Verification Boundary**: J1-J10 and J11-M1 are frozen; the final J11-M2 P/PD controller is supported by existing qualified hardware evidence. Both final Demo smoke tests have been executed (Demo A PASS; Demo B PASS ON REPEAT). No unverified J12 ADRC performance claim is made.
+> **Honesty & Verification Boundary**: J1-J10, J11, and J12 are frozen; the final classical P/PD controller and dynamic characterization metrics are supported by verified real-hardware evidence. No unverified J13 ADRC performance claim is made.
 
 ### J10 Single-Axis Operational Workspace Envelope (HOME-Centered)
 
@@ -147,9 +150,19 @@ cd /home/lyapunov/bone_drill
 bash bone_ws/scripts/run_j11_demo_feedforward_pd.sh
 ```
 
-Press `Ctrl+C` once to stop the demo cleanly and return to `OPERATING_HOME`. Developers may still source `/opt/ros/jazzy/setup.bash` and `/home/lyapunov/bone_drill/bone_ws/install/setup.bash` explicitly for diagnostics, but this is not required for the final demos.
+**Status**: J11 COMPLETED & FROZEN (`v1.0-j11-attitude-stabilization-frozen`) — Demo A (Feedforward) PASS; Demo B (Feedforward + P/PD) PASS ON REPEAT.
 
-**Status**: J11 FINAL FREEZE READY — Demo A (Feedforward) PASS; Demo B (Feedforward + P/PD) PASS ON REPEAT. **Next**: J12 ADRC disturbance rejection under external payload/force disturbance.
+### J12 Classical Dynamic Performance Characterization (Stage Result)
+
+- **Status**: **COMPLETED & FROZEN** (`v1.0-j12-classical-dynamic-performance-frozen`).
+- **Scope**: Large-Angle Static Load Qualification (J12-1), 3DOF Combined Attitude Screening (J12-2), and Handheld Dynamic Performance Characterization (J12-3).
+- **Key Findings**:
+  - Validated classical feedforward + P/PD disturbance rejection under handheld dynamic motion up to observed effective peak angular rate of `92.33°/s` (P95 `46.16°/s`).
+  - Maximum observed actuator current remained well below limits at `468 mA` (0 samples > 500 mA). Bottleneck identified as control residual saturation (±0.5°) and actuator tracking lag, not motor current.
+  - Production host current limit formally aligned with actuator hardware protection register at `MAX_CURRENT_MA = 1500`.
+  - Detailed findings: [`agent_docs/J12_FINAL_SUMMARY.md`](./agent_docs/J12_FINAL_SUMMARY.md); Handoff: [`agent_docs/J12_TO_J13_HANDOFF.md`](./agent_docs/J12_TO_J13_HANDOFF.md).
+
+**Next**: J13 ADRC Attitude Disturbance Rejection.
 
 ---
 

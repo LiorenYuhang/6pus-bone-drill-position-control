@@ -1,0 +1,239 @@
+{
+  "stage": "J12_1A_STATIC_LOAD_NEG25DEG",
+  "title": "Sustained Base-IMU Feedforward Attitude Hold",
+  "execute_motion": true,
+  "dry_run": false,
+  "hardware_write_count": 2113,
+  "total_cycles": 2167,
+  "active_cycles": 2112,
+  "duration_s": 120.0,
+  "angular_clamp": "DISABLED (Full SO(3) Inverse Rotation)",
+  "feedforward_law": "R_BP_cmd = Delta_R_B^T @ R_BP0",
+  "platform_feedback_in_control": false,
+  "initial_operating_home_verified": true,
+  "base_attitude_excursions": {
+    "so3_max_deg": 27.253763345943955,
+    "roll_min_max_deg": [
+      -26.38004236910187,
+      26.613261954909582
+    ],
+    "pitch_min_max_deg": [
+      -9.57419304195087,
+      6.090801695036703
+    ],
+    "yaw_min_max_deg": [
+      -3.397263570160228,
+      6.141374836856219
+    ]
+  },
+  "command_attitude_excursions": {
+    "roll_min_max_deg": [
+      -26.571192787313304,
+      26.318802845246733
+    ],
+    "pitch_min_max_deg": [
+      -7.853945866474194,
+      7.7711563190149215
+    ],
+    "yaw_min_max_deg": [
+      -7.303886884624849,
+      3.3972057129093787
+    ]
+  },
+  "platform_world_attitude_errors": {
+    "so3_error_max_deg": 10.467858828898734,
+    "so3_error_rms_deg": 2.998695607662265,
+    "tilt_error_max_deg": 10.291204071379996,
+    "tilt_error_rms_deg": 2.7669932810001185,
+    "roll_error_min_max_deg": [
+      -9.590270861278825,
+      10.255077601581505
+    ],
+    "pitch_error_min_max_deg": [
+      -3.9445587235134645,
+      7.835516918662718
+    ],
+    "yaw_error_min_max_deg": [
+      -5.403555575131907,
+      7.61198473339277
+    ]
+  },
+  "motor_feedback_ranges": {
+    "min_steps_axis_1_to_6": [
+      565,
+      935,
+      566,
+      608,
+      850,
+      581
+    ],
+    "max_steps_axis_1_to_6": [
+      1416,
+      1163,
+      1456,
+      1459,
+      1069,
+      1460
+    ]
+  },
+  "joint_currents_metrics_mA": {
+    "min_current_per_axis_mA": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "max_current_per_axis_mA": [
+      153,
+      154,
+      157,
+      135,
+      149,
+      178
+    ],
+    "mean_current_per_axis_mA": [
+      24.6,
+      13.0,
+      24.9,
+      18.7,
+      13.9,
+      25.8
+    ],
+    "rms_current_per_axis_mA": [
+      42.7,
+      27.4,
+      42.3,
+      34.3,
+      29.6,
+      45.6
+    ],
+    "overall_max_current_mA": 178
+  },
+  "slew_recovery_summary": {
+    "total_slew_events": 13,
+    "events": [
+      {
+        "timestamp_ns": 1617499667125,
+        "original_gap": 7,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.714,
+        "sent_gap": 5,
+        "remaining_gap": 2
+      },
+      {
+        "timestamp_ns": 1618679231470,
+        "original_gap": 6,
+        "allowance": 5,
+        "dt_ms": 11.7,
+        "alpha": 0.833,
+        "sent_gap": 5,
+        "remaining_gap": 1
+      },
+      {
+        "timestamp_ns": 1619728516079,
+        "original_gap": 9,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.556,
+        "sent_gap": 5,
+        "remaining_gap": 4
+      },
+      {
+        "timestamp_ns": 1629201468946,
+        "original_gap": 12,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.417,
+        "sent_gap": 5,
+        "remaining_gap": 7
+      },
+      {
+        "timestamp_ns": 1633379679501,
+        "original_gap": 8,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.625,
+        "sent_gap": 5,
+        "remaining_gap": 3
+      },
+      {
+        "timestamp_ns": 1634384617149,
+        "original_gap": 29,
+        "allowance": 5,
+        "dt_ms": 13.6,
+        "alpha": 0.172,
+        "sent_gap": 5,
+        "remaining_gap": 24
+      },
+      {
+        "timestamp_ns": 1635386276990,
+        "original_gap": 51,
+        "allowance": 5,
+        "dt_ms": 12.2,
+        "alpha": 0.098,
+        "sent_gap": 5,
+        "remaining_gap": 46
+      },
+      {
+        "timestamp_ns": 1637850771773,
+        "original_gap": 8,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.625,
+        "sent_gap": 5,
+        "remaining_gap": 3
+      },
+      {
+        "timestamp_ns": 1639024102224,
+        "original_gap": 97,
+        "allowance": 5,
+        "dt_ms": 13.9,
+        "alpha": 0.052,
+        "sent_gap": 5,
+        "remaining_gap": 92
+      },
+      {
+        "timestamp_ns": 1640029996833,
+        "original_gap": 24,
+        "allowance": 5,
+        "dt_ms": 12.0,
+        "alpha": 0.208,
+        "sent_gap": 5,
+        "remaining_gap": 19
+      },
+      {
+        "timestamp_ns": 1647756359531,
+        "original_gap": 6,
+        "allowance": 5,
+        "dt_ms": 10.0,
+        "alpha": 0.833,
+        "sent_gap": 5,
+        "remaining_gap": 1
+      },
+      {
+        "timestamp_ns": 1648765040772,
+        "original_gap": 23,
+        "allowance": 5,
+        "dt_ms": 14.0,
+        "alpha": 0.217,
+        "sent_gap": 5,
+        "remaining_gap": 18
+      },
+      {
+        "timestamp_ns": 1649765607914,
+        "original_gap": 23,
+        "allowance": 5,
+        "dt_ms": 13.5,
+        "alpha": 0.217,
+        "sent_gap": 5,
+        "remaining_gap": 18
+      }
+    ]
+  },
+  "fault_window_audit_last_2s": null,
+  "final_fault_reason": "",
+  "verdict": "PASS"
+}
