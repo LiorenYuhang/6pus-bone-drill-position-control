@@ -1,0 +1,13 @@
+{
+  "stage": "j13_2b1_dry_run_preflight",
+  "mode": "DRY-RUN (hardware_write_count = 0)",
+  "controller_mode": "roll_active",
+  "active_axis": "roll",
+  "takeover_cycle_index": 55,
+  "command_jump_at_takeover_rad": 4.3476101241419676e-07,
+  "command_jump_at_takeover_deg": 2.4909971108168263e-05,
+  "hardware_write_count": 0,
+  "total_cycles": 250,
+  "final_state": "ACTIVE",
+  "fault_reason": ""
+}

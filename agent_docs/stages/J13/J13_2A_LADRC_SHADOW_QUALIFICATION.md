@@ -14,7 +14,7 @@ J13-2A 作为 J13 自抗扰控制（ADRC）首次进入真实 ROS 2 工程环境
 
 ### 严格边界与不变式
 1. **真实控制权保持不变**: 真实六自由度并联机构的姿态残差命令 100% 由冻结的 J11/J12 经典 P/PD 控制器生成；
-2. **前馈算子与运动学不变**: Base-IMU 全 $SO(3)$ 旋转矩阵前馈 $\mathbf{R}_{BP\_FF} = \Delta \mathbf{R}_B^T$、误差定义、逆运动学（IK）、轨迹整形器（Trajectory Shaper）及底层 J8 伺服驱动完全继承；
+2. **前馈算子与运动学不变**: Base-IMU 全 $SO(3)$ 旋转矩阵前馈 $\mathbf{R}_{BP\_FF} = \mathbf{R}_{WB}^T$、误差定义、逆运动学（IK）、轨迹整形器（Trajectory Shaper）及底层 J8 伺服驱动完全继承；
 3. **零硬件写入泄漏**: LADRC 仅读取真实状态与前一拍被控对象实际输入，内部运行二阶 LESO 与一阶控制律，其输出仅写入遥测数据流，严禁送入合成姿态或底层电机；
 4. **冻结基准零修改**: J8、J11、J12 所有历史冻结文件保持 0 行代码修改。
 
@@ -26,8 +26,8 @@ J13-2A 作为 J13 自抗扰控制（ADRC）首次进入真实 ROS 2 工程环境
 
 1. **离散 LADRC 核心 (`scripts/j13_ladrc.py`)**:
    - **离散二阶 LESO**: 基于零阶保持（Exact ZOH）显式矩阵离散化，观测状态 $z_1 \approx e$（跟踪误差）与 $z_2$（等效总扰动 Equivalent Lumped Disturbance，单位 $\text{rad/s}$）；
-   - **控制律**: 比例反馈与总扰动补偿 $u_0 = k_p (r - z_1) - \frac{z_2}{b_0}$；
-   - **安全限幅**: 严格限制于 $\pm 0.5^\circ$（与经典基线一致）；
+   - **控制律**: $u_{raw} = \frac{\omega_c z_1 + z_2}{b_0}$，其中 $e$ 本身为任务空间姿态误差；
+   - **安全限幅**: $u_{actual} = \text{clip}(u_{raw}, -u_{limit}, +u_{limit})$，严格限制于 $\pm 0.5^\circ$（与经典基线一致）；
    - **输入映射**: 支持显式传入前一拍真实被控对象输入 $u_{plant, k-1}$，确保影子模式下观测器闭环与实际物理激励一致。
 2. **影子模式调度器 (`scripts/j13_ladrc_shadow_runner.py`)**:
    - 继承 `j9_1_3dof_orientation_servo.py` 完整生产架构与两级时效安全策略；

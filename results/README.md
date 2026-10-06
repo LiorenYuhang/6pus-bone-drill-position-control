@@ -143,6 +143,16 @@
   - 资格认证总结：[`agent_docs/stages/J13/J13_2A_LADRC_SHADOW_QUALIFICATION.md`](../agent_docs/stages/J13/J13_2A_LADRC_SHADOW_QUALIFICATION.md)
   - 当前状态卡：[`agent_docs/decisions/CURRENT_STAGE.md`](../agent_docs/decisions/CURRENT_STAGE.md)
 
+### 3.8 J13-2B1 Roll 单轴 LADRC 物理接管静态验收基准
+- **数据集路径**：[`results/j13/j13_2b1_roll_active/20261006_104124/`](./j13/j13_2b1_roll_active/20261006_104124/)
+- **性质**：真实物理样机实机控制接管（Real-Hardware LADRC Active Takeover, Roll LADRC Active, Pitch/Yaw Classical P/PD Active）
+- **核心基准清单**：
+  1. **15s 静态接管运行** (`static_15s/`): 696 闭环周期，接管跳变 $0.000016^\circ$，峰值电流 38 mA，最大关节误差 2 steps，零硬件故障；
+  2. **30s 静态接管运行** (`static_30s/`): 1,446 闭环周期，接管跳变 $0.000045^\circ$，Roll 稳态误差 RMS $0.0084^\circ$（30s 运行低，15s 运行高；缺少 matched trials 不作提升断言），均值误差 $0.0067^\circ$，峰值电流 54 mA，0% 限幅饱和。
+- **对应分析与报告**：
+  - 资格认证总结：[`agent_docs/stages/J13/J13_2B1_ROLL_ACTIVE_STATIC_QUALIFICATION.md`](../agent_docs/stages/J13/J13_2B1_ROLL_ACTIVE_STATIC_QUALIFICATION.md)
+  - 当前状态卡：[`agent_docs/decisions/CURRENT_STAGE.md`](../agent_docs/decisions/CURRENT_STAGE.md)
+
 ---
 
 ## 4. 离线复现与数据查看指引

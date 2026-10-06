@@ -170,12 +170,17 @@ def run_j13_staged_session(
     ladrc_omega_o_roll: float = 4.0,
     ladrc_omega_o_pitch: float = 4.0,
     ladrc_omega_o_yaw: float = 1.8,
+    mode: str = "shadow",
+    safe_takeover_jump_threshold_deg: float = 0.05,
 ) -> None:
     cleanup_stale_processes_and_markers()
 
     if output_dir is None:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        output_dir = f"/home/lyapunov/bone_drill/results/j13/j13_2a2_shadow/{timestamp}/{stage}"
+        if mode == "roll_active":
+            output_dir = f"/home/lyapunov/bone_drill/results/j13/j13_2b1_roll_active/{timestamp}/{stage}"
+        else:
+            output_dir = f"/home/lyapunov/bone_drill/results/j13/j13_2a2_shadow/{timestamp}/{stage}"
 
     out_path = Path(output_dir)
     out_path.mkdir(parents=True, exist_ok=True)
@@ -418,6 +423,10 @@ def run_j13_staged_session(
             str(duration),
             "--output-dir",
             str(out_path.resolve()),
+            "--mode",
+            mode,
+            "--safe-takeover-jump-threshold-deg",
+            str(safe_takeover_jump_threshold_deg),
             "--kp-roll",
             str(kp_roll),
             "--kp-pitch",
@@ -520,6 +529,20 @@ def main():
         "--config-file",
         default="/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j13_ladrc_params.yaml",
     )
+    parser.add_argument(
+        "--mode",
+        "--controller-mode",
+        dest="mode",
+        choices=["shadow", "roll_active"],
+        default="shadow",
+        help="Controller mode: 'shadow' (default, passive observer) or 'roll_active' (LADRC Roll active takeover)",
+    )
+    parser.add_argument(
+        "--safe-takeover-jump-threshold-deg",
+        type=float,
+        default=0.05,
+        help="Max allowable command jump threshold on Roll at takeover instant (deg)",
+    )
     parser.add_argument("--dry-run", action="store_true", default=False)
     parser.add_argument("--execute-motion", action="store_true", default=True)
     parser.add_argument(
@@ -575,6 +598,8 @@ def main():
         servo_scheduler_mode=args.servo_scheduler_mode,
         telemetry_publish_mode=args.telemetry_publish_mode,
         feedback_loss_policy=args.feedback_loss_policy,
+        mode=args.mode,
+        safe_takeover_jump_threshold_deg=args.safe_takeover_jump_threshold_deg,
         kp_roll=args.kp_roll,
         kp_pitch=args.kp_pitch,
         kp_yaw=args.kp_yaw,

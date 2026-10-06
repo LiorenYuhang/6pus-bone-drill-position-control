@@ -1,0 +1,13 @@
+{
+  "stage": "j13_2b1_static_30s_roll_active",
+  "mode": "POWERED REAL EXECUTION",
+  "controller_mode": "roll_active",
+  "active_axis": "roll",
+  "takeover_cycle_index": 55,
+  "command_jump_at_takeover_rad": 7.787836829160449e-07,
+  "command_jump_at_takeover_deg": 4.4621018184743925e-05,
+  "hardware_write_count": 1446,
+  "total_cycles": 1500,
+  "final_state": "ACTIVE",
+  "fault_reason": ""
+}

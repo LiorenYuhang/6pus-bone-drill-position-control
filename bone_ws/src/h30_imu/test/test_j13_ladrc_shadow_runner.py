@@ -50,11 +50,18 @@ def rclpy_session():
         rclpy.shutdown()
 
 
-def _create_mock_runner(execute_motion: bool = False, dry_run: bool = True) -> J13LadrcShadowRunner:
+def _create_mock_runner(
+    execute_motion: bool = False,
+    dry_run: bool = True,
+    controller_mode: str = "shadow",
+    safe_takeover_jump_threshold_deg: float = 0.05,
+) -> J13LadrcShadowRunner:
     runner = J13LadrcShadowRunner(
         execute_motion=execute_motion,
         dry_run=dry_run,
         auto_start=True,
+        controller_mode=controller_mode,
+        safe_takeover_jump_threshold_deg=safe_takeover_jump_threshold_deg,
     )
     now = time.perf_counter_ns()
     # Establish stationary reference at identity
@@ -76,6 +83,7 @@ def _tick(runner: J13LadrcShadowRunner) -> None:
     runner.latest_base_rx_time_ns = now
     runner.latest_plat_rx_time_ns = now
     runner.latest_fb_rx_time_ns = now
+    runner.last_tick_time_ns = now - 20_000_000
     runner._on_control_tick()
 
 
@@ -235,6 +243,12 @@ def test_07_telemetry_completeness():
             "dt_ms",
             "state",
             "controller_mode",
+            "active_axis",
+            "takeover_cycle_index",
+            "command_jump_at_takeover_rad",
+            "command_jump_at_takeover_deg",
+            "u_combined_actual_rad",
+            "u_combined_actual_deg",
             "e_R_W_rad",
             "e_R_W_deg",
             "classical_u_raw_rad",
@@ -303,5 +317,118 @@ def test_09_dry_run_hardware_write_count_zero():
 
         assert runner.hardware_write_count == 0
         assert all(not t.hardware_write_issued for t in runner.telemetry_history)
+    finally:
+        runner.destroy_node()
+
+
+def test_10_roll_active_residual_routing():
+    """Test 10: In roll_active mode, Roll residual strictly matches LADRC, Pitch/Yaw match Classical."""
+    runner = _create_mock_runner(controller_mode="roll_active")
+    try:
+        runner.state = J13ShadowState.ACTIVE
+        # Set 0.2 deg roll and 0.1 deg pitch on platform
+        roll_rad = math.radians(0.2)
+        pitch_rad = math.radians(0.1)
+        runner.latest_plat_q_raw = (
+            math.sin(roll_rad / 2.0),
+            math.sin(pitch_rad / 2.0),
+            0.0,
+            math.cos(roll_rad / 2.0) * math.cos(pitch_rad / 2.0),
+        )
+
+        _tick(runner)
+        telem = runner.telemetry_history[-1]
+
+        assert telem.controller_mode == "roll_active"
+        assert telem.active_axis == "roll"
+
+        # Roll: strictly matches LADRC roll output
+        assert math.isclose(telem.u_combined_actual_rad[0], telem.ladrc_u_shadow_rad[0], abs_tol=1e-12)
+        # Pitch & Yaw: strictly match Classical P/PD outputs
+        assert math.isclose(telem.u_combined_actual_rad[1], telem.classical_u_actual_rad[1], abs_tol=1e-12)
+        assert math.isclose(telem.u_combined_actual_rad[2], telem.classical_u_actual_rad[2], abs_tol=1e-12)
+
+        # Authoritative composition must match u_combined_actual
+        R_WB = np.array(telem.R_WB, dtype=np.float64)
+        R_BP_FF = np.array(telem.R_BP_FF, dtype=np.float64)
+        _, _, expected_R_BP_cmd, expected_quat = compose_so3_pid_residual(
+            R_WB, R_BP_FF, telem.u_combined_actual_rad
+        )
+        assert np.allclose(np.array(telem.R_BP_cmd), expected_R_BP_cmd, atol=1e-12)
+        assert np.allclose(np.array(telem.cmd_quat_xyzw), np.array(expected_quat), atol=1e-12)
+    finally:
+        runner.destroy_node()
+
+
+def test_11_roll_active_observer_previous_input_routing():
+    """Test 11: In roll_active mode, Roll LESO input uses actual Roll LADRC input, Pitch/Yaw use Classical."""
+    runner = _create_mock_runner(controller_mode="roll_active")
+    try:
+        runner.state = J13ShadowState.ACTIVE
+        roll_rad = math.radians(0.2)
+        runner.latest_plat_q_raw = (math.sin(roll_rad / 2.0), 0.0, 0.0, math.cos(roll_rad / 2.0))
+
+        # Tick 1
+        _tick(runner)
+        telem1 = runner.telemetry_history[-1]
+        u_combined_tick1 = list(telem1.u_combined_actual_rad)
+
+        # Tick 2
+        _tick(runner)
+        telem2 = runner.telemetry_history[-1]
+
+        # On Tick 2, observer_previous_plant_input must match Tick 1's combined actual input!
+        assert math.isclose(telem2.observer_previous_plant_input_rad[0], u_combined_tick1[0], abs_tol=1e-12)
+        assert math.isclose(telem2.observer_previous_plant_input_rad[1], u_combined_tick1[1], abs_tol=1e-12)
+        assert math.isclose(telem2.observer_previous_plant_input_rad[2], u_combined_tick1[2], abs_tol=1e-12)
+
+        # In particular, Roll input was LADRC, not Classical
+        assert math.isclose(telem2.observer_previous_plant_input_rad[0], telem1.ladrc_u_shadow_rad[0], abs_tol=1e-12)
+    finally:
+        runner.destroy_node()
+
+
+def test_12_roll_active_bumpless_takeover_check():
+    """Test 12: Takeover cycle index and command jump are recorded correctly."""
+    runner = _create_mock_runner(controller_mode="roll_active", safe_takeover_jump_threshold_deg=0.05)
+    try:
+        runner.state = J13ShadowState.ACTIVE
+        _tick(runner)
+        telem = runner.telemetry_history[-1]
+
+        assert telem.takeover_cycle_index == 1
+        assert telem.command_jump_at_takeover_deg >= 0.0
+        assert telem.command_jump_at_takeover_deg < 0.05
+        assert runner.state == J13ShadowState.ACTIVE
+    finally:
+        runner.destroy_node()
+
+
+def test_13_roll_active_takeover_jump_threshold_exceeded():
+    """Test 13: If command jump at takeover exceeds safe threshold, runner halts into FAULT."""
+    runner = _create_mock_runner(controller_mode="roll_active", safe_takeover_jump_threshold_deg=1e-8)
+    try:
+        runner.state = J13ShadowState.ACTIVE
+        roll_rad = math.radians(0.1)
+        runner.latest_plat_q_raw = (0.0, math.sin(roll_rad / 2.0), 0.0, math.cos(roll_rad / 2.0))
+
+        _tick(runner)
+        assert runner.state == J13ShadowState.FAULT
+        assert "Bumpless takeover check FAILED" in runner.fault_reason
+    finally:
+        runner.destroy_node()
+
+
+def test_14_roll_active_ladrc_fault_fallback():
+    """Test 14: In roll_active mode, corrupted LADRC Roll triggers fault and safe fallback."""
+    runner = _create_mock_runner(controller_mode="roll_active")
+    try:
+        runner.state = J13ShadowState.ACTIVE
+        # Force corruption on LADRC Roll
+        runner.ladrc.channels[0].z1 = float("nan")
+
+        _tick(runner)
+        assert runner.state == J13ShadowState.FAULT
+        assert "LADRC Roll fault" in runner.fault_reason
     finally:
         runner.destroy_node()

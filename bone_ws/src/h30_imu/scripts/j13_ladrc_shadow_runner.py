@@ -98,7 +98,13 @@ class J13LadrcTelemetry:
     cycle_index: int = 0
     dt_ms: float = 20.0
     state: str = J13ShadowState.DISARMED.value
-    controller_mode: str = "classical_pid_with_ladrc_shadow"
+    controller_mode: str = "shadow"
+    active_axis: str = "none"
+    takeover_cycle_index: int = -1
+    command_jump_at_takeover_rad: float = 0.0
+    command_jump_at_takeover_deg: float = 0.0
+    u_combined_actual_rad: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
+    u_combined_actual_deg: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
 
     # Base IMU
     base_rel_quat_xyzw: Tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0)
@@ -245,6 +251,9 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
         ladrc_max_residual_roll_deg: float = 0.5,
         ladrc_max_residual_pitch_deg: float = 0.5,
         ladrc_max_residual_yaw_deg: float = 0.5,
+        # Mode & Takeover parameters
+        controller_mode: str = "shadow",
+        safe_takeover_jump_threshold_deg: float = 0.05,
     ) -> None:
         if Node is not object:
             super().__init__("j13_ladrc_shadow_runner")
@@ -254,6 +263,18 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
         self.output_dir = Path(output_dir)
         self.auto_start = auto_start
         self.hardware_write_count = 0
+
+        if controller_mode not in ("shadow", "roll_active"):
+            raise ValueError(
+                f"Invalid controller_mode '{controller_mode}'. Must be 'shadow' or 'roll_active'"
+            )
+        self.controller_mode = controller_mode
+        self.active_axis = "roll" if controller_mode == "roll_active" else "none"
+        self.safe_takeover_jump_threshold_deg = float(safe_takeover_jump_threshold_deg)
+        self.takeover_recorded: bool = False
+        self.takeover_cycle_index: int = -1
+        self.command_jump_at_takeover_rad: float = 0.0
+        self.command_jump_at_takeover_deg: float = 0.0
 
         # Kinematics & Config
         if load_geometry_config is not None and Analytical6PusKinematics is not None:
@@ -483,7 +504,8 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
             timestamp_ns=now_ns,
             cycle_index=self.cycle_index,
             dt_ms=dt_s * 1000.0,
-            controller_mode="classical_pid_with_ladrc_shadow",
+            controller_mode=self.controller_mode,
+            active_axis=self.active_axis,
             b0=self.ladrc.b0.tolist(),
             omega_c=self.ladrc.omega_c.tolist(),
             omega_o=self.ladrc.omega_o.tolist(),
@@ -739,9 +761,20 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
                 telem.ladrc_u_shadow_rad = u_ladrc_shadow.tolist()
                 telem.ladrc_u_shadow_deg = np.degrees(u_ladrc_shadow).tolist()
                 telem.ladrc_saturated_axes = list(ladrc_sat)
+
+                if (
+                    not all(math.isfinite(x) for x in z1)
+                    or not all(math.isfinite(x) for x in z2)
+                    or not all(math.isfinite(x) for x in u_ladrc_shadow)
+                ):
+                    telem.ladrc_fault = True
+                    telem.ladrc_fault_reason = (
+                        f"Non-finite LADRC states detected: "
+                        f"z1={z1.tolist()}, z2={z2.tolist()}, u={u_ladrc_shadow.tolist()}"
+                    )
             except Exception as e_ladrc:
                 telem.ladrc_fault = True
-                telem.ladrc_fault_reason = f"LADRC shadow computation error: {e_ladrc}"
+                telem.ladrc_fault_reason = f"LADRC computation error: {e_ladrc}"
                 u_ladrc_shadow = np.zeros(3, dtype=np.float64)
 
             # ------------------------------------------------------------------
@@ -771,19 +804,72 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
             telem.pid_saturated_axes = list(self.pid.saturated_axes)
 
             # ------------------------------------------------------------------
-            # CAUSAL TICK STEP 6: DELTA COMPARISON (SHADOW vs CLASSICAL)
+            # CAUSAL TICK STEP 6: DELTA COMPARISON & BUMPLESS TAKEOVER GATE
             # ------------------------------------------------------------------
             delta_u = u_ladrc_shadow - u_classical_actual
             telem.delta_u_shadow_vs_classical_rad = delta_u.tolist()
             telem.delta_u_shadow_vs_classical_deg = np.degrees(delta_u).tolist()
 
+            # Bumpless takeover measurement & gate upon first ACTIVE cycle
+            if not self.takeover_recorded and self.state == J13ShadowState.ACTIVE:
+                self.takeover_recorded = True
+                self.takeover_cycle_index = self.cycle_index
+                jump_rad = abs(float(u_ladrc_shadow[0]) - float(u_classical_actual[0]))
+                jump_deg = math.degrees(jump_rad)
+                self.command_jump_at_takeover_rad = jump_rad
+                self.command_jump_at_takeover_deg = jump_deg
+
+                if self.controller_mode == "roll_active":
+                    print(
+                        f"\n[J13-BUMPLESS] Roll takeover instant evaluated at cycle {self.cycle_index}: "
+                        f"u_ladrc_roll={math.degrees(u_ladrc_shadow[0]):+.5f}°, "
+                        f"u_classical_roll={math.degrees(u_classical_actual[0]):+.5f}°, "
+                        f"command_jump={jump_deg:.5f}° "
+                        f"(safe limit={self.safe_takeover_jump_threshold_deg:.4f}°)",
+                        flush=True,
+                    )
+                    if jump_deg > self.safe_takeover_jump_threshold_deg:
+                        self._enter_fault(
+                            f"Bumpless takeover check FAILED: command jump {jump_deg:.5f}° > "
+                            f"safe threshold {self.safe_takeover_jump_threshold_deg:.4f}°"
+                        )
+                        return
+
+            # Combine actual control command based on controller_mode
+            if self.controller_mode == "roll_active":
+                if telem.ladrc_fault or not math.isfinite(u_ladrc_shadow[0]):
+                    roll_cmd = float(u_classical_actual[0])
+                    self._enter_fault(
+                        f"LADRC Roll fault in roll_active mode: {telem.ladrc_fault_reason}. "
+                        f"Fell back to Classical Roll."
+                    )
+                    return
+                else:
+                    roll_cmd = float(u_ladrc_shadow[0])
+                u_combined_actual = np.array([
+                    roll_cmd,
+                    float(u_classical_actual[1]),
+                    float(u_classical_actual[2]),
+                ], dtype=np.float64)
+            else:
+                # Strictly Shadow Mode: Classical P/PD retains 100% control authority
+                u_combined_actual = u_classical_actual.copy()
+
+            telem.controller_mode = self.controller_mode
+            telem.active_axis = self.active_axis
+            telem.takeover_cycle_index = self.takeover_cycle_index
+            telem.command_jump_at_takeover_rad = self.command_jump_at_takeover_rad
+            telem.command_jump_at_takeover_deg = self.command_jump_at_takeover_deg
+            telem.u_combined_actual_rad = u_combined_actual.tolist()
+            telem.u_combined_actual_deg = np.degrees(u_combined_actual).tolist()
+
             # ------------------------------------------------------------------
             # CAUSAL TICK STEP 7: AUTHORITATIVE RESIDUAL COMPOSITION
-            # STRICT REQUIREMENT: ONLY u_classical_actual ENTERS COMPOSE.
-            # u_ladrc_shadow IS NEVER PASSED TO COMPOSE OR KINEMATICS.
+            # In roll_active: Roll=LADRC, Pitch/Yaw=Classical P/PD
+            # In shadow: 100% Classical P/PD
             # ------------------------------------------------------------------
             Delta_R_PID_W, Delta_R_PID_B, R_BP_cmd, q_cmd_xyzw = compose_so3_pid_residual(
-                R_WB, R_BP_FF, u_classical_actual
+                R_WB, R_BP_FF, u_combined_actual
             )
             cmd_r, cmd_p, cmd_y = rot_matrix_to_euler_deg(R_BP_cmd)
 
@@ -797,8 +883,10 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
 
             # ------------------------------------------------------------------
             # CAUSAL TICK STEP 8: UPDATE HISTORICAL PLANT INPUT FOR NEXT TICK
+            # In roll_active: self.u_plant_actual stores [u_ladrc_roll, u_class_pitch, u_class_yaw]
+            # In shadow: self.u_plant_actual stores u_classical_actual
             # ------------------------------------------------------------------
-            self.u_plant_actual = u_classical_actual.copy()
+            self.u_plant_actual = u_combined_actual.copy()
 
             # ------------------------------------------------------------------
             # CAUSAL TICK STEP 9: KINEMATICS & SAFETY EVALUATION
@@ -845,25 +933,42 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
                 if not self._manual_prompt_emitted and self.active_cycle_count >= 50:
                     self._manual_prompt_emitted = True
                     print("\n" + "=" * 70, flush=True)
-                    print(
-                        "[J13-SHADOW] Classical Control ACTIVE | LADRC Shadow Observing",
-                        flush=True,
-                    )
+                    if self.controller_mode == "roll_active":
+                        print(
+                            "[J13-ACTIVE] ROLL LADRC ACTIVE | Pitch/Yaw Classical P/PD",
+                            flush=True,
+                        )
+                    else:
+                        print(
+                            "[J13-SHADOW] Classical Control ACTIVE | LADRC Shadow Observing",
+                            flush=True,
+                        )
                     print("=" * 70 + "\n", flush=True)
                 elif self._manual_prompt_emitted and self.active_cycle_count % 25 == 0:
-                    print(
-                        f"[J13 SHADOW t={self.active_cycle_count*0.02:.1f}s] "
-                        f"Plat Err: (R:{telem.platform_rel_roll_deg:+.2f}°, "
-                        f"P:{telem.platform_rel_pitch_deg:+.2f}°, Y:{telem.platform_rel_yaw_deg:+.2f}°) | "
-                        f"Classical_u: (R:{telem.classical_u_actual_deg[0]:+.3f}°, "
-                        f"P:{telem.classical_u_actual_deg[1]:+.3f}°, Y:{telem.classical_u_actual_deg[2]:+.3f}°) | "
-                        f"LADRC_u: (R:{telem.ladrc_u_shadow_deg[0]:+.3f}°, "
-                        f"P:{telem.ladrc_u_shadow_deg[1]:+.3f}°, Y:{telem.ladrc_u_shadow_deg[2]:+.3f}°) | "
-                        f"Delta_u: (R:{telem.delta_u_shadow_vs_classical_deg[0]:+.3f}°, "
-                        f"P:{telem.delta_u_shadow_vs_classical_deg[1]:+.3f}°, "
-                        f"Y:{telem.delta_u_shadow_vs_classical_deg[2]:+.3f}°)",
-                        flush=True,
-                    )
+                    if self.controller_mode == "roll_active":
+                        print(
+                            f"[J13 ROLL_ACTIVE t={self.active_cycle_count*0.02:.1f}s] "
+                            f"Plat Err: (R:{telem.platform_rel_roll_deg:+.2f}°, "
+                            f"P:{telem.platform_rel_pitch_deg:+.2f}°, Y:{telem.platform_rel_yaw_deg:+.2f}°) | "
+                            f"Combined_u: (R_ladrc:{telem.u_combined_actual_deg[0]:+.3f}°, "
+                            f"P_class:{telem.u_combined_actual_deg[1]:+.3f}°, Y_class:{telem.u_combined_actual_deg[2]:+.3f}°) | "
+                            f"Roll z2:{telem.ladrc_z2_deg_s[0]:+.3f}°/s",
+                            flush=True,
+                        )
+                    else:
+                        print(
+                            f"[J13 SHADOW t={self.active_cycle_count*0.02:.1f}s] "
+                            f"Plat Err: (R:{telem.platform_rel_roll_deg:+.2f}°, "
+                            f"P:{telem.platform_rel_pitch_deg:+.2f}°, Y:{telem.platform_rel_yaw_deg:+.2f}°) | "
+                            f"Classical_u: (R:{telem.classical_u_actual_deg[0]:+.3f}°, "
+                            f"P:{telem.classical_u_actual_deg[1]:+.3f}°, Y:{telem.classical_u_actual_deg[2]:+.3f}°) | "
+                            f"LADRC_u: (R:{telem.ladrc_u_shadow_deg[0]:+.3f}°, "
+                            f"P:{telem.ladrc_u_shadow_deg[1]:+.3f}°, Y:{telem.ladrc_u_shadow_deg[2]:+.3f}°) | "
+                            f"Delta_u: (R:{telem.delta_u_shadow_vs_classical_deg[0]:+.3f}°, "
+                            f"P:{telem.delta_u_shadow_vs_classical_deg[1]:+.3f}°, "
+                            f"Y:{telem.delta_u_shadow_vs_classical_deg[2]:+.3f}°)",
+                            flush=True,
+                        )
 
         self.telemetry_history.append(telem)
 
@@ -922,13 +1027,15 @@ def run_j13_shadow_session(
     ladrc_max_residual_roll_deg: float = 0.5,
     ladrc_max_residual_pitch_deg: float = 0.5,
     ladrc_max_residual_yaw_deg: float = 0.5,
+    controller_mode: str = "shadow",
+    safe_takeover_jump_threshold_deg: float = 0.05,
 ) -> dict:
     mode_str = (
         "POWERED REAL EXECUTION"
         if (execute_motion and not dry_run)
         else "DRY-RUN (hardware_write_count = 0)"
     )
-    print(f"\n[{stage.upper()}] Starting J13 LADRC Shadow Runner in {mode_str}...")
+    print(f"\n[{stage.upper()}] Starting J13 LADRC Runner in {mode_str} (Mode: {controller_mode.upper()})...")
 
     if rclpy is not None:
         rclpy.init()
@@ -937,6 +1044,8 @@ def run_j13_shadow_session(
         dry_run=dry_run,
         output_dir=output_dir,
         auto_start=auto_start,
+        controller_mode=controller_mode,
+        safe_takeover_jump_threshold_deg=safe_takeover_jump_threshold_deg,
         kp_roll=kp_roll,
         kp_pitch=kp_pitch,
         kp_yaw=kp_yaw,
@@ -1026,13 +1135,18 @@ def run_j13_shadow_session(
                         d[k] = json.dumps(v)
                 w.writerow(d)
         print(
-            f"[{stage.upper()}] Unified Shadow Telemetry CSV saved to: {csv_file} "
+            f"[{stage.upper()}] Unified Telemetry CSV saved to: {csv_file} "
             f"({len(runner.telemetry_history)} rows)"
         )
 
     summary = {
         "stage": stage,
         "mode": mode_str,
+        "controller_mode": runner.controller_mode,
+        "active_axis": runner.active_axis,
+        "takeover_cycle_index": runner.takeover_cycle_index,
+        "command_jump_at_takeover_rad": runner.command_jump_at_takeover_rad,
+        "command_jump_at_takeover_deg": runner.command_jump_at_takeover_deg,
         "hardware_write_count": runner.hardware_write_count,
         "total_cycles": len(runner.telemetry_history),
         "final_state": runner.state.value,
@@ -1046,7 +1160,7 @@ def run_j13_shadow_session(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="J13-2A1: Dual-IMU LADRC Shadow-Mode ROS 2 Runner"
+        description="J13: Dual-IMU LADRC Shadow & Active Takeover Runner"
     )
     parser.add_argument("--execute-motion", action="store_true", default=False)
     parser.add_argument("--dry-run", action="store_true", default=False)
@@ -1056,6 +1170,20 @@ def main():
     parser.add_argument("--stage", default="j13_2a1_software_qualification")
     parser.add_argument("--auto-start", action="store_true", default=True)
     parser.add_argument("--no-auto-start", action="store_false", dest="auto_start")
+    parser.add_argument(
+        "--mode",
+        "--controller-mode",
+        dest="controller_mode",
+        choices=["shadow", "roll_active"],
+        default="shadow",
+        help="Controller mode: 'shadow' (default, passive observer) or 'roll_active' (LADRC Roll active takeover)",
+    )
+    parser.add_argument(
+        "--safe-takeover-jump-threshold-deg",
+        type=float,
+        default=0.05,
+        help="Max allowable command jump threshold on Roll at takeover instant (deg)",
+    )
 
     # Classical PID arguments
     parser.add_argument("--kp-roll", type=float, default=0.05)
@@ -1074,7 +1202,7 @@ def main():
     parser.add_argument("--max-residual-pitch-deg", type=float, default=0.5)
     parser.add_argument("--max-residual-yaw-deg", type=float, default=0.5)
 
-    # LADRC Shadow arguments
+    # LADRC arguments
     parser.add_argument("--ladrc-b0-roll", type=float, default=10.0)
     parser.add_argument("--ladrc-b0-pitch", type=float, default=10.0)
     parser.add_argument("--ladrc-b0-yaw", type=float, default=3.0)
@@ -1097,6 +1225,8 @@ def main():
         output_dir=args.output_dir,
         stage=args.stage,
         auto_start=args.auto_start,
+        controller_mode=args.controller_mode,
+        safe_takeover_jump_threshold_deg=args.safe_takeover_jump_threshold_deg,
         kp_roll=args.kp_roll,
         kp_pitch=args.kp_pitch,
         kp_yaw=args.kp_yaw,
