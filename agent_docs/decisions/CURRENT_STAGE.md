@@ -1,16 +1,24 @@
 # 6PUS 当前开发阶段状态卡 (Current Stage State Sheet)
 
-**最后更新时间**: 2026-10-05
+**最后更新时间**: 2026-10-06
 
-**当前状态**: **J12 CLOSED / FROZEN** (`v1.0-j12-classical-dynamic-performance-frozen`)
+**当前状态**: **J13 ACTIVE (J13-2A QUALIFIED / J13-2B1 IN PROGRESS)**
 
-**下一研究阶段**: **J13 ADRC Attitude Disturbance Rejection**
+**前序冻结基准**: **J12 CLOSED / FROZEN** (`v1.0-j12-classical-dynamic-performance-frozen`)
 
 ---
 
 ## 1. 阶段导航 (Stage Status)
 
-* **已完成阶段**: **J12 (Classical Dynamic Performance Characterization) = CLOSED / FROZEN**
+* **当前活动阶段**: **J13 (ADRC Attitude Disturbance Rejection) = ACTIVE**
+  - **J13-1A**: MATLAB ADRC 仿真与架构审计，**PASS**
+  - **J13-1B**: 实机外环 Plant 审计与既有数据辨识，**PASS**
+  - **J13-1C**: 离散 LADRC 数学资格认证与离线仿真回放，**PASS**
+  - **J13-2A1**: ROS 2 影子模式 LADRC 软件实现与离线回放认证，**PASS**
+  - **J13-2A2**: 实机影子模式闭环遥测（4工况/8762周期/0故障/0控制泄漏），**PASS / QUALIFIED**
+  - **J13-2A 权威总结**: [`agent_docs/stages/J13/J13_2A_LADRC_SHADOW_QUALIFICATION.md`](../stages/J13/J13_2A_LADRC_SHADOW_QUALIFICATION.md)
+  - **当前进行子阶段**: **J13-2B1 (Roll 单轴 LADRC 物理接管静态验收)**
+* **已完成冻结阶段**: **J12 (Classical Dynamic Performance Characterization) = CLOSED / FROZEN**
   - **核心定位**: Classical Feedforward + P/PD Dynamic Performance Characterization（经典姿态稳定控制性能与物理负载摸底）
   - **J12-1 (大角度静态负载边界)**: Roll $\pm 30^\circ$ 区域已测定，$-38^\circ \sim -45^\circ$ 深倾角定性为 `configuration-dependent mechanical / kinematic loading with actuator tracking deterioration`，**CLOSED**
   - **J12-2 (三轴组合姿态准静态筛选)**: 4 组代表性 3DOF 组合姿态通过（PASS），稳态电流正常（$20 \sim 150$ mA），**CLOSED**

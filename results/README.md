@@ -131,6 +131,18 @@
   - 阶段交接规范：[`agent_docs/J12_TO_J13_HANDOFF.md`](../agent_docs/J12_TO_J13_HANDOFF.md)
   - 当前状态卡：[`agent_docs/decisions/CURRENT_STAGE.md`](../agent_docs/decisions/CURRENT_STAGE.md)
 
+### 3.7 J13-2A2 LADRC 影子模式实机资格认证基准
+- **数据集路径**：[`results/j13/j13_2a2_shadow/20261005_205126/`](./j13/j13_2a2_shadow/20261005_205126/)
+- **性质**：真实物理样机实机测试（Real-Hardware LADRC Shadow Mode Run, Classical P/PD Active, LADRC Passive Observer）
+- **核心基准清单**：
+  1. **Static 静态基线** (`static/`): 1,445 周期，零硬件故障，状态观测器误差收敛 $z_1-e$ RMSE $\approx 0.0010^\circ$；
+  2. **Roll/Pitch Gentle 温和扰动** (`roll_pitch_gentle/`): 2,195 周期，峰值电流 61 mA，观测器稳定无震荡；
+  3. **Yaw Gentle 温和扰动** (`yaw_gentle/`): 2,180 周期，峰值电流 35 mA，三轴独立解耦正常；
+  4. **3DOF Gentle 复合扰动** (`three_axis_gentle/`): 2,942 周期，三轴复合动态观测正常，0% 限幅饱和，0% 控制权泄漏。
+- **对应分析与报告**：
+  - 资格认证总结：[`agent_docs/stages/J13/J13_2A_LADRC_SHADOW_QUALIFICATION.md`](../agent_docs/stages/J13/J13_2A_LADRC_SHADOW_QUALIFICATION.md)
+  - 当前状态卡：[`agent_docs/decisions/CURRENT_STAGE.md`](../agent_docs/decisions/CURRENT_STAGE.md)
+
 ---
 
 ## 4. 离线复现与数据查看指引
