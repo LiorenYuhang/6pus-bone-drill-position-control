@@ -164,7 +164,60 @@ bash bone_ws/scripts/run_j11_demo_feedforward_pd.sh
   - Production host current limit formally aligned with actuator hardware protection register at `MAX_CURRENT_MA = 1500`.
   - Detailed findings: [`agent_docs/J12_FINAL_SUMMARY.md`](./agent_docs/J12_FINAL_SUMMARY.md); Handoff: [`agent_docs/J12_TO_J13_HANDOFF.md`](./agent_docs/J12_TO_J13_HANDOFF.md).
 
-**Next**: J13 ADRC Attitude Disturbance Rejection.
+### J13 First-Order Linear ADRC Attitude Residual Control and Eccentric-Payload Hardware Validation (Stage Result)
+
+- **Status**: **CLOSED / ENGINEERING QUALIFIED** (Release Tag: `v1.0-j13-ladrc-attitude-residual-control-qualified`, Final Commit: `89d38b3ac2bbb63234aa56f8ecd87178010dde76`).
+- **Architecture**:
+  - **3-axis LADRC**: Base $SO(3)$ Feedforward + 3-axis First-Order Linear ADRC / LADRC Residual Control (exact ZOH discrete second-order LESO).
+  - **Classical Baseline**: Base $SO(3)$ Feedforward + Roll P + Pitch PD + Yaw PD.
+- **Final LADRC Parameters**:
+
+| Axis | $b_0$ | $\omega_c$ | $\omega_o$ | Residual Clamp |
+| :--- | :---: | :---: | :---: | :---: |
+| **Roll** | 20.0 | 0.8 rad/s | 2.5 rad/s | $\pm 0.5^\circ$ |
+| **Pitch** | 10.0 | 1.0 rad/s | 4.0 rad/s | $\pm 0.5^\circ$ |
+| **Yaw** | 6.0 | 0.25 rad/s | 1.2 rad/s | $\pm 0.5^\circ$ |
+
+*(Definitions: $b_0$ = nominal input-gain estimate, $\omega_c$ = controller bandwidth, $\omega_o$ = observer bandwidth).*
+
+- **Real-Hardware Qualification & Experimental Execution**:
+  1. **Empty-load 10s qualification**: 500 cycles (~9.98 s), 430 active cycles, 0 hard stops, 0 motor faults, 0 recovery rejects, observer strictly stable. **Conclusion: PASS / QUALIFIED**.
+  2. **Eccentric-payload hardware experiment**: Classical run (500 cycles, 429 active cycles) vs. 3-axis LADRC run (500 cycles, 446 active cycles). Both runs completed without fatal runtime failures.
+
+- **Eccentric-Payload A/B Comparison & Evidence Boundaries**:
+Platform $SO(3)$ attitude tracking error RMS:
+
+| Axis | Classical RMS | 3-axis LADRC RMS | Base RMS Excitation Ratio (LADRC / Classical) |
+| :--- | :---: | :---: | :---: |
+| **Roll** | $0.446^\circ$ | $1.072^\circ$ | 1.896× |
+| **Pitch** | $0.868^\circ$ | $1.309^\circ$ | 1.501× |
+| **Yaw** | $0.608^\circ$ | $0.441^\circ$ | 0.525× |
+
+> [!WARNING]
+> **No claim of comprehensive LADRC superiority over Classical control is made.** Because manual Base excitations were non-identical between the two runs (LADRC Base Roll excitation was 1.896× Classical, Pitch was 1.501×, while Yaw was 0.525×), the observed higher Roll/Pitch errors and lower Yaw error in the LADRC run cannot be attributed solely to the controller.
+
+- **Key Engineering Findings**:
+  - **Pitch Residual Saturation**: Pitch LADRC saturated in 73 / 446 active samples (**16.37%**), with $u_\text{raw}$ peak reaching $\approx 1.025^\circ$ before being clipped to $\pm 0.5^\circ$. This highlights the engineering boundary of Pitch residual authority and parameter matching under strong excitation, reflecting expected control limits rather than algorithm failure.
+  - **LESO Stability**: Observer states $z_1$ and $z_2$ remained strictly stable throughout all runs. State $z_2$ represents the *Equivalent Lumped Disturbance* (等效集总扰动项), not physical disturbance torque.
+  - **Runtime & Communication Long-Tail Latency**: J13 runs uncovered sporadic communication and scheduling jitter over the RS485 bus:
+    - Max Scheduler Gap: Classical $\approx 274.9\text{ ms}$, LADRC $\approx 370.6\text{ ms}$
+    - Max UART Drain: Classical $\approx 182.6\text{ ms}$, LADRC $\approx 363.1\text{ ms}$
+    - Max Feedback Age: Classical $\approx 269.9\text{ ms}$, LADRC $\approx 352.4\text{ ms}$
+    While 10-second runs execute reliably, this timing long-tail limits continuous multi-minute to 10-minute operation.
+
+- **Core Conclusions**:
+  - First-Order 3-axis LADRC successfully deployed and qualified on real 6PUS hardware;
+  - 10s empty-load qualification PASS; eccentric payload hardware runs completed; LESO states numerically stable;
+  - Existing evidence does not prove LADRC superiority over Classical control; Pitch exhibits noticeable residual saturation (16.37%);
+  - Runtime timing long-tail handed off to J14.
+- **Detailed Documentation**:
+  - Detailed Stage Summary: [`agent_docs/J13_FINAL_SUMMARY.md`](./agent_docs/J13_FINAL_SUMMARY.md)
+  - Stage Handoff: [`agent_docs/J13_TO_J14_HANDOFF.md`](./agent_docs/J13_TO_J14_HANDOFF.md)
+
+**Next**: J14 — Long-Duration Runtime & Communication Reliability
+- **J14-A**: 10-minute continuous runtime & communication qualification (eliminate UART blocking and scheduler starvation).
+- **J14-Q1**: ROS 2 QoS Deadline / Liveliness fault-detection characterization (standby/planned non-blocking track).
+- **J14-B**: Following J14-A qualification PASS, conduct controlled eccentric-payload + manual end-effector transient disturbance comparison between Classical and 3-axis LADRC.
 
 ---
 

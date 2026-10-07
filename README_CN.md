@@ -175,7 +175,65 @@ bash bone_ws/scripts/run_j11_demo_feedforward_pd.sh
   - 主机端生产过流保护正式与执行器硬件内部保护对齐统一为 `MAX_CURRENT_MA = 1500`。
   - 详细总结：[`agent_docs/J12_FINAL_SUMMARY.md`](./agent_docs/J12_FINAL_SUMMARY.md)；交接文档：[`agent_docs/J12_TO_J13_HANDOFF.md`](./agent_docs/J12_TO_J13_HANDOFF.md)。
 
-**下一阶段**：J13 ADRC 姿态主动抗扰控制（ADRC Attitude Disturbance Rejection）。
+### J13 一阶线性 ADRC 姿态残差控制与偏心负载真机验证（阶段结果）
+
+- **阶段状态**：**已闭环工程资格认证（CLOSED / ENGINEERING QUALIFIED）**（官方 Release Tag: `v1.0-j13-ladrc-attitude-residual-control-qualified`，最终 Commit: `89d38b3ac2bbb63234aa56f8ecd87178010dde76`）。
+- **控制架构**：
+  - **3-axis LADRC**：Base $SO(3)$ 几何前馈 + 三轴独立一阶线性 ADRC 残差控制（Base $SO(3)$ Feedforward + 3-axis First-Order Linear ADRC / LADRC Residual Control，采用严格 ZOH 离散二阶扩张状态观测器 LESO）。
+  - **Classical 基线**：Base $SO(3)$ 几何前馈 + Roll P + Pitch PD + Yaw PD（Base $SO(3)$ Feedforward + Roll P + Pitch PD + Yaw PD）。
+- **最终 LADRC 参数**：
+
+| 轴向 | $b_0$ | $\omega_c$ | $\omega_o$ | 残差限幅 |
+| :--- | :---: | :---: | :---: | :---: |
+| **Roll** | 20.0 | 0.8 rad/s | 2.5 rad/s | $\pm 0.5^\circ$ |
+| **Pitch** | 10.0 | 1.0 rad/s | 4.0 rad/s | $\pm 0.5^\circ$ |
+| **Yaw** | 6.0 | 0.25 rad/s | 1.2 rad/s | $\pm 0.5^\circ$ |
+
+*(参数说明：$b_0$ 为名义输入增益估计 nominal input-gain estimate，$\omega_c$ 为控制器闭环带宽 controller bandwidth，$\omega_o$ 为观测器带宽 observer bandwidth)。*
+
+- **真实硬件资格结果与运行**：
+  1. **3-axis LADRC 空载 10s 资格认证**：500 周期（约 9.98 s），430 active 周期，0 hard stop，0 motor fault，0 recovery reject，观测器全程稳定。**结论：PASS / QUALIFIED**。
+  2. **偏心负载硬件实验**：Classical 组（500 cycles，429 active cycles）与 3-axis LADRC 组（500 cycles，446 active cycles）均完整完成真实硬件运行，无致命运行时故障（fatal runtime failure）。
+
+- **偏心负载 A/B 核心数据与证据边界**：
+平台 $SO(3)$ 姿态误差 RMS 统计：
+
+| 轴向 | Classical RMS | 3-axis LADRC RMS | Base 激励比 (LADRC / Classical RMS) |
+| :--- | :---: | :---: | :---: |
+| **Roll** | $0.446^\circ$ | $1.072^\circ$ | 1.896× |
+| **Pitch** | $0.868^\circ$ | $1.309^\circ$ | 1.501× |
+| **Yaw** | $0.608^\circ$ | $0.441^\circ$ | 0.525× |
+
+> [!WARNING]
+> **上述数据不能直接作为控制器因果优劣结论，当前实验未证明 LADRC 全面优于 Classical**。因为两次实验中人工施加的 Base 晃动激励并不匹配（LADRC 组的 Base Roll 激励约为 Classical 的 1.896 倍，Pitch 约为 1.501 倍，而 Yaw 仅为 0.525 倍）。因此：
+> - 本次 LADRC run 的 Roll / Pitch 误差偏高；
+> - 本次 LADRC run 的 Yaw 误差偏低；
+> - 当前非同源扰动实验无法证明 LADRC 全面优于 Classical，亦不能将 Yaw 轴误差降低单独归因于 LADRC 控制器。
+
+- **关键工程发现**：
+  - **Pitch 显著残差饱和**：Pitch LADRC 在 446 个 active 采样中出现 73 次限幅饱和（占比 **16.37%**），$u_\text{raw}$ 峰值达到约 $1.025^\circ$（被 clip 约束至 $\pm 0.5^\circ$ 残差上限）。这客观暴露了当前强扰动下 Pitch 残差控制能力裕量（authority）与参数匹配的工程边界，属于正常的工程限幅表现而非算法失效。
+  - **LESO 观测器状态稳定**：LESO $z_1$ 与 $z_2$ 全程保持数值稳定。必须明确 $z_2$ 表征的是**等效集总扰动项（Equivalent Lumped Disturbance）**，而非真实物理扰动力矩（physical torque）。
+  - **长时运行时通信与调度长尾**：J13 实验同时暴露出底层长时运行的通信与调度长尾抖动问题：
+    - Max Scheduler Gap：Classical $\approx 274.9\text{ ms}$，LADRC $\approx 370.6\text{ ms}$
+    - Max UART Drain：Classical $\approx 182.6\text{ ms}$，LADRC $\approx 363.1\text{ ms}$
+    - Max Feedback Age：Classical $\approx 269.9\text{ ms}$，LADRC $\approx 352.4\text{ ms}$
+    10s 短时实验能够稳定完成，但此类 timing long-tail 仍是制约系统连续运行至数分钟乃至 10 分钟级的核心瓶颈。共同根因尚未完全定论，移交后续专班排查。
+
+- **J13 最终核心结论**：
+  - First-Order 3-axis LADRC 已在真实 6PUS 并联平台上成功部署并运行；
+  - 空载 10s qualification 确认 PASS；
+  - 偏心负载真实硬件运行完整完成，LESO 全程数值稳定；
+  - 当前没有证据证明 LADRC 全面优于 Classical；
+  - Pitch 存在明显的残差限幅饱和（16.37%）；
+  - 底层 runtime timing long-tail 移交 J14 专班攻关。
+- **详细文档与交接**：
+  - 详细总结：[`agent_docs/J13_FINAL_SUMMARY.md`](./agent_docs/J13_FINAL_SUMMARY.md)
+  - 阶段交接：[`agent_docs/J13_TO_J14_HANDOFF.md`](./agent_docs/J13_TO_J14_HANDOFF.md)
+
+**下一阶段**：J14 — 长时运行与通信可靠性攻关 (Long-Duration Runtime & Communication Reliability)
+- **J14-A**：10 分钟连续运行与通信可靠性资格认证（消除 UART 同步阻塞与调度饥饿，确保 50Hz 闭环连续稳定运行）。
+- **J14-Q1**：ROS 2 QoS Deadline / Liveliness 故障检测能力独立表征（STANDBY / PLANNED 非阻塞支线）。
+- **J14-B**：在 J14-A 资格认证 PASS 后，开展偏心负载 + 人工末端瞬态扰动下的 Classical vs 3-axis LADRC 对比。
 
 ### 文档
 
