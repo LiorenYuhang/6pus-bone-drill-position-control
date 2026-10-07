@@ -7,10 +7,10 @@ j13_ladrc_shadow_runner:
     # --------------------------------------------------------------------------
     # LADRC Shadow Channel Parameters (J13 Conservative Hardware Start)
     # --------------------------------------------------------------------------
-    # Roll Channel: b0=10.0 s^-1, omega_c=1.0 rad/s, omega_o=4.0 rad/s
-    ladrc_b0_roll: 10.0
-    ladrc_omega_c_roll: 1.0
-    ladrc_omega_o_roll: 4.0
+    # Roll Channel: b0=20.0 s^-1, omega_c=0.8 rad/s, omega_o=2.5 rad/s
+    ladrc_b0_roll: 20.0
+    ladrc_omega_c_roll: 0.8
+    ladrc_omega_o_roll: 2.5
     ladrc_max_residual_roll_deg: 0.5
 
     # Pitch Channel: b0=10.0 s^-1, omega_c=1.0 rad/s, omega_o=4.0 rad/s
@@ -19,10 +19,10 @@ j13_ladrc_shadow_runner:
     ladrc_omega_o_pitch: 4.0
     ladrc_max_residual_pitch_deg: 0.5
 
-    # Yaw Channel: b0=3.0 s^-1, omega_c=0.35 rad/s, omega_o=1.8 rad/s (Independent!)
-    ladrc_b0_yaw: 3.0
-    ladrc_omega_c_yaw: 0.35
-    ladrc_omega_o_yaw: 1.8
+    # Yaw Channel: b0=6.0 s^-1, omega_c=0.25 rad/s, omega_o=1.2 rad/s (Independent!)
+    ladrc_b0_yaw: 6.0
+    ladrc_omega_c_yaw: 0.25
+    ladrc_omega_o_yaw: 1.2
     ladrc_max_residual_yaw_deg: 0.5
 
     # --------------------------------------------------------------------------

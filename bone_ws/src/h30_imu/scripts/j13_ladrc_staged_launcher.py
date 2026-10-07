@@ -131,8 +131,20 @@ def cleanup_stale_processes_and_markers() -> None:
                 p.unlink()
             except OSError:
                 pass
-    subprocess.run(["pkill", "-9", "-f", "j13_ladrc_shadow_runner"], stderr=subprocess.DEVNULL)
-    time.sleep(0.5)
+    for proc_pattern in [
+        "j13_ladrc_shadow_runner",
+        "j11_m2_pid_residual_runner",
+        "j11_base_feedforward_runner",
+        "j11_attitude_stabilization_runner",
+        "motor_driver_node",
+        "kinematics_node",
+        "control_node",
+        "fk_node",
+        "h30_imu_node",
+        "pus6_system.launch.py",
+    ]:
+        subprocess.run(["pkill", "-9", "-f", proc_pattern], stderr=subprocess.DEVNULL)
+    time.sleep(1.0)
 
 
 def run_j13_staged_session(
@@ -161,23 +173,26 @@ def run_j13_staged_session(
     max_residual_pitch_deg: float = 0.5,
     max_residual_yaw_deg: float = 0.5,
     # LADRC Parameters
-    ladrc_b0_roll: float = 10.0,
+    ladrc_b0_roll: float = 20.0,
     ladrc_b0_pitch: float = 10.0,
-    ladrc_b0_yaw: float = 3.0,
-    ladrc_omega_c_roll: float = 1.0,
+    ladrc_b0_yaw: float = 6.0,
+    ladrc_omega_c_roll: float = 0.8,
     ladrc_omega_c_pitch: float = 1.0,
-    ladrc_omega_c_yaw: float = 0.35,
-    ladrc_omega_o_roll: float = 4.0,
+    ladrc_omega_c_yaw: float = 0.25,
+    ladrc_omega_o_roll: float = 2.5,
     ladrc_omega_o_pitch: float = 4.0,
-    ladrc_omega_o_yaw: float = 1.8,
+    ladrc_omega_o_yaw: float = 1.2,
     mode: str = "shadow",
     safe_takeover_jump_threshold_deg: float = 0.05,
+    runtime_diagnostics: bool = False,
 ) -> None:
     cleanup_stale_processes_and_markers()
 
     if output_dir is None:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        if mode == "roll_active":
+        if mode == "3axis_active":
+            output_dir = f"/home/lyapunov/bone_drill/results/j13/j13_2c1_3axis_active/{timestamp}/{stage}"
+        elif mode == "roll_active":
             output_dir = f"/home/lyapunov/bone_drill/results/j13/j13_2b1_roll_active/{timestamp}/{stage}"
         else:
             output_dir = f"/home/lyapunov/bone_drill/results/j13/j13_2a2_shadow/{timestamp}/{stage}"
@@ -186,6 +201,7 @@ def run_j13_staged_session(
     out_path.mkdir(parents=True, exist_ok=True)
     try:
         Path("/tmp/j13_latest_run_dir").write_text(str(out_path.resolve()))
+        Path("/tmp/j11_latest_run_dir").write_text(str(out_path.resolve()))
     except OSError:
         pass
     print(f"[J13 STAGED STARTUP] Output directory: {out_path.resolve()}", flush=True)
@@ -195,6 +211,9 @@ def run_j13_staged_session(
     plat_proc = None
     base_proc = None
     runner_proc = None
+    robot_log = None
+    plat_log = None
+    base_log = None
 
     if not rclpy.ok():
         rclpy.init()
@@ -221,7 +240,7 @@ def run_j13_staged_session(
                     os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
                 except OSError:
                     pass
-        time.sleep(1.0)
+        time.sleep(2.0)
         for proc, name in [
             (runner_proc, "J13 Runner"),
             (plat_proc, "Platform IMU"),
@@ -231,6 +250,12 @@ def run_j13_staged_session(
             if proc and proc.poll() is None:
                 try:
                     os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                except OSError:
+                    pass
+        for log_f in [robot_log, plat_log, base_log]:
+            if log_f and not log_f.closed:
+                try:
+                    log_f.close()
                 except OSError:
                     pass
 
@@ -252,7 +277,8 @@ def run_j13_staged_session(
             f"maintenance_mode:=true "
             f"servo_scheduler_mode:={servo_scheduler_mode} "
             f"telemetry_publish_mode:={telemetry_publish_mode} "
-            f"feedback_loss_policy:={feedback_loss_policy}",
+            f"feedback_loss_policy:={feedback_loss_policy} "
+            f"enable_runtime_diagnostics:={'true' if runtime_diagnostics else 'false'}",
         ]
         robot_log = open("/tmp/j13_robot.log", "w")
         robot_proc = subprocess.Popen(
@@ -494,9 +520,18 @@ def run_j13_staged_session(
             if active_marker.exists() and not banner_printed:
                 banner_printed = True
                 print("\n" + "=" * 60, flush=True)
-                print(f"J13-2A2 ACTIVE: Classical P/PD Control + LADRC Shadow Mode Engaged")
-                print(f"Stage: {stage} | Planned Duration: {duration:.1f}s")
-                print(f"LADRC Shadow Observing (LOG ONLY, NO REAL CONTROL AUTHORITY)")
+                if mode == "3axis_active":
+                    print(f"J13-2C1 ACTIVE: 3-Axis LADRC Active Control Engaged")
+                    print(f"Stage: {stage} | Planned Duration: {duration:.1f}s")
+                    print(f"Roll, Pitch, Yaw all governed by LADRC")
+                elif mode == "roll_active":
+                    print(f"J13-2B2 ACTIVE: Roll LADRC Active + Pitch/Yaw Classical P/PD")
+                    print(f"Stage: {stage} | Planned Duration: {duration:.1f}s")
+                    print(f"Roll LADRC governing Roll control authority")
+                else:
+                    print(f"J13-2A2 ACTIVE: Classical P/PD Control + LADRC Shadow Mode Engaged")
+                    print(f"Stage: {stage} | Planned Duration: {duration:.1f}s")
+                    print(f"LADRC Shadow Observing (LOG ONLY, NO REAL CONTROL AUTHORITY)")
                 print("=" * 60 + "\n", flush=True)
             if not banner_printed and (time.monotonic() - t_wait_active > 15.0):
                 print(
@@ -533,15 +568,15 @@ def main():
         "--mode",
         "--controller-mode",
         dest="mode",
-        choices=["shadow", "roll_active"],
+        choices=["shadow", "roll_active", "3axis_active"],
         default="shadow",
-        help="Controller mode: 'shadow' (default, passive observer) or 'roll_active' (LADRC Roll active takeover)",
+        help="Controller mode: 'shadow' (default, passive observer), 'roll_active' (LADRC Roll active takeover), or '3axis_active' (LADRC 3-axis active takeover)",
     )
     parser.add_argument(
         "--safe-takeover-jump-threshold-deg",
         type=float,
         default=0.05,
-        help="Max allowable command jump threshold on Roll at takeover instant (deg)",
+        help="Max allowable command jump threshold on active axis at takeover instant (deg)",
     )
     parser.add_argument("--dry-run", action="store_true", default=False)
     parser.add_argument("--execute-motion", action="store_true", default=True)
@@ -576,15 +611,17 @@ def main():
     parser.add_argument("--max-residual-yaw-deg", type=float, default=0.5)
 
     # LADRC
-    parser.add_argument("--ladrc-b0-roll", type=float, default=10.0)
+    parser.add_argument("--ladrc-b0-roll", type=float, default=20.0)
     parser.add_argument("--ladrc-b0-pitch", type=float, default=10.0)
-    parser.add_argument("--ladrc-b0-yaw", type=float, default=3.0)
-    parser.add_argument("--ladrc-omega-c-roll", type=float, default=1.0)
+    parser.add_argument("--ladrc-b0-yaw", type=float, default=6.0)
+    parser.add_argument("--ladrc-omega-c-roll", type=float, default=0.8)
     parser.add_argument("--ladrc-omega-c-pitch", type=float, default=1.0)
-    parser.add_argument("--ladrc-omega-c-yaw", type=float, default=0.35)
-    parser.add_argument("--ladrc-omega-o-roll", type=float, default=4.0)
+    parser.add_argument("--ladrc-omega-c-yaw", type=float, default=0.25)
+    parser.add_argument("--ladrc-omega-o-roll", type=float, default=2.5)
     parser.add_argument("--ladrc-omega-o-pitch", type=float, default=4.0)
-    parser.add_argument("--ladrc-omega-o-yaw", type=float, default=1.8)
+    parser.add_argument("--ladrc-omega-o-yaw", type=float, default=1.2)
+
+    parser.add_argument("--runtime-diagnostics", action="store_true", default=False)
 
     args = parser.parse_args()
 
@@ -598,6 +635,7 @@ def main():
         servo_scheduler_mode=args.servo_scheduler_mode,
         telemetry_publish_mode=args.telemetry_publish_mode,
         feedback_loss_policy=args.feedback_loss_policy,
+        runtime_diagnostics=args.runtime_diagnostics,
         mode=args.mode,
         safe_takeover_jump_threshold_deg=args.safe_takeover_jump_threshold_deg,
         kp_roll=args.kp_roll,

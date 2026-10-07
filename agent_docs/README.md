@@ -45,6 +45,8 @@ agent_docs/
 | **J10** | 6DOF 单轴实机安全运行包络 | 总结：[`agent_docs/stages/J10/J10_FINAL_SUMMARY.md`](./stages/J10/J10_FINAL_SUMMARY.md)<br>报告库：[`agent_docs/reports/j10/`](./reports/j10/) (15篇单轴报告)<br>交接：[`agent_docs/stages/J10/J10_TO_J11_HANDOFF.md`](./stages/J10/J10_TO_J11_HANDOFF.md) | **CLOSED** |
 | **J11** | 世界坐标系姿态防抖闭环 | 最终总结：[`agent_docs/j11/J11_FINAL_SUMMARY.md`](./j11/J11_FINAL_SUMMARY.md)<br>最终中文对比：[`docs/j11/J11_FINAL_CONTROL_COMPARISON.md`](../docs/j11/J11_FINAL_CONTROL_COMPARISON.md)<br>详细调参档案：[`agent_docs/j11/J11_M1_M2_CONTROL_COMPARISON.md`](./j11/J11_M1_M2_CONTROL_COMPARISON.md)<br>交接：[`agent_docs/j11/J11_TO_J12_HANDOFF.md`](./j11/J11_TO_J12_HANDOFF.md)<br>USB fault 审计：[`agent_docs/j11/J11_DEMO_B_USB_UART_FAULT_AUDIT.md`](./j11/J11_DEMO_B_USB_UART_FAULT_AUDIT.md)<br>**Final controller**: `Kp=[0.05,0.05,0.025], Kd=[0,0.0015,0.0015] s, Ki=0, fc=5 Hz; Roll=P, Pitch=PD, Yaw=PD` | **FROZEN**<br>(`v1.0-j11-attitude-stabilization-frozen`) |
 | **J12** | 经典前馈+P/PD动态性能与物理负载摸底 | 权威总结：[`agent_docs/J12_FINAL_SUMMARY.md`](./J12_FINAL_SUMMARY.md)<br>交接：[`agent_docs/J12_TO_J13_HANDOFF.md`](./J12_TO_J13_HANDOFF.md)<br>**Scope**: J12-1 大角度静态/构型负载边界、J12-2 组合姿态筛选、J12-3 手持高动态表征与生产 1500mA 电流保护对齐 | **CLOSED / FROZEN**<br>(`v1.0-j12-classical-dynamic-performance-frozen`) |
+| **J13** | 一阶线性自抗扰姿态残差控制实机闭环与偏心验证 | 权威总结：[`agent_docs/J13_FINAL_SUMMARY.md`](./J13_FINAL_SUMMARY.md)<br>交接：[`agent_docs/J13_TO_J14_HANDOFF.md`](./J13_TO_J14_HANDOFF.md)<br>**Final controller**: 3-axis First-Order LADRC, $b_0=[20,10,6], \omega_c=[0.8,1.0,0.25], \omega_o=[2.5,4.0,1.2]$, clamp $\pm 0.5^\circ$ | **CLOSED / ENGINEERING QUALIFIED** |
+| **J14** | 长时运行与通信可靠性攻关 | 阶段交接：[`agent_docs/J13_TO_J14_HANDOFF.md`](./J13_TO_J14_HANDOFF.md)<br>**Target**: 真实 6PUS 连续 10 分钟 Active 伺服闭环运行（消除 UART/调度长尾，0 异常停机） | **ACTIVE** |
 
 ---
 
@@ -61,6 +63,7 @@ agent_docs/
 - **J10 $\to$ J11 交接**：[`agent_docs/stages/J10/J10_TO_J11_HANDOFF.md`](./stages/J10/J10_TO_J11_HANDOFF.md)（交付 J10 单轴实测极限，明确 J8 冻结控制黑盒与标定延后约束）。
 - **J11 $\to$ J12 交接**：[`agent_docs/j11/J11_TO_J12_HANDOFF.md`](./j11/J11_TO_J12_HANDOFF.md)（交付最终 Classical P/PD baseline、外部偏心负载协议与 ADRC A/B 边界）。
 - **J12 $\to$ J13 交接**：[`agent_docs/J12_TO_J13_HANDOFF.md`](./J12_TO_J13_HANDOFF.md)（交付 J12 物理动态表征数据、1500 mA 生产电流门限、高动态瓶颈规律与 ADRC 迁移要求）。
+- **J13 $\to$ J14 交接**：[`agent_docs/J13_TO_J14_HANDOFF.md`](./J13_TO_J14_HANDOFF.md)（交付 J13 冻结 3-axis LADRC 控制架构与参数、长尾通信时序痛点分析、10 分钟运行资格目标与后续偏心瞬态扰动实验路线）。
 
 ---
 

@@ -432,3 +432,81 @@ def test_14_roll_active_ladrc_fault_fallback():
         assert "LADRC Roll fault" in runner.fault_reason
     finally:
         runner.destroy_node()
+
+
+def test_15_3axis_active_residual_routing():
+    """Test 15: In 3axis_active mode, Roll, Pitch, and Yaw residuals all strictly match LADRC."""
+    runner = _create_mock_runner(controller_mode="3axis_active")
+    try:
+        runner.state = J13ShadowState.ACTIVE
+        roll_rad = math.radians(0.2)
+        pitch_rad = math.radians(0.1)
+        yaw_rad = math.radians(-0.15)
+        # Approximate small-angle quaternion
+        runner.latest_plat_q_raw = (
+            math.sin(roll_rad / 2.0),
+            math.sin(pitch_rad / 2.0),
+            math.sin(yaw_rad / 2.0),
+            math.cos(roll_rad / 2.0),
+        )
+
+        _tick(runner)
+        telem = runner.telemetry_history[-1]
+
+        assert telem.controller_mode == "3axis_active"
+        assert telem.active_axis == "3axis"
+
+        # All 3 channels strictly match LADRC outputs
+        for i in range(3):
+            assert math.isclose(telem.u_combined_actual_rad[i], telem.ladrc_u_shadow_rad[i], abs_tol=1e-12)
+
+        # Authoritative composition matches u_combined_actual
+        R_WB = np.array(telem.R_WB, dtype=np.float64)
+        R_BP_FF = np.array(telem.R_BP_FF, dtype=np.float64)
+        _, _, expected_R_BP_cmd, expected_quat = compose_so3_pid_residual(
+            R_WB, R_BP_FF, telem.u_combined_actual_rad
+        )
+        assert np.allclose(np.array(telem.R_BP_cmd), expected_R_BP_cmd, atol=1e-12)
+        assert np.allclose(np.array(telem.cmd_quat_xyzw), np.array(expected_quat), atol=1e-12)
+    finally:
+        runner.destroy_node()
+
+
+def test_16_3axis_active_observer_previous_input_routing():
+    """Test 16: In 3axis_active mode, all 3 LESO channels receive actual 3-axis LADRC inputs."""
+    runner = _create_mock_runner(controller_mode="3axis_active")
+    try:
+        runner.state = J13ShadowState.ACTIVE
+        roll_rad = math.radians(0.2)
+        pitch_rad = math.radians(0.1)
+        runner.latest_plat_q_raw = (math.sin(roll_rad / 2.0), math.sin(pitch_rad / 2.0), 0.0, math.cos(roll_rad / 2.0))
+
+        # Tick 1
+        _tick(runner)
+        telem1 = runner.telemetry_history[-1]
+        u_combined_tick1 = list(telem1.u_combined_actual_rad)
+
+        # Tick 2
+        _tick(runner)
+        telem2 = runner.telemetry_history[-1]
+
+        for i in range(3):
+            assert math.isclose(telem2.observer_previous_plant_input_rad[i], u_combined_tick1[i], abs_tol=1e-12)
+            assert math.isclose(telem2.observer_previous_plant_input_rad[i], telem1.ladrc_u_shadow_rad[i], abs_tol=1e-12)
+    finally:
+        runner.destroy_node()
+
+
+def test_17_3axis_active_ladrc_fault_fallback():
+    """Test 17: In 3axis_active mode, corrupted LADRC on any channel halts into FAULT."""
+    runner = _create_mock_runner(controller_mode="3axis_active")
+    try:
+        runner.state = J13ShadowState.ACTIVE
+        # Force corruption on LADRC Yaw (channel 2)
+        runner.ladrc.channels[2].z1 = float("nan")
+
+        _tick(runner)
+        assert runner.state == J13ShadowState.FAULT
+        assert "LADRC fault in 3axis_active mode" in runner.fault_reason
+    finally:
+        runner.destroy_node()

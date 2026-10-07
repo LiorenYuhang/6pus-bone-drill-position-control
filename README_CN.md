@@ -13,7 +13,8 @@
 - **J1–J10（已完成并冻结）**：构建了坚实的真实物理硬件运动与感知基线，涵盖多电机底层串口通信、微秒级闭式解析逆解、三阶加加速度连续轨迹平滑整形、50Hz 连续流式伺服驱动、双 H30 IMU 微秒级时钟对齐解算、数值正运动学重构，以及在真实物理平台上完成的 6 自由度单轴安全运行包络边界全域测定。
 - **J11-M1（已完成并冻结）**：完成 Base-IMU 全 SO(3) 前馈姿态保持实机闭环、专用驱动层运行资格认证、两级安全策略 (Two-Tier Safety Policy)、300s 静态长周期达标以及真机低速动基座扰动防抖补偿验证（官方 Release Tag: `v1.0-j11-m1-feedforward-hardware-qualified`）。
 - **J11（已完成并冻结）**：最终保留 Base-IMU SO(3) Feedforward + Platform-IMU Classical P/PD Attitude Feedback。Roll / Pitch / Yaw 参数：`Kp = [0.05, 0.05, 0.025]`，`Kd = [0, 0.0015, 0.0015] s`，`Ki = 0`；低通滤波截止频率：`fc = 5 Hz`（Roll=P，Pitch=PD，Yaw=PD）。Demo A 与 Demo B 实机验证通过（官方 Release Tag: `v1.0-j11-attitude-stabilization-frozen`）。
-- **J12（已完成并冻结）**：经典前馈+P/PD动态性能与物理负载摸底（Classical Feedforward + P/PD Dynamic Performance Characterization）。全面完成大角度静态负载摸底（J12-1）、3自由度组合姿态准静态筛选（J12-2）以及手持高动态性能表征（J12-3，实测有效峰值角速度 `92.33°/s`）。实测电机最大电流 `468 mA`。主机端生产安全电流保护统一升级为 `MAX_CURRENT_MA = 1500`（官方 Release Tag: `v1.0-j12-classical-dynamic-performance-frozen`）。下一阶段：J13 ADRC。
+- **J12（已完成并冻结）**：经典前馈+P/PD动态性能与物理负载摸底（Classical Feedforward + P/PD Dynamic Performance Characterization）。全面完成大角度静态负载摸底（J12-1）、3自由度组合姿态准静态筛选（J12-2）以及手持高动态性能表征（J12-3，实测有效峰值角速度 `92.33°/s`）。实测电机最大电流 `468 mA`。主机端生产安全电流保护统一升级为 `MAX_CURRENT_MA = 1500`（官方 Release Tag: `v1.0-j12-classical-dynamic-performance-frozen`）。
+- **J13（已完成并工程资格认证）**：真实 6PUS 并联平台一阶线性自抗扰动平台姿态残差控制（First-Order Linear ADRC / LADRC Residual Control）。完整闭环实机架构（Base $SO(3)$ 几何前馈 + 三轴独立一阶线性 ADRC，含 ZOH 离散二阶扩张状态观测器 LESO 与 $\pm 0.5^\circ$ 残差安全限幅）。完成空载 10s 物理接管资格认证（0 故障）；完成偏心负载工况下对比 Classical P/PD 基线实机测试。识别出底层通信与调度长尾延时为系统迈向长时间连续运行的核心瓶颈。阶段状态：CLOSED / ENGINEERING QUALIFIED。
 
 ---
 
@@ -47,17 +48,18 @@
 │         [状态：已全面完成并冻结 — Release Tag: v1.0-j11]                 │
 │  • J12: 经典前馈+P/PD动态性能与物理负载摸底                              │
 │         [状态：已全面完成并冻结 — Release Tag: v1.0-j12]                 │
-│  • 当前：J12 CLOSED / FROZEN                                             │
-│  • 下一阶段 J13：ADRC 姿态主动抗扰控制                                   │
-│    - ADRC 与扩张状态观测器 (ESO) 总扰动实时估计与补偿                    │
-│    - 与 J11/J12 经典基线的同工况受控对比 (Matched-Condition Comparison)  │
-│    - IMU 角加速度前馈与扰动观测器 (DOB) 抑制高频动基座振颤              │
-│    - 强化学习与自适应在线刚度自调优控制                                 │
+│  • J13: 一阶线性自抗扰动平台姿态残差控制 (First-Order LADRC)              │
+│         [状态：已闭环资格认证 — CLOSED / ENGINEERING QUALIFIED]          │
+│  • 当前活动主线：J14 — 长时运行与通信可靠性攻关 (Runtime Reliability)    │
+│    - 彻底消除 UART 同步阻塞与调度长尾抖动 (Long-Tail Latency)            │
+│    - 严格保持两级安全策略 (80步恢复拒绝 / 283.3ms告警 / 1000ms硬停机)     │
+│    - 资格验收目标：真实 6PUS 连续 10 分钟 50Hz Active 伺服闭环全通       │
+│    - 后续研究方向：偏心负载工况下末端人工瞬态扰动抑制特性对比            │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
 > [!IMPORTANT]
-> **真实性与验证边界**：J1 至 J10、J11 与 J12 已全面冻结；经典 P/PD 控制器与动态物理表征指标均基于真实硬件严格测试证据。未宣称 J13 ADRC 的未验证性能。
+> **真实性与验证边界**：J1 至 J10、J11 与 J12 已全面冻结；J13 已正式按工程资格达标闭环。所有指标均基于真实物理机载遥测数据支持。在偏心负载 A/B 测试中，基座人工晃动输入非严格一致，未作 LADRC 全面优于经典控制的主观断言。
 
 ### J10 单自由度实机安全运行包络边界（以 HOME 为基准）
 

@@ -138,9 +138,9 @@ def test_07_roll_pitch_parameters():
     """Test 7: Roll & Pitch channels instantiate with conservative hardware parameters."""
     ladrc = ThreeAxisLadrc()
     # Roll channel (index 0)
-    assert ladrc.channels[0].b0 == 10.0
-    assert ladrc.channels[0].omega_c == 1.0
-    assert ladrc.channels[0].omega_o == 4.0
+    assert ladrc.channels[0].b0 == 20.0
+    assert ladrc.channels[0].omega_c == 0.8
+    assert ladrc.channels[0].omega_o == 2.5
     assert math.isclose(ladrc.channels[0].u_limit, math.radians(0.5), rel_tol=1e-9)
 
     # Pitch channel (index 1)
@@ -154,9 +154,9 @@ def test_08_yaw_independent_parameters():
     """Test 8: Yaw channel has strictly independent parameters matching J13 identification."""
     ladrc = ThreeAxisLadrc()
     yaw_ch = ladrc.channels[2]
-    assert yaw_ch.b0 == 3.0
-    assert yaw_ch.omega_c == 0.35
-    assert yaw_ch.omega_o == 1.8
+    assert yaw_ch.b0 == 6.0
+    assert yaw_ch.omega_c == 0.25
+    assert yaw_ch.omega_o == 1.2
     assert math.isclose(yaw_ch.u_limit, math.radians(0.5), rel_tol=1e-9)
 
     # Confirm Yaw parameters are distinct from Roll/Pitch

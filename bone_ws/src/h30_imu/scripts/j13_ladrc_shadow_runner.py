@@ -183,9 +183,9 @@ class J13LadrcTelemetry:
     delta_u_shadow_vs_classical_deg: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
 
     # Active parameters
-    b0: List[float] = field(default_factory=lambda: [10.0, 10.0, 3.0])
-    omega_c: List[float] = field(default_factory=lambda: [1.0, 1.0, 0.35])
-    omega_o: List[float] = field(default_factory=lambda: [4.0, 4.0, 1.8])
+    b0: List[float] = field(default_factory=lambda: [20.0, 10.0, 6.0])
+    omega_c: List[float] = field(default_factory=lambda: [0.8, 1.0, 0.25])
+    omega_o: List[float] = field(default_factory=lambda: [2.5, 4.0, 1.2])
 
     # Command: Delta_R_PID & R_BP_cmd (Governed 100% by Classical P/PD)
     Delta_R_PID_W: List[List[float]] = field(default_factory=lambda: np.eye(3).tolist())
@@ -239,15 +239,15 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
         max_residual_pitch_deg: float = 0.5,
         max_residual_yaw_deg: float = 0.5,
         # LADRC Parameters (J13 Conservative Hardware Start)
-        ladrc_b0_roll: float = 10.0,
+        ladrc_b0_roll: float = 20.0,
         ladrc_b0_pitch: float = 10.0,
-        ladrc_b0_yaw: float = 3.0,
-        ladrc_omega_c_roll: float = 1.0,
+        ladrc_b0_yaw: float = 6.0,
+        ladrc_omega_c_roll: float = 0.8,
         ladrc_omega_c_pitch: float = 1.0,
-        ladrc_omega_c_yaw: float = 0.35,
-        ladrc_omega_o_roll: float = 4.0,
+        ladrc_omega_c_yaw: float = 0.25,
+        ladrc_omega_o_roll: float = 2.5,
         ladrc_omega_o_pitch: float = 4.0,
-        ladrc_omega_o_yaw: float = 1.8,
+        ladrc_omega_o_yaw: float = 1.2,
         ladrc_max_residual_roll_deg: float = 0.5,
         ladrc_max_residual_pitch_deg: float = 0.5,
         ladrc_max_residual_yaw_deg: float = 0.5,
@@ -264,12 +264,17 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
         self.auto_start = auto_start
         self.hardware_write_count = 0
 
-        if controller_mode not in ("shadow", "roll_active"):
+        if controller_mode not in ("shadow", "roll_active", "3axis_active"):
             raise ValueError(
-                f"Invalid controller_mode '{controller_mode}'. Must be 'shadow' or 'roll_active'"
+                f"Invalid controller_mode '{controller_mode}'. Must be 'shadow', 'roll_active', or '3axis_active'"
             )
         self.controller_mode = controller_mode
-        self.active_axis = "roll" if controller_mode == "roll_active" else "none"
+        if controller_mode == "3axis_active":
+            self.active_axis = "3axis"
+        elif controller_mode == "roll_active":
+            self.active_axis = "roll"
+        else:
+            self.active_axis = "none"
         self.safe_takeover_jump_threshold_deg = float(safe_takeover_jump_threshold_deg)
         self.takeover_recorded: bool = False
         self.takeover_cycle_index: int = -1
@@ -814,17 +819,23 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
             if not self.takeover_recorded and self.state == J13ShadowState.ACTIVE:
                 self.takeover_recorded = True
                 self.takeover_cycle_index = self.cycle_index
-                jump_rad = abs(float(u_ladrc_shadow[0]) - float(u_classical_actual[0]))
+                if self.controller_mode == "3axis_active":
+                    jump_vec_rad = [
+                        abs(float(u_ladrc_shadow[i]) - float(u_classical_actual[i]))
+                        for i in range(3)
+                    ]
+                    jump_rad = max(jump_vec_rad)
+                else:
+                    jump_rad = abs(float(u_ladrc_shadow[0]) - float(u_classical_actual[0]))
                 jump_deg = math.degrees(jump_rad)
                 self.command_jump_at_takeover_rad = jump_rad
                 self.command_jump_at_takeover_deg = jump_deg
 
-                if self.controller_mode == "roll_active":
+                if self.controller_mode in ("roll_active", "3axis_active"):
+                    mode_label = "3-axis" if self.controller_mode == "3axis_active" else "Roll"
                     print(
-                        f"\n[J13-BUMPLESS] Roll takeover instant evaluated at cycle {self.cycle_index}: "
-                        f"u_ladrc_roll={math.degrees(u_ladrc_shadow[0]):+.5f}°, "
-                        f"u_classical_roll={math.degrees(u_classical_actual[0]):+.5f}°, "
-                        f"command_jump={jump_deg:.5f}° "
+                        f"\n[J13-BUMPLESS] {mode_label} takeover instant evaluated at cycle {self.cycle_index}: "
+                        f"max_command_jump={jump_deg:.5f}° "
                         f"(safe limit={self.safe_takeover_jump_threshold_deg:.4f}°)",
                         flush=True,
                     )
@@ -836,7 +847,15 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
                         return
 
             # Combine actual control command based on controller_mode
-            if self.controller_mode == "roll_active":
+            if self.controller_mode == "3axis_active":
+                if telem.ladrc_fault or not all(math.isfinite(x) for x in u_ladrc_shadow):
+                    self._enter_fault(
+                        f"LADRC fault in 3axis_active mode: {telem.ladrc_fault_reason}. "
+                        f"Fell back to Classical."
+                    )
+                    return
+                u_combined_actual = u_ladrc_shadow.copy()
+            elif self.controller_mode == "roll_active":
                 if telem.ladrc_fault or not math.isfinite(u_ladrc_shadow[0]):
                     roll_cmd = float(u_classical_actual[0])
                     self._enter_fault(
@@ -933,7 +952,12 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
                 if not self._manual_prompt_emitted and self.active_cycle_count >= 50:
                     self._manual_prompt_emitted = True
                     print("\n" + "=" * 70, flush=True)
-                    if self.controller_mode == "roll_active":
+                    if self.controller_mode == "3axis_active":
+                        print(
+                            "[J13-ACTIVE] 3-AXIS LADRC ACTIVE (Roll, Pitch, Yaw)",
+                            flush=True,
+                        )
+                    elif self.controller_mode == "roll_active":
                         print(
                             "[J13-ACTIVE] ROLL LADRC ACTIVE | Pitch/Yaw Classical P/PD",
                             flush=True,
@@ -945,7 +969,17 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
                         )
                     print("=" * 70 + "\n", flush=True)
                 elif self._manual_prompt_emitted and self.active_cycle_count % 25 == 0:
-                    if self.controller_mode == "roll_active":
+                    if self.controller_mode == "3axis_active":
+                        print(
+                            f"[J13 3AXIS_ACTIVE t={self.active_cycle_count*0.02:.1f}s] "
+                            f"Plat Err: (R:{telem.platform_rel_roll_deg:+.2f}°, "
+                            f"P:{telem.platform_rel_pitch_deg:+.2f}°, Y:{telem.platform_rel_yaw_deg:+.2f}°) | "
+                            f"LADRC_u: (R:{telem.u_combined_actual_deg[0]:+.3f}°, "
+                            f"P:{telem.u_combined_actual_deg[1]:+.3f}°, Y:{telem.u_combined_actual_deg[2]:+.3f}°) | "
+                            f"z2: (R:{telem.ladrc_z2_deg_s[0]:+.2f}°, P:{telem.ladrc_z2_deg_s[1]:+.2f}°, Y:{telem.ladrc_z2_deg_s[2]:+.2f}°/s)",
+                            flush=True,
+                        )
+                    elif self.controller_mode == "roll_active":
                         print(
                             f"[J13 ROLL_ACTIVE t={self.active_cycle_count*0.02:.1f}s] "
                             f"Plat Err: (R:{telem.platform_rel_roll_deg:+.2f}°, "
@@ -1015,15 +1049,15 @@ def run_j13_shadow_session(
     max_residual_pitch_deg: float = 0.5,
     max_residual_yaw_deg: float = 0.5,
     # LADRC
-    ladrc_b0_roll: float = 10.0,
+    ladrc_b0_roll: float = 20.0,
     ladrc_b0_pitch: float = 10.0,
-    ladrc_b0_yaw: float = 3.0,
-    ladrc_omega_c_roll: float = 1.0,
+    ladrc_b0_yaw: float = 6.0,
+    ladrc_omega_c_roll: float = 0.8,
     ladrc_omega_c_pitch: float = 1.0,
-    ladrc_omega_c_yaw: float = 0.35,
-    ladrc_omega_o_roll: float = 4.0,
+    ladrc_omega_c_yaw: float = 0.25,
+    ladrc_omega_o_roll: float = 2.5,
     ladrc_omega_o_pitch: float = 4.0,
-    ladrc_omega_o_yaw: float = 1.8,
+    ladrc_omega_o_yaw: float = 1.2,
     ladrc_max_residual_roll_deg: float = 0.5,
     ladrc_max_residual_pitch_deg: float = 0.5,
     ladrc_max_residual_yaw_deg: float = 0.5,
@@ -1174,15 +1208,15 @@ def main():
         "--mode",
         "--controller-mode",
         dest="controller_mode",
-        choices=["shadow", "roll_active"],
+        choices=["shadow", "roll_active", "3axis_active"],
         default="shadow",
-        help="Controller mode: 'shadow' (default, passive observer) or 'roll_active' (LADRC Roll active takeover)",
+        help="Controller mode: 'shadow' (default, passive observer), 'roll_active' (LADRC Roll active takeover), or '3axis_active' (LADRC 3-axis active takeover)",
     )
     parser.add_argument(
         "--safe-takeover-jump-threshold-deg",
         type=float,
         default=0.05,
-        help="Max allowable command jump threshold on Roll at takeover instant (deg)",
+        help="Max allowable command jump threshold on active axis at takeover instant (deg)",
     )
 
     # Classical PID arguments
@@ -1203,15 +1237,15 @@ def main():
     parser.add_argument("--max-residual-yaw-deg", type=float, default=0.5)
 
     # LADRC arguments
-    parser.add_argument("--ladrc-b0-roll", type=float, default=10.0)
+    parser.add_argument("--ladrc-b0-roll", type=float, default=20.0)
     parser.add_argument("--ladrc-b0-pitch", type=float, default=10.0)
-    parser.add_argument("--ladrc-b0-yaw", type=float, default=3.0)
-    parser.add_argument("--ladrc-omega-c-roll", type=float, default=1.0)
+    parser.add_argument("--ladrc-b0-yaw", type=float, default=6.0)
+    parser.add_argument("--ladrc-omega-c-roll", type=float, default=0.8)
     parser.add_argument("--ladrc-omega-c-pitch", type=float, default=1.0)
-    parser.add_argument("--ladrc-omega-c-yaw", type=float, default=0.35)
-    parser.add_argument("--ladrc-omega-o-roll", type=float, default=4.0)
+    parser.add_argument("--ladrc-omega-c-yaw", type=float, default=0.25)
+    parser.add_argument("--ladrc-omega-o-roll", type=float, default=2.5)
     parser.add_argument("--ladrc-omega-o-pitch", type=float, default=4.0)
-    parser.add_argument("--ladrc-omega-o-yaw", type=float, default=1.8)
+    parser.add_argument("--ladrc-omega-o-yaw", type=float, default=1.2)
     parser.add_argument("--ladrc-max-residual-roll-deg", type=float, default=0.5)
     parser.add_argument("--ladrc-max-residual-pitch-deg", type=float, default=0.5)
     parser.add_argument("--ladrc-max-residual-yaw-deg", type=float, default=0.5)

@@ -153,6 +153,33 @@
   - 资格认证总结：[`agent_docs/stages/J13/J13_2B1_ROLL_ACTIVE_STATIC_QUALIFICATION.md`](../agent_docs/stages/J13/J13_2B1_ROLL_ACTIVE_STATIC_QUALIFICATION.md)
   - 当前状态卡：[`agent_docs/decisions/CURRENT_STAGE.md`](../agent_docs/decisions/CURRENT_STAGE.md)
 
+### 3.9 J13-2B1 Roll 单轴静态重复性实测数据集 (J13-2B1 Static Repeat Supplement)
+- **数据集路径**：[`results/j13/j13_2b2_roll_active_gentle/20261006_114437/`](./j13/j13_2b2_roll_active_gentle/20261006_114437/)
+- **性质**：真实物理样机实机控制静态重复性对比（J13-2B1 Static Repeat Supplement, Roll LADRC Active vs Classical Reference）
+- **数据溯源与物理事实勘误说明**：
+  > 尽管存储目录与 Stage 名称中包含 `gentle`，但在真实实验过程中操作人员全程未施加人为 Base 晃动，物理环境全程为 **BASE STATIC**。Base IMU 数据（RMS 0.007° ~ 0.021°）属于传感器零漂与微扰动本底，非人工基座激励。本数据集正式分类为 **J13-2B1 Static Repeat**，J13-2B2 状态修正为 **NOT YET EXECUTED**。
+- **核心基准清单**：
+  1. **Classical Static Repeat** (`classical_reference/`): 1,679 闭环周期 (33.58s)，Roll 控制量 RMS $0.0003^\circ$，平台 Roll 误差 RMS $0.0056^\circ$；
+  2. **Roll LADRC Active Static Repeat 1** (`ladrc_trial_1/`): 1,696 闭环周期 (33.92s)，Roll 控制量 RMS $0.0089^\circ$（0% 饱和），平台 Roll 误差 RMS $0.0061^\circ$，Total SO(3) 误差 $0.0133^\circ$，零硬件故障；
+  3. **Roll LADRC Active Static Repeat 2** (`ladrc_trial_2/`): 1,663 闭环周期 (33.26s)，平台 Roll 误差 RMS $0.0114^\circ$，峰值电流 38 mA，0% 饱和，零硬件故障。
+- **对应分析与报告**：
+  - 静态重复性总结：[`agent_docs/stages/J13/J13_2B1_STATIC_REPEAT_SUPPLEMENT.md`](../agent_docs/stages/J13/J13_2B1_STATIC_REPEAT_SUPPLEMENT.md)
+  - 统计对比数据：[`results/j13/j13_2b2_roll_active_gentle/20261006_114437/analysis/j13_2b2_comparative_metrics.json`](./j13/j13_2b2_roll_active_gentle/20261006_114437/analysis/j13_2b2_comparative_metrics.json)
+  - 当前状态卡：[`agent_docs/decisions/CURRENT_STAGE.md`](../agent_docs/decisions/CURRENT_STAGE.md)
+
+### 3.10 J13-2C1 三轴 LADRC 空载 10s 资格认证数据集 (J13-2C1 3-Axis Active Empty Qualification)
+- **数据集路径**：[`results/j13/j13_2c1_3axis_active/20261007_141708/j13_2c1_3axis_active_10s/`](./j13/j13_2c1_3axis_active/20261007_141708/j13_2c1_3axis_active_10s/)
+- **性质**：真实物理样机 3-axis LADRC 空载全轴物理接管资格测试（500 周期，430 active 周期，零硬件故障，观测器稳定收敛）
+- **对应报告**：[`agent_docs/J13_FINAL_SUMMARY.md`](../agent_docs/J13_FINAL_SUMMARY.md)
+
+### 3.11 J13 动平台偏心负载 A/B 对比数据集 (J13 Eccentric Payload Classical vs 3-Axis LADRC)
+- **数据集路径**：
+  - Classical：[`results/j13/j13_2a2_shadow/20261007_143007/j13_3axis_payload_classical_10s/`](./j13/j13_2a2_shadow/20261007_143007/j13_3axis_payload_classical_10s/)
+  - 3-axis LADRC：[`results/j13/j13_2c1_3axis_active/20261007_143036/j13_3axis_payload_ladrc_10s/`](./j13/j13_2c1_3axis_active/20261007_143036/j13_3axis_payload_ladrc_10s/)
+- **性质**：同一偏心重物装夹工况下连续 10s 真实硬件对比（两组均完成 500 周期，0 致命故障退出）
+- **离线分析与 Windows 交接包**：[`results/j13/J13_payload_AB_win_package_20261007.zip`](./j13/J13_payload_AB_win_package_20261007.zip)
+- **对应报告**：[`agent_docs/J13_FINAL_SUMMARY.md`](../agent_docs/J13_FINAL_SUMMARY.md) / [`results/j13/J13_payload_AB_win_package_20261007/01_report/J13_payload_AB_analysis.md`](./j13/J13_payload_AB_win_package_20261007/01_report/J13_payload_AB_analysis.md)
+
 ---
 
 ## 4. 离线复现与数据查看指引
