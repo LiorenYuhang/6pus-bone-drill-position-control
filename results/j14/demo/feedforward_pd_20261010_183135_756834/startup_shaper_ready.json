@@ -1,0 +1,42 @@
+{
+  "reset_api": "JointTrajectoryController.reset",
+  "initial_feedback": {
+    "count": 20,
+    "steps": [
+      739,
+      740,
+      738,
+      738,
+      737,
+      738
+    ],
+    "rx_ns": [
+      7547193924057,
+      7547193924057,
+      7547193924057,
+      7547193924057,
+      7547193924057,
+      7547193924057
+    ],
+    "faults": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "currents": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "last_rx_ns": 7547195817650
+  },
+  "monotonic_ns": 7547288022931,
+  "command_output_before_admission": false,
+  "target_waits_for_cartesian": true
+}

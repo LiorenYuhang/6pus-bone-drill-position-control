@@ -1,0 +1,20 @@
+{
+  "role": "control_node",
+  "pid": 164346,
+  "ppid": 164333,
+  "pgid": 164333,
+  "state": "exited",
+  "args": [
+    "/home/lyapunov/bone_drill/bone_ws/install/pus6_control/lib/pus6_control/control_node",
+    "--ros-args",
+    "-r",
+    "__node:=pus6_control_node",
+    "--params-file",
+    "/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j11_feedforward_params.yaml"
+  ],
+  "start_ns": 7473432199806,
+  "node_name": "/pus6_control_node",
+  "executor": "SingleThreadedExecutor",
+  "returncode": 0,
+  "end_ns": 7513499665775
+}

@@ -17,14 +17,16 @@ Safety:
 from __future__ import annotations
 
 import argparse
+import csv
 import datetime
 import os
 import signal
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import rclpy
 from rclpy.node import Node
@@ -108,6 +110,77 @@ class StagePreflightMonitor(Node):
             ):
                 self.driver_stop_latched = True
                 self.driver_stop_reason = msg.msg
+
+
+class HostHeartbeatObserver(threading.Thread):
+    """Stage J14-A0: Independent Host Scheduler Heartbeat Observer.
+
+    Runs at 100 Hz (10 ms period) to detect OS-level scheduling freezes / deschedules
+    independent of any ROS node or GIL-locked worker thread.
+    """
+
+    def __init__(
+        self,
+        out_csv_path: Path,
+        interval_s: float = 0.010,
+        threshold_delay_ms: float = 20.0,
+    ) -> None:
+        super().__init__(daemon=True)
+        self.out_csv_path = out_csv_path
+        self.interval_s = interval_s
+        self.interval_ns = int(interval_s * 1e9)
+        self.threshold_delay_ms = threshold_delay_ms
+        self.stop_event = threading.Event()
+        self.stalls: List[Tuple[int, int, int, int, float, float, int]] = []
+        self._seq = 0
+
+    def run(self) -> None:
+        t_next = time.perf_counter_ns() + self.interval_ns
+        while not self.stop_event.is_set():
+            time.sleep(self.interval_s)
+            t_wake = time.perf_counter_ns()
+            self._seq += 1
+            delay_ms = (t_wake - t_next) / 1e6
+            if delay_ms > self.threshold_delay_ms:
+                load_1m = os.getloadavg()[0] if hasattr(os, "getloadavg") else 0.0
+                proc_count = 0
+                try:
+                    proc_count = len([f for f in os.listdir("/proc") if f.isdigit()])
+                except Exception:
+                    pass
+                self.stalls.append((
+                    self._seq,
+                    t_wake,
+                    t_next,
+                    t_wake,
+                    round(delay_ms, 3),
+                    round(load_1m, 2),
+                    proc_count,
+                ))
+            t_next = time.perf_counter_ns() + self.interval_ns
+
+    def stop_and_flush(self) -> None:
+        self.stop_event.set()
+        try:
+            with open(self.out_csv_path, "w", newline="") as f:
+                w = csv.writer(f)
+                w.writerow([
+                    "heartbeat_seq",
+                    "timestamp_ns",
+                    "expected_ns",
+                    "wake_ns",
+                    "delay_ms",
+                    "system_load_1m",
+                    "process_count",
+                ])
+                w.writerows(self.stalls)
+            print(
+                f"[HostHeartbeatObserver] Heartbeat stalls saved to {self.out_csv_path} "
+                f"({len(self.stalls)} stalls > {self.threshold_delay_ms:.0f}ms recorded)",
+                flush=True,
+            )
+        except Exception as exc:
+            print(f"[HostHeartbeatObserver] Error flushing heartbeat stalls: {exc}", flush=True)
 
 
 def cleanup_stale_processes_and_markers() -> None:
@@ -200,11 +273,15 @@ def run_j13_staged_session(
     out_path = Path(output_dir)
     out_path.mkdir(parents=True, exist_ok=True)
     try:
+        Path("/tmp/j14_latest_run_dir").write_text(str(out_path.resolve()))
         Path("/tmp/j13_latest_run_dir").write_text(str(out_path.resolve()))
         Path("/tmp/j11_latest_run_dir").write_text(str(out_path.resolve()))
     except OSError:
         pass
     print(f"[J13 STAGED STARTUP] Output directory: {out_path.resolve()}", flush=True)
+
+    heartbeat_observer = HostHeartbeatObserver(out_path / "host_heartbeat_stalls.csv")
+    heartbeat_observer.start()
 
     setup_bash = "/home/lyapunov/bone_drill/bone_ws/install/setup.bash"
     robot_proc = None
@@ -548,6 +625,8 @@ def run_j13_staged_session(
     except Exception as exc:
         print(f"\n[J13 STAGED STARTUP ERROR] {exc}", flush=True)
     finally:
+        if heartbeat_observer is not None:
+            heartbeat_observer.stop_and_flush()
         print("[J13 STAGED STARTUP] Shutting down subprocesses...", flush=True)
         kill_all_subprocesses()
         print("[J13 STAGED STARTUP] All processes cleanly terminated.", flush=True)

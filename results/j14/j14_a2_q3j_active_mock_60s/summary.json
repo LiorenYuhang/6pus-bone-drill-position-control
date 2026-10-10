@@ -1,0 +1,85 @@
+{
+  "duration_s": 60.000190706,
+  "parent_cpu_percent": {
+    "n": 118,
+    "p50": 8.492574471934788,
+    "p95": 10.02433202489406,
+    "p99": 10.704407010785172,
+    "p999": 10.872403755859466,
+    "max": 10.890091892176773
+  },
+  "ipc_gap_ms": {
+    "n": 2999,
+    "p50": 20.484297,
+    "p95": 20.7104778,
+    "p99": 21.25328666,
+    "p999": 22.233992813999976,
+    "max": 30.831426
+  },
+  "ipc_gaps_over_250ms": 0,
+  "command_ingress_count": 3000,
+  "command_ingress_hz": 49.99984107883846,
+  "published_commands": 3000,
+  "distinct_command_vectors": 134,
+  "command_seq_first": 1,
+  "command_seq_last": 3000,
+  "ipc_command_duplicate_or_regression": 0,
+  "ipc_send_not_accepted": 0,
+  "child_lease_age_ms": {
+    "n": 3000,
+    "p50": 15.969847000000001,
+    "p95": 20.20023985,
+    "p99": 20.60925576,
+    "p999": 20.968868588000667,
+    "max": 101.261535
+  },
+  "child_cycle_gap_ms": {
+    "n": 2999,
+    "p50": 19.999022,
+    "p95": 20.0991048,
+    "p99": 20.1740452,
+    "p999": 20.278034008,
+    "max": 21.095664
+  },
+  "child_cycle_duration_ms": {
+    "n": 3000,
+    "p50": 4.085913,
+    "p95": 4.666956549999999,
+    "p99": 5.037686689999995,
+    "p999": 8.02901841300007,
+    "max": 20.907597
+  },
+  "child_final": {
+    "pid": 440992,
+    "cycles": 3042,
+    "fault": "parent_shutdown",
+    "closed": true,
+    "servo_start_ns": 27257785176620,
+    "motion_stop_ns": 27318624870768,
+    "hardware_write_count": 0,
+    "pause_success": true
+  },
+  "child_health": {
+    "cycles": 3042,
+    "motion_writes": 18252,
+    "tx_timeouts": 0,
+    "fault_cycles": 0,
+    "max_serial_write_ns": 0,
+    "max_rx_drain_ns": 445391,
+    "max_wake_lateness_ns": 1219792,
+    "wake_watchlist_count": 0,
+    "telemetry_mode": "qualification",
+    "retained_cycles": 3042,
+    "retained_write_records": 18252,
+    "closed": true
+  },
+  "parent_executor_pool_queue_max": 0,
+  "hardware_write_count": 0,
+  "pass": true,
+  "requested_duration_s": 60.0,
+  "completed_requested_duration": true,
+  "compatibility_observer": {
+    "raw_steps": 3004,
+    "joint_states": 3009
+  }
+}

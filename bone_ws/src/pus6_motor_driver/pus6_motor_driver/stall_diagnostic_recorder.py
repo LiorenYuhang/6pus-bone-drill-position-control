@@ -99,6 +99,7 @@ class CycleTimingRecord:
     scheduler_gap_ms: float = 0.0
     watchdog_scheduler_gap_ms: float = 0.0
     feedback_age_max_ms: float = 0.0
+    warn_log_duration_ms: float = 0.0
     fault_reason: str = ""
     fault_phase: str = ""
 
@@ -112,6 +113,13 @@ class CycleTimingRecord:
     tx_drain_read_calls: int = 0
     tx_drain_bytes_read: int = 0
     tx_drain_max_read_ms: float = 0.0
+    rx_max_single_read_wall_ms: float = 0.0
+    rx_max_single_read_thread_cpu_ms: float = 0.0
+    rx_max_single_read_process_cpu_ms: float = 0.0
+    rx_max_read_vol_ctx_delta: int = 0
+    rx_max_read_invol_ctx_delta: int = 0
+    rx_read_call_count: int = 0
+    rx_bytes: int = 0
 
 
 @dataclass
@@ -151,6 +159,8 @@ class TransportPhaseRecord:
     motion_fb_read_calls: int = 0
     motion_fb_bytes_read: int = 0
     motion_fb_max_read_latency_ms: float = 0.0
+    motion_fb_drain_iterations: int = 0
+    feedbacks_extracted: int = 0
     transport_total_wall_ms: float = 0.0
     error_phase: str = ""
     error_motor_id: int = 0
@@ -170,9 +180,14 @@ class J11StallDiagnosticRecorder:
         self.buffer_size = buffer_size
         self.ring_buffer: deque[CycleTimingRecord] = deque(maxlen=buffer_size)
         self.transport_ring_buffer: deque[TransportPhaseRecord] = deque(maxlen=buffer_size)
+        self.tx_queue_ring_buffer: deque = deque(maxlen=buffer_size * 6)
+        self._curr_tx_queue_records: list[dict] = []
         self.all_stall_events: List[Dict[str, Any]] = []
+        self.rx_slow_read_events: list[dict] = []
+        self._rx_representative_notice_emitted = False
 
         self.output_dir_override = output_dir
+        self.tier1_summary: List[Tuple[Any, ...]] = []
         self._t_prev_exit_ns: int = 0
         self._t_prev_entry_ns: int = 0
         self._cycle_count: int = 0
@@ -291,6 +306,7 @@ class J11StallDiagnosticRecorder:
         )
         self._curr = rec
         self._curr_transport = TransportPhaseRecord(cycle_seq=cycle_seq)
+        self._curr_tx_queue_records = []
         self._t_entry_ns = t_entry
         self._t_prev_entry_ns = t_entry
 
@@ -361,6 +377,30 @@ class J11StallDiagnosticRecorder:
             slowest_dur_ms = 0.0
             motor_durations = {}
             for tx in tx_records:
+                metric = getattr(tx, "serial_write_metric", None)
+                if metric is not None and metric.queue_before is not None:
+                    row = dict(
+                        cycle_seq=rec.cycle_seq, motor_id=tx.motor_id,
+                        configured_timeout_ms=(metric.configured_timeout_s * 1000
+                                               if metric.configured_timeout_s is not None else None),
+                        serial_write_start_ns=metric.timestamp_start_ns,
+                        serial_write_end_ns=metric.timestamp_end_ns,
+                        serial_write_wall_ms=metric.wall_duration_ns / 1e6,
+                        serial_write_cpu_ms=metric.cpu_duration_ns / 1e6,
+                        wrapper_write_wall_ms=tx.duration_ns / 1e6,
+                        write_error=metric.error or "",
+                    )
+                    for name in ('write_seq', 'native_thread_id', 'process_cpu_duration_ns',
+                                 'voluntary_ctx_delta', 'involuntary_ctx_delta', 'snapshot_enter_ns',
+                                 'snapshot_exit_ns', 'snapshot_overhead_ns', 'clock_sync_monotonic_before_ns',
+                                 'clock_sync_epoch_ns', 'clock_sync_monotonic_after_ns', 'requested_bytes', 'written_bytes'):
+                        row[name] = getattr(metric, name, None)
+                    for suffix, state in (("before", metric.queue_before), ("after", metric.queue_after)):
+                        row[f"out_waiting_{suffix}"] = state.out_waiting if state is not None else None
+                        row[f"in_waiting_{suffix}"] = state.in_waiting if state is not None else None
+                        row[f"queue_read_{suffix}_ms"] = state.wall_duration_ns / 1e6 if state is not None else None
+                        row[f"queue_error_{suffix}"] = (state.error or "") if state is not None else "unavailable"
+                    self._curr_tx_queue_records.append(row)
                 dur_ms = round(getattr(tx, "duration_ns", 0) / 1e6, 3)
                 motor_durations[tx.motor_id] = dur_ms
                 if dur_ms > slowest_dur_ms:
@@ -413,6 +453,8 @@ class J11StallDiagnosticRecorder:
             trans.motion_fb_read_calls = rec.tx_drain_read_calls
             trans.motion_fb_bytes_read = rec.tx_drain_bytes_read
             trans.motion_fb_max_read_latency_ms = rec.tx_drain_max_read_ms
+            trans.motion_fb_drain_iterations = getattr(rx_metrics, "drain_iterations", 0)
+            trans.feedbacks_extracted = getattr(rx_metrics, "feedbacks_extracted", 0)
 
         trans.transport_total_wall_ms = rec.transport_total_ms
         trans.error_phase = getattr(servo_audit, "error_phase", "") or ""
@@ -495,6 +537,47 @@ class J11StallDiagnosticRecorder:
         start_ns = self._t_ingest_exit_ns if self._t_ingest_exit_ns > 0 else self._t_entry_ns
         self._curr.telem_total_ms = round((now - start_ns) / 1e6, 3)
 
+    def record_warning_log_duration(self, dur_ms: float) -> None:
+        """Records duration spent in synchronous logging during warning events."""
+        if not self.enabled or self._curr is None:
+            return
+        self._curr.warn_log_duration_ms = round(self._curr.warn_log_duration_ms + dur_ms, 3)
+
+    def record_single_read(self, metric: Any) -> None:
+        """Same-call observational counters; 5ms capture threshold is never a gate."""
+        if not self.enabled:
+            return
+        rec = self._curr
+        in_cycle = rec is not None and rec.native_thread_id == metric.native_thread_id
+        if in_cycle:
+            rec.rx_read_call_count += 1
+            rec.rx_bytes += metric.returned_read_bytes or 0
+            wall_ms = metric.read_wall_ns / 1e6
+            if wall_ms > rec.rx_max_single_read_wall_ms:
+                # All associated fields refer to the SAME slowest-wall read.
+                rec.rx_max_single_read_wall_ms = wall_ms
+                rec.rx_max_single_read_thread_cpu_ms = metric.read_thread_cpu_ns / 1e6
+                rec.rx_max_single_read_process_cpu_ms = metric.read_process_cpu_ns / 1e6
+                rec.rx_max_read_vol_ctx_delta = metric.read_vol_ctx_delta
+                rec.rx_max_read_invol_ctx_delta = metric.read_invol_ctx_delta
+        if metric.read_wall_ns > 5_000_000:
+            event = dict(cycle_seq=rec.cycle_seq if in_cycle else -1,
+                         scope="cycle" if in_cycle else "non_cycle", **asdict(metric))
+            self.rx_slow_read_events.append(event)
+            if in_cycle and metric.read_wall_ns > 20_000_000 and not self._rx_representative_notice_emitted:
+                self._rx_representative_notice_emitted = True
+                # One diagnostic notice lets the short-run harness finish promptly.
+                # No motion/fault state is changed here; the measured read has returned.
+                print("J14_RX_READ_EVENT " + json.dumps(event), flush=True)
+
+    def _finish_tx_queue_records(self) -> None:
+        for row in self._curr_tx_queue_records:
+            row.update(six_axis_tx_phase_ms=self._curr.uart_tx_ms,
+                       callback_total_ms=self._curr.callback_total_ms,
+                       fault_reason=self._curr.fault_reason)
+            self.tx_queue_ring_buffer.append(row)
+        self._curr_tx_queue_records = []
+
     def record_fault_cycle(self, fault_reason: str, fault_phase: str = "unknown") -> None:
         """Guarantees that the active faulting cycle is preserved in the ring buffer before dump."""
         if self._curr is None:
@@ -522,12 +605,38 @@ class J11StallDiagnosticRecorder:
 
         self.ring_buffer.append(rec)
         if self._curr_transport is not None:
-            self._curr_transport.error_phase = fault_phase
+            if not self._curr_transport.error_phase:
+                self._curr_transport.error_phase = fault_phase
             self.transport_ring_buffer.append(self._curr_transport)
 
         d = asdict(rec)
         self.all_stall_events.append(d)
         self._create_fault_snapshot(rec)
+        self._finish_tx_queue_records()
+
+        tier1_tuple = (
+            rec.cycle_seq,
+            rec.actual_entry_ns,
+            rec.wake_lateness_ms,
+            rec.inter_callback_gap_ms,
+            rec.callback_total_ms,
+            rec.uart_tx_ms,
+            rec.uart_drain_ms,
+            rec.tx_drain_read_calls,
+            rec.tx_drain_bytes_read,
+            rec.ros_pub_total_ms,
+            rec.feedback_age_max_ms,
+            rec.warn_log_duration_ms,
+            rec.fault_reason,
+            rec.rx_max_single_read_wall_ms,
+            rec.rx_max_single_read_thread_cpu_ms,
+            rec.rx_max_single_read_process_cpu_ms,
+            rec.rx_max_read_vol_ctx_delta,
+            rec.rx_max_read_invol_ctx_delta,
+            rec.rx_read_call_count,
+            rec.rx_bytes,
+        )
+        self.tier1_summary.append(tier1_tuple)
 
         self._curr = None
         self._curr_transport = None
@@ -580,6 +689,32 @@ class J11StallDiagnosticRecorder:
         self.ring_buffer.append(rec)
         if self._curr_transport is not None:
             self.transport_ring_buffer.append(self._curr_transport)
+
+        self._finish_tx_queue_records()
+
+        tier1_tuple = (
+            rec.cycle_seq,
+            rec.actual_entry_ns,
+            rec.wake_lateness_ms,
+            rec.inter_callback_gap_ms,
+            rec.callback_total_ms,
+            rec.uart_tx_ms,
+            rec.uart_drain_ms,
+            rec.tx_drain_read_calls,
+            rec.tx_drain_bytes_read,
+            rec.ros_pub_total_ms,
+            rec.feedback_age_max_ms,
+            rec.warn_log_duration_ms,
+            rec.fault_reason,
+            rec.rx_max_single_read_wall_ms,
+            rec.rx_max_single_read_thread_cpu_ms,
+            rec.rx_max_single_read_process_cpu_ms,
+            rec.rx_max_read_vol_ctx_delta,
+            rec.rx_max_read_invol_ctx_delta,
+            rec.rx_read_call_count,
+            rec.rx_bytes,
+        )
+        self.tier1_summary.append(tier1_tuple)
 
         if rec.inter_callback_gap_ms >= 50.0 or rec.callback_total_ms >= 30.0 or fault_reason:
             d = asdict(rec)
@@ -700,16 +835,17 @@ class J11StallDiagnosticRecorder:
             p.mkdir(parents=True, exist_ok=True)
             return p
 
-        ptr = Path("/tmp/j11_latest_run_dir")
-        if ptr.exists():
-            try:
-                target = ptr.read_text().strip()
-                if target:
-                    p = Path(target)
-                    p.mkdir(parents=True, exist_ok=True)
-                    return p
-            except OSError:
-                pass
+        for ptr_path in ("/tmp/j14_latest_run_dir", "/tmp/j11_latest_run_dir"):
+            ptr = Path(ptr_path)
+            if ptr.exists():
+                try:
+                    target = ptr.read_text().strip()
+                    if target:
+                        p = Path(target)
+                        p.mkdir(parents=True, exist_ok=True)
+                        return p
+                except OSError:
+                    pass
 
         default_p = Path("/tmp/j11_stall_diagnostics")
         default_p.mkdir(parents=True, exist_ok=True)
@@ -731,6 +867,52 @@ class J11StallDiagnosticRecorder:
         out_dir = self.get_effective_output_dir()
         records = list(self.ring_buffer)
         trans_records = list(self.transport_ring_buffer)
+        queue_records = list(self.tx_queue_ring_buffer)
+        if self.rx_slow_read_events:
+            with open(out_dir / "rx_read_events.csv", "w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=list(self.rx_slow_read_events[0]))
+                writer.writeheader()
+                writer.writerows(self.rx_slow_read_events)
+        else:
+            (out_dir / "rx_read_events.csv").write_text("cycle_seq,scope,read_seq,read_wall_ns\n")
+        if queue_records:
+            with open(out_dir / "tx_queue_state.csv", "w", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=list(queue_records[0]))
+                writer.writeheader()
+                writer.writerows(queue_records)
+            with open(out_dir / 'tx_write_events.jsonl', 'w') as stream:
+                for row in queue_records:
+                    if row['write_error']:
+                        stream.write(json.dumps(row)+'\n')
+
+        # 0. Save cycle_summary_full.csv (Tier 1 full-lifecycle lightweight summary)
+        if self.tier1_summary:
+            t1_file = out_dir / "cycle_summary_full.csv"
+            with open(t1_file, "w", newline="") as f:
+                w = csv.writer(f)
+                w.writerow([
+                    "cycle_seq",
+                    "t_entry_ns",
+                    "wake_lateness_ms",
+                    "inter_gap_ms",
+                    "cb_total_ms",
+                    "uart_tx_ms",
+                    "uart_drain_ms",
+                    "rx_drain_calls",
+                    "rx_drain_bytes",
+                    "ros_pub_total_ms",
+                    "feedback_age_max_ms",
+                    "warn_log_dur_ms",
+                    "fault_reason",
+                    "rx_max_single_read_wall_ms",
+                    "rx_max_single_read_thread_cpu_ms",
+                    "rx_max_single_read_process_cpu_ms",
+                    "rx_max_read_vol_ctx_delta",
+                    "rx_max_read_invol_ctx_delta",
+                    "rx_read_call_count",
+                    "rx_bytes",
+                ])
+                w.writerows(self.tier1_summary)
 
         # 1. Save cycle_timing.csv (and alias stall_diagnostic_timing.csv for backwards compat)
         if records:

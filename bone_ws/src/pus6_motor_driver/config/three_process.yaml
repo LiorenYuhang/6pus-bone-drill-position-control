@@ -1,0 +1,16 @@
+# J14 production driver defaults only. Controller/geometry/J13 configuration is separate.
+pus6_motor_driver_node:
+  ros__parameters:
+    driver_architecture: three_process
+    enable_coordinated_handshake: true
+    driver_telemetry_mode: production
+    driver_audit_directory: ""
+    servo_run_duration_s: 0.0
+    driver_telemetry_capacity_cycles: 4096
+    servo_scheduler_mode: dedicated_thread
+    telemetry_publish_mode: async_latest
+    feedback_loss_policy: age_based
+    reconnect_max_jump_steps: 80
+    target_timeout_sec: 0.20
+    write_rate_hz: 50.0
+    baudrate: 921600

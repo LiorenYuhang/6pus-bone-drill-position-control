@@ -1,6 +1,6 @@
 # 6PUS-Anti-Vibration
 
-> [English] | [中文](README_CN.md)  
+> [English] | [中文](README_CN.md)
 > **A ROS 2 based real-time sensing and control framework for a 6PUS parallel surgical robot with active vibration suppression.**
 
 ---
@@ -162,7 +162,7 @@ bash bone_ws/scripts/run_j11_demo_feedforward_pd.sh
   - Validated classical feedforward + P/PD disturbance rejection under handheld dynamic motion up to observed effective peak angular rate of `92.33°/s` (P95 `46.16°/s`).
   - Maximum observed actuator current remained well below limits at `468 mA` (0 samples > 500 mA). Bottleneck identified as control residual saturation (±0.5°) and actuator tracking lag, not motor current.
   - Production host current limit formally aligned with actuator hardware protection register at `MAX_CURRENT_MA = 1500`.
-  - Detailed findings: [`agent_docs/J12_FINAL_SUMMARY.md`](./agent_docs/J12_FINAL_SUMMARY.md); Handoff: [`agent_docs/J12_TO_J13_HANDOFF.md`](./agent_docs/J12_TO_J13_HANDOFF.md).
+  - Detailed findings: [`agent_docs/stages/J12/J12_FINAL_SUMMARY.md`](./agent_docs/stages/J12/J12_FINAL_SUMMARY.md); Handoff: [`agent_docs/stages/J12/J12_TO_J13_HANDOFF.md`](./agent_docs/stages/J12/J12_TO_J13_HANDOFF.md).
 
 ### J13 First-Order Linear ADRC Attitude Residual Control and Eccentric-Payload Hardware Validation (Stage Result)
 
@@ -211,13 +211,42 @@ Platform $SO(3)$ attitude tracking error RMS:
   - Existing evidence does not prove LADRC superiority over Classical control; Pitch exhibits noticeable residual saturation (16.37%);
   - Runtime timing long-tail handed off to J14.
 - **Detailed Documentation**:
-  - Detailed Stage Summary: [`agent_docs/J13_FINAL_SUMMARY.md`](./agent_docs/J13_FINAL_SUMMARY.md)
-  - Stage Handoff: [`agent_docs/J13_TO_J14_HANDOFF.md`](./agent_docs/J13_TO_J14_HANDOFF.md)
+  - Detailed Stage Summary: [`agent_docs/stages/J13/J13_FINAL_SUMMARY.md`](./agent_docs/stages/J13/J13_FINAL_SUMMARY.md)
+  - Stage Handoff: [`agent_docs/stages/J13/J13_TO_J14_HANDOFF.md`](./agent_docs/stages/J13/J13_TO_J14_HANDOFF.md)
 
-**Next**: J14 — Long-Duration Runtime & Communication Reliability
-- **J14-A**: 10-minute continuous runtime & communication qualification (eliminate UART blocking and scheduler starvation).
-- **J14-Q1**: ROS 2 QoS Deadline / Liveliness fault-detection characterization (standby/planned non-blocking track).
-- **J14-B**: Following J14-A qualification PASS, conduct controlled eccentric-payload + manual end-effector transient disturbance comparison between Classical and 3-axis LADRC.
+### J14-A Long-Duration Runtime & Communication Reliability Qualification (Stage Result)
+
+- **Status**: **CLOSED / FROZEN** (Release Tag: `v1.0-j14-a-three-process-runtime-reliability-qualified`).
+- **Production Architecture**:
+  - **Parent Node**: `SingleThreadedExecutor` inline event execution (resolves qualified Parent IPC starvation under dynamic topic traffic).
+  - **UART Child**: Dedicated subprocess, sole owner of physical RS485 UART port (`/dev/ttyUSB0` at 921600 baud).
+  - **Feedback Bridge**: Dedicated subprocess, sole motor feedback IPC consumer (`AF_UNIX SOCK_SEQPACKET` at 50 Hz).
+  - **Compatibility Relay**: External ROS adapter for legacy topic translation; zero direct UART ownership.
+- **Real-Hardware Qualification & Results**:
+  1. **Q3-R1D Classical P/PD Active 60s**: **PASS** (3529 driver cycles, 2945 ACTIVE cycles @ 50 Hz, 0 hard stop, 0 fault, max IMU age < 57 ms).
+  2. **Q3-R2 3-axis LADRC Active 60s**: **PASS** (3539 driver cycles, 2942 ACTIVE cycles @ 50 Hz, 0 hard stop, 0 fault, max IMU age < 66 ms, LESO observer bounded and stable).
+  3. **Official J14 Demos**: All three entrypoints confirmed on physical hardware (**HUMAN HARDWARE CONFIRMATION = PASS**), verifying the complete lifecycle: Startup HOME → Dual-IMU preflight → ACTIVE → Operator Ctrl+C → Controlled Shutdown HOME → 6-axis Pause ACK → clean serial release with 0 residual processes.
+- **Official Demo Entrypoints**:
+
+```bash
+# 1. Base SO(3) Pure Feedforward
+cd /home/lyapunov/bone_drill
+bash bone_ws/scripts/run_j14_demo_feedforward.sh
+
+# 2. Base SO(3) Feedforward + Classical Task-Space P/PD
+cd /home/lyapunov/bone_drill
+bash bone_ws/scripts/run_j14_demo_feedforward_pd.sh
+
+# 3. Base SO(3) Feedforward + 3-Axis First-Order LADRC
+cd /home/lyapunov/bone_drill
+bash bone_ws/scripts/run_j14_demo_feedforward_ladrc.sh
+```
+
+- **Detailed Documentation**:
+  - Authoritative Stage Summary: [`agent_docs/stages/J14/J14_FINAL_SUMMARY.md`](./agent_docs/stages/J14/J14_FINAL_SUMMARY.md)
+  - Stage Handoff Specification: [`agent_docs/stages/J14/J14_TO_NEXT_STAGE_HANDOFF.md`](./agent_docs/stages/J14/J14_TO_NEXT_STAGE_HANDOFF.md)
+  - Production Driver Architecture: [`docs/J14_PRODUCTION_DRIVER.md`](./docs/J14_PRODUCTION_DRIVER.md)
+  - Demo Operation Guide: [`docs/J14_DEMO_ENTRYPOINTS.md`](./docs/J14_DEMO_ENTRYPOINTS.md)
 
 ---
 

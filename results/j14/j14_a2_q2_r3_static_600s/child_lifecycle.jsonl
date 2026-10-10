@@ -1,0 +1,4 @@
+{"event": "serial_owner", "ns": 9125213102292, "pid": 169099, "hardware_mode": "active"}
+{"event": "pause_complete", "ns": 9725647316669, "success": true}
+{"event": "serial_closed", "ns": 9725648071035}
+{"event": "child_exit", "ns": 9726721384394}

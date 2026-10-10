@@ -1,0 +1,3 @@
+experiment_group,stage_name,controller_structure,eccentric_payload_condition,sampling_rate_hz,total_duration_s,total_samples,takeover_cycle,takeover_time_s,active_samples,fault_count
+Classical,j13_3axis_payload_classical_10s,Base SO(3) feedforward + Roll P + Pitch PD + Yaw PD,same fixed eccentric payload condition (同一未知质量、同一固定位置偏心重物),50.0,9.98,500,72,1.42,429,0
+3-axis LADRC,j13_3axis_payload_ladrc_10s,Base SO(3) feedforward + 3-axis LADRC residual control,same fixed eccentric payload condition (同一未知质量、同一固定位置偏心重物),50.0,9.98,500,55,1.08,446,0

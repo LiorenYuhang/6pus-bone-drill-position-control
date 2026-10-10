@@ -1,0 +1,168 @@
+{
+  "stage": "A2-Q3",
+  "run_id": "Q3-R1",
+  "mode": "classical",
+  "hardware": true,
+  "duration_s": 60.0,
+  "nominal_slots": 3000,
+  "driver_session_cycles": 459,
+  "driver_bridge_cycles": 459,
+  "controller_total_cycles": 0,
+  "controller_active_cycles": 0,
+  "controller_planned_cycles": 3000,
+  "executed_cycles": 459,
+  "bridge_cycles": 459,
+  "nominal_minus_executed": 2541,
+  "deadline_reset_count": 0,
+  "deadline_resets": [],
+  "skipped_nominal_slots_estimate": 0,
+  "phase_shift_slots": 0.0,
+  "tx_timeout_count": 0,
+  "fault_cycles": 0,
+  "ipc_missing_sequences": [],
+  "duplicate_cycles": 0,
+  "motion_write_records": 2754,
+  "pause_ack_confirmed": true,
+  "serial_free": true,
+  "residual_processes": [],
+  "host_heartbeat_stalls_gt20ms": 0,
+  "warning_283_3ms_count": 0,
+  "hard_stop_1000ms_count": 0,
+  "measurements": {
+    "serial_write_ms": {
+      "n": 2754,
+      "P50": 0.0295,
+      "P95": 0.0637,
+      "P99": 0.0858,
+      "P99_9": 0.1039,
+      "Max": 0.1386,
+      "Min": 0.0051
+    },
+    "wrapper_wall_ms": {
+      "n": 2754,
+      "P50": 0.0401,
+      "P95": 0.0909,
+      "P99": 0.121,
+      "P99_9": 0.1737,
+      "Max": 0.288,
+      "Min": 0.009
+    },
+    "cycle_wall_ms": {
+      "n": 459,
+      "P50": 6.2684,
+      "P95": 6.9319,
+      "P99": 7.0061,
+      "P99_9": 7.1941,
+      "Max": 7.2024,
+      "Min": 5.8786
+    },
+    "cycle_interval_ms": {
+      "n": 458,
+      "P50": 20.0004,
+      "P95": 20.0968,
+      "P99": 20.1318,
+      "P99_9": 20.2361,
+      "Max": 20.3091,
+      "Min": 19.8036
+    },
+    "wake_lateness_ms": {
+      "n": 459,
+      "P50": 0.1003,
+      "P95": 0.2327,
+      "P99": 0.267,
+      "P99_9": 0.3053,
+      "Max": 0.3214,
+      "Min": 0.0123
+    },
+    "thread_cpu_ms": {
+      "n": 459,
+      "P50": 6.2676,
+      "P95": 6.9253,
+      "P99": 6.9927,
+      "P99_9": 7.1793,
+      "Max": 7.1917,
+      "Min": 5.8784
+    },
+    "feedback_ipc_age_ms": {
+      "n": 459,
+      "P50": 0.2654,
+      "P95": 0.462,
+      "P99": 0.5079,
+      "P99_9": 0.5936,
+      "Max": 0.5957,
+      "Min": 0.1441
+    },
+    "feedback_gap_ms": {
+      "n": 458,
+      "P50": 19.9929,
+      "P95": 20.405,
+      "P99": 20.5678,
+      "P99_9": 20.8407,
+      "Max": 20.8578,
+      "Min": 18.8513
+    }
+  },
+  "controller_active_evidence": {
+    "found": false,
+    "active_evidence_pass": false,
+    "reason": "No telemetry CSV found"
+  },
+  "static_baseline_comparison": {
+    "serial_write_ms": {
+      "static_P50": 0.033933,
+      "active_P50": 0.0295,
+      "delta_P50": -0.0044,
+      "static_P99": 0.104406,
+      "active_P99": 0.0858,
+      "delta_P99": -0.0186,
+      "static_Max": 0.222165,
+      "active_Max": 0.1386,
+      "delta_Max": -0.0836
+    },
+    "wrapper_wall_ms": {
+      "static_P50": 0.0502,
+      "active_P50": 0.0401,
+      "delta_P50": -0.0101,
+      "static_P99": 0.148866,
+      "active_P99": 0.121,
+      "delta_P99": -0.0279,
+      "static_Max": 0.358754,
+      "active_Max": 0.288,
+      "delta_Max": -0.0708
+    },
+    "cycle_wall_ms": {
+      "static_P50": 6.81058,
+      "active_P50": 6.2684,
+      "delta_P50": -0.5422,
+      "static_P99": 7.59762,
+      "active_P99": 7.0061,
+      "delta_P99": -0.5915,
+      "static_Max": 11.471005,
+      "active_Max": 7.2024,
+      "delta_Max": -4.2686
+    },
+    "feedback_ipc_age_ms": {
+      "static_P50": 0.441695,
+      "active_P50": 0.2654,
+      "delta_P50": -0.1763,
+      "static_P99": 0.691924,
+      "active_P99": 0.5079,
+      "delta_P99": -0.184,
+      "static_Max": 0.983718,
+      "active_Max": 0.5957,
+      "delta_Max": -0.388
+    },
+    "feedback_gap_ms": {
+      "static_P50": 20.004841,
+      "active_P50": 19.9929,
+      "delta_P50": -0.0119,
+      "static_P99": 20.850362,
+      "active_P99": 20.5678,
+      "delta_P99": -0.2826,
+      "static_Max": 24.063334,
+      "active_Max": 20.8578,
+      "delta_Max": -3.2055
+    }
+  },
+  "verdict": "FAIL"
+}

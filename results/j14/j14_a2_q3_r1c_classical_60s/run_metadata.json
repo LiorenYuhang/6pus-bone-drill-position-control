@@ -1,0 +1,52 @@
+{
+  "stage": "A2-Q3",
+  "run_id": "Q3-R1",
+  "mode": "classical",
+  "hardware": true,
+  "hardware_mode": "active",
+  "duration_s": 60.0,
+  "driver_telemetry_capacity_cycles": 32768,
+  "preflight": {
+    "processes": [],
+    "serial": {
+      "returncode": 1,
+      "owners": "",
+      "free": true
+    }
+  },
+  "hardware_write_count": null,
+  "start_ns": 22843053524039,
+  "start_epoch_ns": 1791544471009228122,
+  "rmw": "rmw_fastrtps_cpp",
+  "end_ns": 22864563619300,
+  "end_epoch_ns": 1791544492519322957,
+  "stop_reason": "parent_lease_expired",
+  "launch_returncode": 0,
+  "child_final": {
+    "pid": 369180,
+    "cycles": 459,
+    "fault": "parent_lease_expired",
+    "closed": true,
+    "servo_start_ns": 22844118079902,
+    "motion_stop_ns": 22853298160191,
+    "hardware_write_count": null,
+    "pause_success": true
+  },
+  "child_returncode": 0,
+  "bridge_returncode": 0,
+  "cycles": 459,
+  "bridge_cycles": 459,
+  "relay_summary": {},
+  "tx_timeout_count": 0,
+  "hardware_fault_count": 0,
+  "pause_ack_confirmed": true,
+  "handshake_valid": true,
+  "production_path_confirmed": true,
+  "unique_publishers_confirmed": true,
+  "serial_after": {
+    "returncode": 1,
+    "owners": "",
+    "free": true
+  },
+  "residual_processes": []
+}

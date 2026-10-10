@@ -1,6 +1,6 @@
 # Results & Experimental Evidence Index
 
-本文档为 `/home/lyapunov/bone_drill/results` 的**数据集与实验证据索引清单**。  
+本文档为 `/home/lyapunov/bone_drill/results` 的**数据集与实验证据索引清单**。
 根据 [`AGENTS.md`](../AGENTS.md) 规定，`results/` 专用于存放程序运行、自动化测试、仿真评测以及实机实验生成的各类机读数据证据与运行时产物（machine-generated / experiment-generated evidence and runtime artifacts）。本文档是 `results/` 目录下唯一允许的索引元数据例外，所有人类与 Agent 撰写的深度分析与结论报告统一归档于 [`agent_docs/reports/`](../agent_docs/reports/)。
 
 **Performance Summary**：原始 evidence 保存在本目录；HOME 附近定位与姿态跟踪性能的 metric semantics、详细工程解释、限制与证据追溯见 [`agent_docs/reports/REAL_HARDWARE_PERFORMANCE_SUMMARY.md`](../agent_docs/reports/REAL_HARDWARE_PERFORMANCE_SUMMARY.md)。
@@ -127,8 +127,8 @@
   3. **J12-3 手持高动态性能表征** ([`results/j12/j12_3_dynamic_performance/20261005_152615/`](./j12/j12_3_dynamic_performance/20261005_152615/)):
      - 2007 闭环有效周期，Base 实测有效峰值角速度 $92.33^\circ/\text{s}$（P95 = $46.16^\circ/\text{s}$），电机电流峰值仅 $468\text{ mA}$（0 次 $>500\text{ mA}$），证实机构非电流受限。
 - **对应分析与报告**：
-  - 权威总结报告：[`agent_docs/J12_FINAL_SUMMARY.md`](../agent_docs/J12_FINAL_SUMMARY.md)
-  - 阶段交接规范：[`agent_docs/J12_TO_J13_HANDOFF.md`](../agent_docs/J12_TO_J13_HANDOFF.md)
+  - 权威总结报告：[`agent_docs/stages/J12/J12_FINAL_SUMMARY.md`](../agent_docs/J12_FINAL_SUMMARY.md)
+  - 阶段交接规范：[`agent_docs/stages/J12/J12_TO_J13_HANDOFF.md`](../agent_docs/J12_TO_J13_HANDOFF.md)
   - 当前状态卡：[`agent_docs/decisions/CURRENT_STAGE.md`](../agent_docs/decisions/CURRENT_STAGE.md)
 
 ### 3.7 J13-2A2 LADRC 影子模式实机资格认证基准
@@ -170,7 +170,7 @@
 ### 3.10 J13-2C1 三轴 LADRC 空载 10s 资格认证数据集 (J13-2C1 3-Axis Active Empty Qualification)
 - **数据集路径**：[`results/j13/j13_2c1_3axis_active/20261007_141708/j13_2c1_3axis_active_10s/`](./j13/j13_2c1_3axis_active/20261007_141708/j13_2c1_3axis_active_10s/)
 - **性质**：真实物理样机 3-axis LADRC 空载全轴物理接管资格测试（500 周期，430 active 周期，零硬件故障，观测器稳定收敛）
-- **对应报告**：[`agent_docs/J13_FINAL_SUMMARY.md`](../agent_docs/J13_FINAL_SUMMARY.md)
+- **对应报告**：[`agent_docs/stages/J13/J13_FINAL_SUMMARY.md`](../agent_docs/J13_FINAL_SUMMARY.md)
 
 ### 3.11 J13 动平台偏心负载 A/B 对比数据集 (J13 Eccentric Payload Classical vs 3-Axis LADRC)
 - **数据集路径**：
@@ -178,7 +178,7 @@
   - 3-axis LADRC：[`results/j13/j13_2c1_3axis_active/20261007_143036/j13_3axis_payload_ladrc_10s/`](./j13/j13_2c1_3axis_active/20261007_143036/j13_3axis_payload_ladrc_10s/)
 - **性质**：同一偏心重物装夹工况下连续 10s 真实硬件对比（两组均完成 500 周期，0 致命故障退出）
 - **离线分析与 Windows 交接包**：[`results/j13/J13_payload_AB_win_package_20261007.zip`](./j13/J13_payload_AB_win_package_20261007.zip)
-- **对应报告**：[`agent_docs/J13_FINAL_SUMMARY.md`](../agent_docs/J13_FINAL_SUMMARY.md) / [`results/j13/J13_payload_AB_win_package_20261007/01_report/J13_payload_AB_analysis.md`](./j13/J13_payload_AB_win_package_20261007/01_report/J13_payload_AB_analysis.md)
+- **对应报告**：[`agent_docs/stages/J13/J13_FINAL_SUMMARY.md`](../agent_docs/J13_FINAL_SUMMARY.md) / [`results/j13/J13_payload_AB_win_package_20261007/01_report/J13_payload_AB_analysis.md`](./j13/J13_payload_AB_win_package_20261007/01_report/J13_payload_AB_analysis.md)
 
 ---
 

@@ -1,0 +1,12 @@
+metric_name,classical_value,ladrc_value,safety_limit_or_threshold,status
+Motor Step Tracking Error Peak,38 steps,80 steps,N/A (unconfigured in code),Observed Normal
+Motor Current Mean,18.5 mA,22.7 mA,N/A (unconfigured in code),Observed Normal
+Motor Current Peak,143 mA,555 mA,1500 mA (pus6_motor_driver/safety.py: MAX_CURRENT_MA),PASS / Safe
+Sample Max Age,269.9 ms,352.4 ms,N/A (unconfigured in code),Observed Normal
+Max Scheduler Gap,274.9 ms,370.6 ms,N/A (unconfigured in code),Observed Normal
+Max UART TX Duration,130.4 ms,133.5 ms,N/A (unconfigured in code),Observed Normal
+Max UART Drain Duration,182.6 ms,363.1 ms,N/A (unconfigured in code),Observed Normal
+Takeover Command Jump Peak,0.000055 deg,0.000003 deg,0.05 deg (j13_ladrc_shadow_runner.py: safe_takeover_jump_threshold_deg),PASS / Safe
+Driver Hard STOP Events,0,0,0 (safety invariant),PASS / Clean
+Motor Fault Trips,0,0,0 (safety invariant),PASS / Clean
+Safety Gate Rejections,0,0,0 (safety invariant),PASS / Clean

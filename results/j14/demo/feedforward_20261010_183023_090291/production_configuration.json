@@ -1,0 +1,37 @@
+{
+  "parameters": {
+    "driver_architecture": "three_process",
+    "enable_coordinated_handshake": true,
+    "driver_telemetry_mode": "production",
+    "driver_audit_directory": "/home/lyapunov/bone_drill/results/j14/demo/feedforward_20261010_183023_090291",
+    "servo_run_duration_s": 0.0,
+    "driver_telemetry_capacity_cycles": 4096,
+    "servo_scheduler_mode": "dedicated_thread",
+    "telemetry_publish_mode": "async_latest",
+    "feedback_loss_policy": "age_based",
+    "reconnect_max_jump_steps": 80,
+    "target_timeout_sec": 0.2,
+    "write_rate_hz": 50.0,
+    "baudrate": 921600,
+    "use_j7_servo": true,
+    "enable_j2_f0_instrumentation": false,
+    "hardware_mode": "active"
+  },
+  "child_configuration": {
+    "production": true,
+    "feedback_bridge": true,
+    "enable_coordinated_handshake": true,
+    "telemetry_mode": "production",
+    "telemetry_capacity_cycles": 4096,
+    "output_dir": "/home/lyapunov/bone_drill/results/j14/demo/feedforward_20261010_183023_090291",
+    "epoch": 7473708273408,
+    "port": "/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0",
+    "baudrate": 921600,
+    "hardware_mode": "active",
+    "servo_speed": 50,
+    "maintenance_mode": true,
+    "target_timeout_sec": 0.2,
+    "reconnect_max_jump_steps": 80,
+    "max_servo_duration_s": 0.0
+  }
+}

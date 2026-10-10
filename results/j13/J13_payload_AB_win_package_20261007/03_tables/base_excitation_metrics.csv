@@ -1,0 +1,4 @@
+axis,classical_rms_deg,classical_p95_deg,classical_peak_deg,ladrc_rms_deg,ladrc_p95_deg,ladrc_peak_deg,delta_rms_percent,notes
+Roll,1.02,2.07,2.29,1.94,4.06,4.57,+90.2%,Base Roll RMS amplitude in LADRC group was ~1.9x that of Classical group
+Pitch,2.41,5.72,6.43,3.61,6.63,6.93,+49.8%,Base Pitch RMS amplitude in LADRC group was ~1.5x that of Classical group
+Yaw,1.74,3.14,3.18,0.91,2.21,2.43,-47.7%,Base Yaw RMS amplitude in LADRC group was ~0.52x that of Classical group

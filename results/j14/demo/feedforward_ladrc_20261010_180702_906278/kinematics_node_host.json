@@ -1,0 +1,20 @@
+{
+  "role": "kinematics_node",
+  "pid": 137980,
+  "ppid": 137968,
+  "pgid": 137968,
+  "state": "exited",
+  "args": [
+    "/home/lyapunov/bone_drill/bone_ws/install/pus6_kinematics/lib/pus6_kinematics/kinematics_node",
+    "--ros-args",
+    "-r",
+    "__node:=pus6_kinematics_node",
+    "--params-file",
+    "/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j13_ladrc_params.yaml"
+  ],
+  "start_ns": 6073187491011,
+  "node_name": "/pus6_kinematics_node",
+  "executor": "SingleThreadedExecutor",
+  "returncode": 0,
+  "end_ns": 6109574475736
+}

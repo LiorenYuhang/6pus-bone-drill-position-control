@@ -1,0 +1,10 @@
+{
+  "pid": 440992,
+  "cycles": 3042,
+  "fault": "parent_shutdown",
+  "closed": true,
+  "servo_start_ns": 27257785176620,
+  "motion_stop_ns": 27318624870768,
+  "hardware_write_count": 0,
+  "pause_success": true
+}

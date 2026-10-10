@@ -1,0 +1,5 @@
+{"state": "WAITING_FOR_PREFLIGHT", "monotonic_ns": 7477026658753}
+{"state": "CAPTURING_REFERENCE", "monotonic_ns": 7477064118545}
+{"state": "READY", "monotonic_ns": 7478063938691}
+{"state": "ACTIVE", "monotonic_ns": 7478084248659}
+{"state": "HOME_CONFIRMED", "monotonic_ns": 7507435025611}

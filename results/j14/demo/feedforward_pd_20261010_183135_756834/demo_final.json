@@ -1,0 +1,541 @@
+{
+  "mode": "feedforward_pd",
+  "hardware_mode": "active",
+  "startup": "PASS",
+  "active": true,
+  "start_epoch_ns": 1791628295705181821,
+  "start_monotonic_ns": 7545301325710,
+  "pre_serial": {
+    "free": true,
+    "returncode": 1,
+    "owners": "",
+    "detail": ""
+  },
+  "startup_home": {
+    "state": "HOME_CONFIRMED",
+    "phase": "startup",
+    "already_home": false,
+    "motion_start_ns": 7547298674074,
+    "confirmation_samples": [
+      {
+        "count": 105,
+        "rx_ns": [
+          7548893835128,
+          7548893835128,
+          7548893835128,
+          7548893835128,
+          7548893835128,
+          7548893835128
+        ],
+        "steps": [
+          1000,
+          996,
+          997,
+          997,
+          997,
+          998
+        ]
+      },
+      {
+        "count": 106,
+        "rx_ns": [
+          7548913588254,
+          7548913588254,
+          7548913588254,
+          7548913588254,
+          7548913588254,
+          7548913588254
+        ],
+        "steps": [
+          1000,
+          998,
+          998,
+          998,
+          999,
+          999
+        ]
+      },
+      {
+        "count": 107,
+        "rx_ns": [
+          7548933678778,
+          7548933678778,
+          7548933678778,
+          7548933678778,
+          7548933678778,
+          7548933678778
+        ],
+        "steps": [
+          1000,
+          999,
+          999,
+          999,
+          999,
+          999
+        ]
+      },
+      {
+        "count": 108,
+        "rx_ns": [
+          7548954088814,
+          7548954088814,
+          7548954088814,
+          7548954088814,
+          7548954088814,
+          7548954088814
+        ],
+        "steps": [
+          1000,
+          999,
+          999,
+          999,
+          999,
+          999
+        ]
+      },
+      {
+        "count": 109,
+        "rx_ns": [
+          7548973714497,
+          7548973714497,
+          7548973714497,
+          7548973714497,
+          7548973714497,
+          7548973714497
+        ],
+        "steps": [
+          1000,
+          999,
+          999,
+          999,
+          999,
+          999
+        ]
+      }
+    ],
+    "target": [
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000
+    ],
+    "initial_feedback": [
+      739,
+      739,
+      738,
+      738,
+      737,
+      738
+    ],
+    "start_ns": 7547298419862,
+    "tolerance": [
+      995,
+      1005
+    ],
+    "required_consecutive_samples": 5,
+    "home_target_publish_count": 79,
+    "source": "J10 WorkspaceMeasurementHarness.publish_target_pose / _home_feedback_in_band / _home_timeout_from_feedback",
+    "timeout_s": 5.883333333333334,
+    "end_ns": 7548975315009,
+    "feedback": [
+      1000,
+      999,
+      999,
+      999,
+      999,
+      999
+    ],
+    "per_axis_rx_done_ns": [
+      7548973714497,
+      7548973714497,
+      7548973714497,
+      7548973714497,
+      7548973714497,
+      7548973714497
+    ],
+    "consecutive_samples": 5,
+    "authority_released_ns": 7548976400328
+  },
+  "active_monotonic_ns": 7550656759427,
+  "stop_reason": "operator_stop",
+  "home_recovery": {
+    "state": "HOME_CONFIRMED",
+    "phase": "shutdown",
+    "already_home": false,
+    "motion_start_ns": 7593368978947,
+    "confirmation_samples": [
+      {
+        "count": 2271,
+        "rx_ns": [
+          7595033777612,
+          7595033777612,
+          7595033777612,
+          7595033777612,
+          7595033777612,
+          7595033777612
+        ],
+        "steps": [
+          1000,
+          1002,
+          1000,
+          999,
+          998,
+          999
+        ]
+      },
+      {
+        "count": 2272,
+        "rx_ns": [
+          7595053944017,
+          7595053944017,
+          7595053944017,
+          7595053944017,
+          7595053944017,
+          7595053944017
+        ],
+        "steps": [
+          1000,
+          1000,
+          1000,
+          999,
+          999,
+          999
+        ]
+      },
+      {
+        "count": 2273,
+        "rx_ns": [
+          7595074351993,
+          7595074351993,
+          7595074351993,
+          7595074351993,
+          7595074351993,
+          7595074351993
+        ],
+        "steps": [
+          1000,
+          1001,
+          1000,
+          999,
+          999,
+          998
+        ]
+      },
+      {
+        "count": 2274,
+        "rx_ns": [
+          7595093425682,
+          7595093425682,
+          7595093425682,
+          7595093425682,
+          7595093425682,
+          7595093425682
+        ],
+        "steps": [
+          1000,
+          1000,
+          1000,
+          998,
+          999,
+          998
+        ]
+      },
+      {
+        "count": 2275,
+        "rx_ns": [
+          7595113465575,
+          7595113465575,
+          7595113465575,
+          7595113465575,
+          7595113465575,
+          7595113465575
+        ],
+        "steps": [
+          1000,
+          1000,
+          1000,
+          998,
+          999,
+          999
+        ]
+      }
+    ],
+    "target": [
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000
+    ],
+    "initial_feedback": [
+      1066,
+      1253,
+      1170,
+      933,
+      749,
+      833
+    ],
+    "start_ns": 7593366150207,
+    "tolerance": [
+      995,
+      1005
+    ],
+    "required_consecutive_samples": 5,
+    "home_target_publish_count": 84,
+    "source": "J10 WorkspaceMeasurementHarness.publish_target_pose / _home_feedback_in_band / _home_timeout_from_feedback",
+    "timeout_s": 5.716666666666667,
+    "end_ns": 7595114349967,
+    "feedback": [
+      1000,
+      1000,
+      1000,
+      998,
+      999,
+      999
+    ],
+    "per_axis_rx_done_ns": [
+      7595113465575,
+      7595113465575,
+      7595113465575,
+      7595113465575,
+      7595113465575,
+      7595113465575
+    ],
+    "consecutive_samples": 5
+  },
+  "command_chain": {
+    "counts": {
+      "timed_feedback": 2415,
+      "child_command": 2416,
+      "raw_feedback": 2399,
+      "joint_feedback": 2402,
+      "target": 2299,
+      "ik": 2298,
+      "command": 2391,
+      "platform": 9198,
+      "base": 9197
+    },
+    "last_rx": {
+      "timed_feedback": 7595.095621168,
+      "child_command": 7595.11489847,
+      "raw_feedback": 7595.096471854,
+      "joint_feedback": 7595.095046118,
+      "target": 7595.11442865,
+      "ik": 7595.092813662,
+      "command": 7595.10888535,
+      "platform": 7595.109593697,
+      "base": 7595.108274895
+    },
+    "command_min": [
+      739,
+      740,
+      738,
+      702,
+      732,
+      738
+    ],
+    "command_max": [
+      1316,
+      1278,
+      1194,
+      1092,
+      1138,
+      1237
+    ],
+    "child_command_min": [
+      739,
+      740,
+      738,
+      702,
+      732,
+      738
+    ],
+    "child_command_max": [
+      1316,
+      1278,
+      1194,
+      1092,
+      1138,
+      1237
+    ],
+    "feedback": {
+      "steps": [
+        1000,
+        1000,
+        1000,
+        998,
+        999,
+        998
+      ],
+      "faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "currents": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "rx_ns": [
+        7595093425682,
+        7595093425682,
+        7595093425682,
+        7595093425682,
+        7595093425682,
+        7595093425682
+      ]
+    }
+  },
+  "child_final": {
+    "pid": 165936,
+    "cycles": 2421,
+    "fault": "parent_shutdown",
+    "closed": true,
+    "servo_start_ns": 7546727172372,
+    "motion_stop_ns": 7595135536157,
+    "hardware_write_count": null,
+    "pause_success": true
+  },
+  "pause_ack_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "serial_release": {
+    "free": true,
+    "returncode": 1,
+    "owners": "",
+    "detail": ""
+  },
+  "residual_processes": [],
+  "hardware_write_count": null,
+  "stop_monotonic_ns": 7601529341281,
+  "stop_epoch_ns": 1791628351933200459,
+  "parent_command_delivery": {
+    "source": [
+      "parent_ipc.jsonl",
+      "child_cycles.jsonl"
+    ],
+    "retained_parent_sends": 2391,
+    "max_parent_seq": 2391,
+    "retained_child_command_cycles": 300,
+    "max_child_seq": 2391
+  },
+  "driver_join_status": {
+    "bridge_joined": {
+      "event": "bridge_joined",
+      "ns": 7595413479455,
+      "bridge_returncode": 0
+    },
+    "child_joined": {
+      "event": "child_joined",
+      "ns": 7595439924081,
+      "child_returncode": 0
+    }
+  },
+  "ros_node_exit_errors": [],
+  "legacy_ros_shutdown_exception": false,
+  "runtime_host_status": {
+    "kinematics_node_host": {
+      "role": "kinematics_node",
+      "pid": 165855,
+      "ppid": 165846,
+      "pgid": 165846,
+      "state": "exited",
+      "args": [
+        "/home/lyapunov/bone_drill/bone_ws/install/pus6_kinematics/lib/pus6_kinematics/kinematics_node",
+        "--ros-args",
+        "-r",
+        "__node:=pus6_kinematics_node",
+        "--params-file",
+        "/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j11_m2_pid_params.yaml"
+      ],
+      "start_ns": 7546039460276,
+      "node_name": "/pus6_kinematics_node",
+      "executor": "SingleThreadedExecutor",
+      "returncode": 0,
+      "end_ns": 7601198856748
+    },
+    "motor_driver_node_host": {
+      "role": "motor_driver_node",
+      "pid": 165854,
+      "ppid": 165846,
+      "pgid": 165846,
+      "state": "exited",
+      "args": [
+        "/home/lyapunov/bone_drill/bone_ws/install/pus6_motor_driver/lib/pus6_motor_driver/motor_driver_node",
+        "--ros-args",
+        "-r",
+        "__node:=pus6_motor_driver_node",
+        "--params-file",
+        "/home/lyapunov/bone_drill/bone_ws/install/pus6_motor_driver/share/pus6_motor_driver/config/three_process.yaml",
+        "--params-file",
+        "/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j11_m2_pid_params.yaml",
+        "--params-file",
+        "/tmp/launch_params_epl77dq0"
+      ],
+      "start_ns": 7546072946494,
+      "node_name": "/pus6_motor_driver_node",
+      "executor": "SingleThreadedExecutor",
+      "returncode": 0,
+      "end_ns": 7595459340441
+    },
+    "control_node_host": {
+      "role": "control_node",
+      "pid": 165856,
+      "ppid": 165846,
+      "pgid": 165846,
+      "state": "exited",
+      "args": [
+        "/home/lyapunov/bone_drill/bone_ws/install/pus6_control/lib/pus6_control/control_node",
+        "--ros-args",
+        "-r",
+        "__node:=pus6_control_node",
+        "--params-file",
+        "/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j11_m2_pid_params.yaml"
+      ],
+      "start_ns": 7546040435167,
+      "node_name": "/pus6_control_node",
+      "executor": "SingleThreadedExecutor",
+      "returncode": 0,
+      "end_ns": 7601195957436
+    },
+    "fk_node_host": {
+      "role": "fk_node",
+      "pid": 165857,
+      "ppid": 165846,
+      "pgid": 165846,
+      "state": "exited",
+      "args": [
+        "/home/lyapunov/bone_drill/bone_ws/install/pus6_kinematics/lib/pus6_kinematics/fk_node",
+        "--ros-args",
+        "-r",
+        "__node:=pus6_fk_node",
+        "--params-file",
+        "/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j11_m2_pid_params.yaml",
+        "--params-file",
+        "/tmp/launch_params__8zch40h"
+      ],
+      "start_ns": 7546110606783,
+      "node_name": "/pus6_fk_node",
+      "executor": "SingleThreadedExecutor",
+      "returncode": 0,
+      "end_ns": 7601186093918
+    }
+  },
+  "safe_shutdown": true,
+  "demo_shutdown_pass": true
+}

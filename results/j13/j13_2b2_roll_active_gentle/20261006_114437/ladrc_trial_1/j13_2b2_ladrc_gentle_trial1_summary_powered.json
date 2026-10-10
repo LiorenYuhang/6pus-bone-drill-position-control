@@ -1,0 +1,13 @@
+{
+  "stage": "j13_2b2_ladrc_gentle_trial1",
+  "mode": "POWERED REAL EXECUTION",
+  "controller_mode": "roll_active",
+  "active_axis": "roll",
+  "takeover_cycle_index": 55,
+  "command_jump_at_takeover_rad": 3.889055754966448e-07,
+  "command_jump_at_takeover_deg": 2.228264810506415e-05,
+  "hardware_write_count": 1696,
+  "total_cycles": 1750,
+  "final_state": "ACTIVE",
+  "fault_reason": ""
+}

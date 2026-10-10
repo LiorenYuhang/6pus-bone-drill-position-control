@@ -1,0 +1,24 @@
+{
+  "role": "motor_driver_node",
+  "pid": 167243,
+  "ppid": 167236,
+  "pgid": 167236,
+  "state": "exited",
+  "args": [
+    "/home/lyapunov/bone_drill/bone_ws/install/pus6_motor_driver/lib/pus6_motor_driver/motor_driver_node",
+    "--ros-args",
+    "-r",
+    "__node:=pus6_motor_driver_node",
+    "--params-file",
+    "/home/lyapunov/bone_drill/bone_ws/install/pus6_motor_driver/share/pus6_motor_driver/config/three_process.yaml",
+    "--params-file",
+    "/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j13_ladrc_params.yaml",
+    "--params-file",
+    "/tmp/launch_params_n7arhmwk"
+  ],
+  "start_ns": 7611517301295,
+  "node_name": "/pus6_motor_driver_node",
+  "executor": "SingleThreadedExecutor",
+  "returncode": 0,
+  "end_ns": 7660797983120
+}

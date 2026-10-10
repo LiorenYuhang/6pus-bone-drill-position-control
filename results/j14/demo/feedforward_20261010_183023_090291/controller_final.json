@@ -1,0 +1,256 @@
+{
+  "mode": "feedforward",
+  "state": "ACTIVE",
+  "active_seen": true,
+  "output_stopped_ns": 7507435920205,
+  "stop_reason": "operator_stop",
+  "cartesian_pose_publish_count": 1401,
+  "hardware_write_count": null,
+  "hardware_write_count_source": "driver child_final.json; runner counter is pose publication",
+  "active_cycles": 1400,
+  "cycles": 1454,
+  "home_recovery": {
+    "state": "HOME_CONFIRMED",
+    "phase": "shutdown",
+    "already_home": false,
+    "motion_start_ns": 7506089114785,
+    "confirmation_samples": [
+      {
+        "count": 1498,
+        "rx_ns": [
+          7507353518640,
+          7507353518640,
+          7507353518640,
+          7507353518640,
+          7507353518640,
+          7507353518640
+        ],
+        "steps": [
+          1001,
+          999,
+          996,
+          999,
+          1001,
+          1001
+        ]
+      },
+      {
+        "count": 1499,
+        "rx_ns": [
+          7507373676933,
+          7507373676933,
+          7507373676933,
+          7507373676933,
+          7507373676933,
+          7507373676933
+        ],
+        "steps": [
+          1001,
+          999,
+          998,
+          999,
+          1001,
+          1002
+        ]
+      },
+      {
+        "count": 1500,
+        "rx_ns": [
+          7507393778863,
+          7507393778863,
+          7507393778863,
+          7507393778863,
+          7507393778863,
+          7507393778863
+        ],
+        "steps": [
+          1000,
+          999,
+          998,
+          999,
+          1001,
+          1002
+        ]
+      },
+      {
+        "count": 1501,
+        "rx_ns": [
+          7507413724444,
+          7507413724444,
+          7507413724444,
+          7507413724444,
+          7507413724444,
+          7507413724444
+        ],
+        "steps": [
+          1001,
+          999,
+          998,
+          999,
+          1001,
+          1001
+        ]
+      },
+      {
+        "count": 1502,
+        "rx_ns": [
+          7507433581533,
+          7507433581533,
+          7507433581533,
+          7507433581533,
+          7507433581533,
+          7507433581533
+        ],
+        "steps": [
+          1001,
+          999,
+          998,
+          999,
+          1001,
+          1001
+        ]
+      }
+    ],
+    "target": [
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000
+    ],
+    "initial_feedback": [
+      1071,
+      859,
+      796,
+      927,
+      1140,
+      1212
+    ],
+    "start_ns": 7506088847642,
+    "tolerance": [
+      995,
+      1005
+    ],
+    "required_consecutive_samples": 5,
+    "home_target_publish_count": 64,
+    "source": "J10 WorkspaceMeasurementHarness.publish_target_pose / _home_feedback_in_band / _home_timeout_from_feedback",
+    "timeout_s": 5.033333333333333,
+    "end_ns": 7507434715219,
+    "feedback": [
+      1001,
+      999,
+      998,
+      999,
+      1001,
+      1001
+    ],
+    "per_axis_rx_done_ns": [
+      7507433581533,
+      7507433581533,
+      7507433581533,
+      7507433581533,
+      7507433581533,
+      7507433581533
+    ],
+    "consecutive_samples": 5
+  },
+  "last_telemetry": {
+    "cycle_index": 1454,
+    "timestamp_ns": 7506083446686,
+    "state": "ACTIVE",
+    "loop_dt_ms": 20.0,
+    "base_imu_age_ms": 1.1941979999999999,
+    "platform_imu_age_ms": 3.346513,
+    "driver_feedback_age_ms": 8.729694,
+    "base_rel_roll_deg": -8.903554197162856,
+    "base_rel_pitch_deg": 7.356365865087875,
+    "base_rel_yaw_deg": -1.3794649961234153,
+    "base_rel_quat_xyzw": [
+      -0.07668458990822566,
+      0.06488658726516723,
+      -0.006997629750311152,
+      0.9949172013999783
+    ],
+    "base_so3_magnitude_deg": 11.558545874157872,
+    "cmd_roll_deg": 8.799864472043213,
+    "cmd_pitch_deg": -7.4803859991841835,
+    "cmd_yaw_deg": 0.22956303841418,
+    "cmd_quat_xyzw": [
+      0.0766845899082257,
+      -0.06488658726516726,
+      0.006997629750311154,
+      0.9949172013999782
+    ],
+    "cmd_inverse_consistency_deg": 0.0,
+    "platform_rel_roll_deg": -0.28786880743892873,
+    "platform_rel_pitch_deg": 0.07076383554970285,
+    "platform_rel_yaw_deg": -1.3261282003787866,
+    "platform_rel_quat_xyzw": [
+      -0.0025048116243876093,
+      0.0006465589336480861,
+      -0.011570803454153622,
+      0.9999297097234872
+    ],
+    "platform_so3_error_deg": 1.358681918245706,
+    "platform_tilt_error_deg": 0.2964387433905774,
+    "predicted_steps": [
+      1076,
+      858,
+      789,
+      925,
+      1145,
+      1217
+    ],
+    "commanded_steps": [
+      1076,
+      858,
+      791,
+      925,
+      1144,
+      1215
+    ],
+    "feedback_steps": [
+      1071,
+      859,
+      796,
+      927,
+      1140,
+      1212
+    ],
+    "command_feedback_errors": [
+      5,
+      -1,
+      -5,
+      -2,
+      4,
+      3
+    ],
+    "motor_fault_codes": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "joint_currents_raw_mA": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "slew_recovery_active": false,
+    "slew_original_gap": 0,
+    "slew_allowance": 0,
+    "slew_sent_gap": 0,
+    "slew_remaining_gap": 0,
+    "slew_dt_ms": 0.0,
+    "slew_alpha": 1.0,
+    "hardware_write_issued": true,
+    "fault_reason": ""
+  },
+  "retained_rows": 250
+}

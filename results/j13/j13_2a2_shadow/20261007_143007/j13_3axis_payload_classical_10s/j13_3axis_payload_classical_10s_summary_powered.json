@@ -1,0 +1,13 @@
+{
+  "stage": "j13_3axis_payload_classical_10s",
+  "mode": "POWERED REAL EXECUTION",
+  "controller_mode": "shadow",
+  "active_axis": "none",
+  "takeover_cycle_index": 72,
+  "command_jump_at_takeover_rad": 9.674914583826986e-07,
+  "command_jump_at_takeover_deg": 5.543317728028556e-05,
+  "hardware_write_count": 429,
+  "total_cycles": 500,
+  "final_state": "ACTIVE",
+  "fault_reason": ""
+}

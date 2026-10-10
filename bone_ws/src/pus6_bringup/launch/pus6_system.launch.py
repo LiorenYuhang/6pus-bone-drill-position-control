@@ -1,10 +1,28 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+
+
+def launch_driver(context):
+    overrides={"hardware_mode": LaunchConfiguration("hardware_mode")}
+    for key in ("driver_architecture", "enable_coordinated_handshake", "driver_telemetry_mode",
+                "driver_audit_directory", "servo_run_duration_s", "driver_telemetry_capacity_cycles",
+                "servo_scheduler_mode", "telemetry_publish_mode", "feedback_loss_policy", "enable_runtime_diagnostics"):
+        value=LaunchConfiguration(key).perform(context)
+        if value:
+            if key in ("enable_coordinated_handshake", "enable_runtime_diagnostics"):
+                if value.lower() not in ("true","false"):raise ValueError(f"invalid boolean {key}")
+                value=value.lower()=="true"
+            elif key=="servo_run_duration_s":value=float(value)
+            elif key=="driver_telemetry_capacity_cycles":value=int(value)
+            overrides[key]=value
+    return [Node(package="pus6_motor_driver",executable="motor_driver_node",name="pus6_motor_driver_node",
+                 output="screen",parameters=[LaunchConfiguration("driver_config_file"),
+                 LaunchConfiguration("config_file"),overrides])]
 
 
 def generate_launch_description():
@@ -43,44 +61,34 @@ def generate_launch_description():
 
     servo_scheduler_mode_arg = DeclareLaunchArgument(
         "servo_scheduler_mode",
-        default_value="ros_timer",
+        default_value="",
         description="Servo scheduler mode: 'ros_timer' (default) or 'dedicated_thread'",
     )
 
     telemetry_publish_mode_arg = DeclareLaunchArgument(
         "telemetry_publish_mode",
-        default_value="auto",
+        default_value="",
         description="Telemetry publication mode: 'auto' (default: inline for ros_timer, async_latest for dedicated_thread), 'inline', or 'async_latest'",
     )
 
     feedback_loss_policy_arg = DeclareLaunchArgument(
         "feedback_loss_policy",
-        default_value="default",
+        default_value="",
         description="Feedback loss policy: 'default' (J7/J8 strict 4-miss gate) or 'age_based' (J11 research mode: per-axis age gate)",
     )
 
     enable_runtime_diagnostics_arg = DeclareLaunchArgument(
         "enable_runtime_diagnostics",
-        default_value="false",
+        default_value="",
         description="Whether to enable J11/J12 in-memory runtime diagnostics (default: false)",
     )
 
-    motor_driver_node = Node(
-        package="pus6_motor_driver",
-        executable="motor_driver_node",
-        name="pus6_motor_driver_node",
-        output="screen",
-        parameters=[
-            LaunchConfiguration("config_file"),
-            {
-                "hardware_mode": LaunchConfiguration("hardware_mode"),
-                "servo_scheduler_mode": LaunchConfiguration("servo_scheduler_mode"),
-                "telemetry_publish_mode": LaunchConfiguration("telemetry_publish_mode"),
-                "feedback_loss_policy": LaunchConfiguration("feedback_loss_policy"),
-                "enable_runtime_diagnostics": LaunchConfiguration("enable_runtime_diagnostics"),
-            },
-        ],
-    )
+    driver_share = get_package_share_directory("pus6_motor_driver")
+    formal_args = [DeclareLaunchArgument("driver_config_file",default_value=os.path.join(driver_share,"config","three_process.yaml"))]
+    formal_args.extend(DeclareLaunchArgument(key,default_value="",description="Empty preserves driver/YAML value")
+        for key in ("driver_architecture","enable_coordinated_handshake","driver_telemetry_mode",
+                    "driver_audit_directory","servo_run_duration_s","driver_telemetry_capacity_cycles"))
+    motor_driver_node = OpaqueFunction(function=launch_driver)
 
     kinematics_node = Node(
         package="pus6_kinematics",
@@ -128,6 +136,7 @@ def generate_launch_description():
         telemetry_publish_mode_arg,
         feedback_loss_policy_arg,
         enable_runtime_diagnostics_arg,
+        *formal_args,
         motor_driver_node,
         kinematics_node,
         control_node,

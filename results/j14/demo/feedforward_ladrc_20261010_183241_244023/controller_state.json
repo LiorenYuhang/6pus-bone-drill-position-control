@@ -1,0 +1,185 @@
+{
+  "state": "HOME_CONFIRMED",
+  "mode": "feedforward_ladrc",
+  "controller_class": "J13LadrcShadowRunner",
+  "config": "/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j13_ladrc_params.yaml",
+  "parameters": {
+    "ladrc_b0_roll": 20.0,
+    "ladrc_omega_c_roll": 0.8,
+    "ladrc_omega_o_roll": 2.5,
+    "ladrc_max_residual_roll_deg": 0.5,
+    "ladrc_b0_pitch": 10.0,
+    "ladrc_omega_c_pitch": 1.0,
+    "ladrc_omega_o_pitch": 4.0,
+    "ladrc_max_residual_pitch_deg": 0.5,
+    "ladrc_b0_yaw": 6.0,
+    "ladrc_omega_c_yaw": 0.25,
+    "ladrc_omega_o_yaw": 1.2,
+    "ladrc_max_residual_yaw_deg": 0.5,
+    "kp_roll": 0.05,
+    "kp_pitch": 0.05,
+    "kp_yaw": 0.025,
+    "ki_roll": 0.0,
+    "ki_pitch": 0.0,
+    "ki_yaw": 0.0,
+    "kd_roll": 0.0,
+    "kd_pitch": 0.0015,
+    "kd_yaw": 0.0015,
+    "derivative_enabled": true,
+    "derivative_lpf_cutoff_hz": 5.0,
+    "max_residual_roll_deg": 0.5,
+    "max_residual_pitch_deg": 0.5,
+    "max_residual_yaw_deg": 0.5,
+    "controller_mode": "3axis_active"
+  },
+  "preflight_pass": true,
+  "active_seen": true,
+  "home_recovery": {
+    "state": "HOME_CONFIRMED",
+    "phase": "shutdown",
+    "already_home": false,
+    "motion_start_ns": 7658670175905,
+    "confirmation_samples": [
+      {
+        "count": 2259,
+        "rx_ns": [
+          7660449724286,
+          7660449724286,
+          7660449724286,
+          7660449724286,
+          7660449724286,
+          7660449724286
+        ],
+        "steps": [
+          998,
+          1004,
+          999,
+          998,
+          999,
+          999
+        ]
+      },
+      {
+        "count": 2260,
+        "rx_ns": [
+          7660469817858,
+          7660469817858,
+          7660469817858,
+          7660469817858,
+          7660469817858,
+          7660469817858
+        ],
+        "steps": [
+          998,
+          1001,
+          999,
+          998,
+          999,
+          999
+        ]
+      },
+      {
+        "count": 2261,
+        "rx_ns": [
+          7660489465002,
+          7660489465002,
+          7660489465002,
+          7660489465002,
+          7660489465002,
+          7660489465002
+        ],
+        "steps": [
+          998,
+          1001,
+          999,
+          998,
+          999,
+          999
+        ]
+      },
+      {
+        "count": 2262,
+        "rx_ns": [
+          7660509535834,
+          7660509535834,
+          7660509535834,
+          7660509535834,
+          7660509535834,
+          7660509535834
+        ],
+        "steps": [
+          998,
+          1001,
+          999,
+          998,
+          999,
+          999
+        ]
+      },
+      {
+        "count": 2263,
+        "rx_ns": [
+          7660529400776,
+          7660529400776,
+          7660529400776,
+          7660529400776,
+          7660529400776,
+          7660529400776
+        ],
+        "steps": [
+          998,
+          1001,
+          999,
+          998,
+          999,
+          999
+        ]
+      }
+    ],
+    "target": [
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000
+    ],
+    "initial_feedback": [
+      1028,
+      1240,
+      1196,
+      980,
+      762,
+      805
+    ],
+    "start_ns": 7658669871107,
+    "tolerance": [
+      995,
+      1005
+    ],
+    "required_consecutive_samples": 5,
+    "home_target_publish_count": 89,
+    "source": "J10 WorkspaceMeasurementHarness.publish_target_pose / _home_feedback_in_band / _home_timeout_from_feedback",
+    "timeout_s": 5.5,
+    "end_ns": 7660531731078,
+    "feedback": [
+      998,
+      1001,
+      999,
+      998,
+      999,
+      999
+    ],
+    "per_axis_rx_done_ns": [
+      7660529400776,
+      7660529400776,
+      7660529400776,
+      7660529400776,
+      7660529400776,
+      7660529400776
+    ],
+    "consecutive_samples": 5
+  },
+  "monotonic_ns": 7660532224181,
+  "fault_reason": ""
+}

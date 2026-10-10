@@ -1,0 +1,4 @@
+{"event": "startup_handshake_complete", "ns": 6694625793314, "child_ready_ns": 6694363057174, "bridge_ready_ns": 6694617027551, "servo_start_ns": 6694620742747}
+{"event": "bridge_joined", "ns": 6754981162026, "bridge_returncode": 0}
+{"event": "child_joined", "ns": 6754985765574, "child_returncode": 0}
+{"event": "parent_node_destroyed", "ns": 6754993188871, "pid": 122674}

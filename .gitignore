@@ -86,3 +86,32 @@ results/j11/runtime_validation/20260920_13*/
 results/j11/runtime_validation/20260920_14*/
 results/j11/runtime_validation/20260922_*/
 results/j11/runtime_validation/20260923_*/
+
+# J14 Blog Preparation & Presentation Bundles (LOCAL ONLY, not part of runtime release)
+results/j14_blog_prep/
+
+# Large raw per-write serial traces (Kept locally as canonical Level-1 raw evidence, excluded from git)
+**/child_write_metrics.jsonl
+
+# J14 intermediate exploratory sweeps and mock test suites (LOCAL ONLY, not part of canonical release)
+results/j14/j14_a0_*/
+results/j14/j14_a1_*/
+results/j14/j14_a2_p1_*/
+results/j14/j14_a2_q1_*/
+results/j14/j14_a2_q1f_mock_*/
+results/j14/j14_a2_q1f_software/
+results/j14/j14_a2_q3_r1_*/
+results/j14/j14_a2_q3_r1b_*/
+results/j14/j14_a2_q3j_baseline_*/
+results/j14/j14_a2_q3j_fixed_*/
+results/j14/j14_a2_q3j_software/
+results/j14/j14_a_demo_*_software/
+results/j14/j14_a_demo_software/
+results/j14/j14_a_real_failure_*/
+results/j14/j14_real_failure_*/
+results/j14/production/
+results/j14/demo/feedforward_20261010_165632_313928/
+results/j14/demo/feedforward_20261010_173011_658906/
+results/j14/demo/feedforward_20261010_180508_624626/
+results/j14/demo/feedforward_pd_20261010_180549_434029/
+

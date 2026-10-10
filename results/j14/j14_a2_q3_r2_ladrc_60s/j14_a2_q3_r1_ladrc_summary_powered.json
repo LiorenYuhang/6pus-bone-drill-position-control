@@ -1,0 +1,13 @@
+{
+  "stage": "j14_a2_q3_r1_ladrc",
+  "mode": "POWERED REAL EXECUTION",
+  "controller_mode": "3axis_active",
+  "active_axis": "3axis",
+  "takeover_cycle_index": 56,
+  "command_jump_at_takeover_rad": 1.4367172371257506e-07,
+  "command_jump_at_takeover_deg": 8.231783404100181e-06,
+  "hardware_write_count": 2942,
+  "total_cycles": 2997,
+  "final_state": "ACTIVE",
+  "fault_reason": ""
+}

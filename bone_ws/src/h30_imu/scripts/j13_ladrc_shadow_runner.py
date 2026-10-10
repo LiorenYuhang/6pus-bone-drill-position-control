@@ -36,10 +36,15 @@ try:
     from sensor_msgs.msg import Imu
     from std_msgs.msg import Int32MultiArray
     from rcl_interfaces.msg import Log
+    try:
+        from pus6_msgs.msg import TimedJointFeedback
+    except ImportError:
+        TimedJointFeedback = None
 except ImportError:
     rclpy = None
     Node = object
     Log = object
+    TimedJointFeedback = None
 
 import numpy as np
 
@@ -213,6 +218,16 @@ class J13LadrcTelemetry:
     ladrc_fault: bool = False
     ladrc_fault_reason: str = ""
 
+    # Stage J14-A0 Runtime Observability & Latency Decomposition
+    runner_wake_lateness_ms: float = 0.0
+    console_flush_dur_ms: float = 0.0
+    delta_t_bus_ms: float = 0.0
+    delta_t_driver_proc_ms: float = 0.0
+    delta_t_dds_transport_ms: float = 0.0
+    timed_feedback_age_at_tick_ms: float = 0.0
+    delta_t_runner_queue_ms: float = 0.0  # Legacy CSV alias; not callback queue latency.
+    timed_fb_seq: int = 0
+
 
 class J13LadrcShadowRunner(Node if Node is not object else object):
     """ROS 2 Node executing Classical P/PD in real control and LADRC in Shadow Mode."""
@@ -361,6 +376,12 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
         self.driver_stop_latched: bool = False
         self.driver_fault_msg: str = ""
 
+        # Stage J14-A0 parallel timed feedback observer buffers & tick jitter
+        self.latest_timed_fb: Any = None
+        self.latest_timed_fb_rx_mono_ns: int = 0
+        self.latest_timed_fb_rx_ros_ns: int = 0
+        self._expected_tick_ns: int = 0
+
         # Telemetry history
         self.telemetry_history: List[J13LadrcTelemetry] = []
         self.node_init_time_sec = time.time()
@@ -419,7 +440,21 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
                 Int32MultiArray, "/pus6/joint_currents_raw", self._on_fb_currents, qos_sensor
             )
             self.create_subscription(Log, "/rosout", self._on_rosout, qos_rosout)
+            if TimedJointFeedback is not None:
+                self.create_subscription(
+                    TimedJointFeedback,
+                    "/pus6/joint_feedback/timed",
+                    self._on_timed_fb,
+                    qos_sensor,
+                )
             self.timer = self.create_timer(0.020, self._on_control_tick)
+
+    def _on_timed_fb(self, msg: Any) -> None:
+        self.latest_timed_fb_rx_mono_ns = time.monotonic_ns()
+        self.latest_timed_fb_rx_ros_ns = (
+            self.get_clock().now().nanoseconds if hasattr(self, "get_clock") else time.time_ns()
+        )
+        self.latest_timed_fb = msg
 
     def _on_base_imu(self, msg: Imu) -> None:
         self.latest_base_q_raw = (
@@ -497,6 +532,16 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
     def _on_control_tick(self) -> None:
         """Executes one control cycle in strict causal tick order."""
         now_ns = time.perf_counter_ns()
+        now_mono_ns = time.monotonic_ns()
+        if self._expected_tick_ns > 0:
+            wake_lateness_ms = (now_ns - self._expected_tick_ns) / 1e6
+            self._expected_tick_ns += 20_000_000
+            if now_ns - self._expected_tick_ns > 40_000_000:
+                self._expected_tick_ns = now_ns + 20_000_000
+        else:
+            wake_lateness_ms = 0.0
+            self._expected_tick_ns = now_ns + 20_000_000
+
         dt_s = (
             (now_ns - self.last_tick_time_ns) * 1e-9
             if self.last_tick_time_ns is not None
@@ -514,7 +559,41 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
             b0=self.ladrc.b0.tolist(),
             omega_c=self.ladrc.omega_c.tolist(),
             omega_o=self.ladrc.omega_o.tolist(),
+            runner_wake_lateness_ms=round(wake_lateness_ms, 3),
         )
+
+        # Stage J14-A0: Message Age latency decomposition
+        if self.latest_timed_fb is not None and self.latest_timed_fb_rx_mono_ns > 0:
+            msg = self.latest_timed_fb
+            t0 = msg.snapshot_start_monotonic_ns
+            rx_done_list = [t for t in getattr(msg, "per_axis_rx_done_monotonic_ns", ()) if t > 0]
+            t1 = max(rx_done_list) if rx_done_list else msg.snapshot_end_monotonic_ns
+            t2 = msg.snapshot_end_monotonic_ns
+            t4_mono = self.latest_timed_fb_rx_mono_ns
+            t4_ros = self.latest_timed_fb_rx_ros_ns
+            t5_mono = now_mono_ns
+
+            # 1. Bus / acquisition latency: T1 - T0
+            if t0 > 0 and t1 >= t0:
+                telem.delta_t_bus_ms = round((t1 - t0) / 1e6, 3)
+
+            # 2. Driver processing latency: T2 - T1 (purely monotonic within driver)
+            if t1 > 0 and t2 >= t1:
+                telem.delta_t_driver_proc_ms = round((t2 - t1) / 1e6, 3)
+
+            # 3. ROS/DDS delivery latency: T4 - T3
+            stamp_ros_ns = msg.header.stamp.sec * 1_000_000_000 + msg.header.stamp.nanosec
+            if stamp_ros_ns > 0 and t4_ros >= stamp_ros_ns:
+                telem.delta_t_dds_transport_ms = round((t4_ros - stamp_ros_ns) / 1e6, 3)
+            else:
+                telem.delta_t_dds_transport_ms = 0.0
+
+            # 4. Age since latest TimedJointFeedback reception at this tick: T5 - T4.
+            if t4_mono > 0 and t5_mono >= t4_mono:
+                telem.timed_feedback_age_at_tick_ms = round((t5_mono - t4_mono) / 1e6, 3)
+                telem.delta_t_runner_queue_ms = telem.timed_feedback_age_at_tick_ms
+
+            telem.timed_fb_seq = getattr(msg, "uart_cycle_sequence", 0)
 
         base_age_ms = (
             (now_ns - self.latest_base_rx_time_ns) * 1e-6
@@ -948,9 +1027,12 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
                 telem.hardware_write_issued = False
 
             # Console diagnostic output
+            t_print_start = time.perf_counter_ns()
+            did_print = False
             if self.state == J13ShadowState.ACTIVE:
                 if not self._manual_prompt_emitted and self.active_cycle_count >= 50:
                     self._manual_prompt_emitted = True
+                    did_print = True
                     print("\n" + "=" * 70, flush=True)
                     if self.controller_mode == "3axis_active":
                         print(
@@ -969,6 +1051,7 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
                         )
                     print("=" * 70 + "\n", flush=True)
                 elif self._manual_prompt_emitted and self.active_cycle_count % 25 == 0:
+                    did_print = True
                     if self.controller_mode == "3axis_active":
                         print(
                             f"[J13 3AXIS_ACTIVE t={self.active_cycle_count*0.02:.1f}s] "
@@ -1003,6 +1086,8 @@ class J13LadrcShadowRunner(Node if Node is not object else object):
                             f"Y:{telem.delta_u_shadow_vs_classical_deg[2]:+.3f}°)",
                             flush=True,
                         )
+            if did_print:
+                telem.console_flush_dur_ms = round((time.perf_counter_ns() - t_print_start) / 1e6, 3)
 
         self.telemetry_history.append(telem)
 

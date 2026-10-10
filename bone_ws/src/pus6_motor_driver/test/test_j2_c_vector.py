@@ -453,7 +453,7 @@ def test_j2c_target_mid_dispatch_failure_pauses_all_without_retry(tmp_path):
 @pytest.mark.parametrize(
     "kwargs, expected",
     [
-        ({"runtime_current": 501}, "exceeds threshold 500mA"),
+        ({"runtime_current": 501}, "runtime current exceeds 500mA"),
         ({"runtime_fault": 4}, "fault error code 0x04"),
     ],
 )

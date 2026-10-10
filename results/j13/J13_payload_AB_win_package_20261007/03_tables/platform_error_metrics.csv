@@ -1,0 +1,4 @@
+axis,classical_rms_deg,classical_mae_deg,classical_p95_deg,classical_peak_deg,ladrc_rms_deg,ladrc_mae_deg,ladrc_p95_deg,ladrc_peak_deg,delta_rms_percent,evaluation_phase
+Roll,0.45,0.32,0.9,1.17,1.07,0.77,2.14,3.16,+140.4%,ACTIVE (post-takeover steady state)
+Pitch,0.87,0.59,1.88,2.39,1.31,0.86,3.05,4.19,+50.8%,ACTIVE (post-takeover steady state)
+Yaw,0.61,0.33,1.46,2.76,0.44,0.29,1.01,1.36,-27.6%,ACTIVE (post-takeover steady state)

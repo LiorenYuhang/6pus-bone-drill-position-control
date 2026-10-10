@@ -1,0 +1,14 @@
+{
+  "cycles": 1495,
+  "motion_writes": 8970,
+  "tx_timeouts": 0,
+  "fault_cycles": 0,
+  "max_serial_write_ns": 167835,
+  "max_rx_drain_ns": 6219860,
+  "max_wake_lateness_ns": 305981,
+  "wake_watchlist_count": 0,
+  "telemetry_mode": "production",
+  "retained_cycles": 300,
+  "retained_write_records": 0,
+  "closed": true
+}

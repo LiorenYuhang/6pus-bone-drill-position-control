@@ -1,0 +1,11 @@
+filename,data_source,x_quantity,y_quantity,unit,short_factual_description
+fig01_base_roll_comparison.png,Base IMU telemetry,Time from ACTIVE Start,Base Roll Angle,deg,Base Roll external excitation comparison: LADRC group RMS amplitude was ~1.9x that of Classical
+fig02_base_pitch_comparison.png,Base IMU telemetry,Time from ACTIVE Start,Base Pitch Angle,deg,Base Pitch external excitation comparison: LADRC group RMS amplitude was ~1.5x that of Classical
+fig03_base_yaw_comparison.png,Base IMU telemetry,Time from ACTIVE Start,Base Yaw Angle,deg,Base Yaw external excitation comparison: LADRC group experienced lower excitation
+fig04_roll_error_comparison.png,Platform IMU vs Reference,Time from ACTIVE Start,Platform Roll Attitude Error (e_R),deg,Platform Roll tracking error time history under external roll excitation
+fig05_pitch_error_comparison.png,Platform IMU vs Reference,Time from ACTIVE Start,Platform Pitch Attitude Error (e_P),deg,Platform Pitch tracking error time history showing error spikes during LADRC saturation
+fig06_yaw_error_comparison.png,Platform IMU vs Reference,Time from ACTIVE Start,Platform Yaw Attitude Error (e_Y),deg,"Platform Yaw tracking error time history: LADRC run error was lower, but Base Yaw excitation was also lower; difference cannot be attributed solely to controller"
+fig07_classical_control_output.png,Classical controller telemetry,Time from ACTIVE Start,Residual Command,deg,Classical P/PD residual control outputs (Roll/Pitch/Yaw) bounded inside ±0.5 deg
+fig08_ladrc_control_output.png,LADRC controller telemetry,Time from ACTIVE Start,LADRC u_act Command,deg,LADRC authoritative residual control outputs showing Pitch hitting ±0.5 deg clamp (16.4% saturation)
+fig09_ladrc_z2_states.png,LESO state telemetry,Time from ACTIVE Start,ESO z2 Equivalent Lumped Disturbance,deg/s,LESO z2 Equivalent Lumped Disturbance estimates with Pitch peaking at 6.92 deg/s (0.1208 rad/s)
+fig10_initial_static_bias_zoom.png,Platform IMU telemetry (0-1.5s),Time from Run Start,Platform Attitude Errors,deg,Initial static phase zoom showing ~0.02 deg to 0.06 deg Roll gravity sag under eccentric payload

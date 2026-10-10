@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'motor_driver_node = pus6_motor_driver.motor_driver_node:main',
+            'motor_driver_legacy_debug = pus6_motor_driver.motor_driver_node:legacy_debug_main',
         ],
     },
 )

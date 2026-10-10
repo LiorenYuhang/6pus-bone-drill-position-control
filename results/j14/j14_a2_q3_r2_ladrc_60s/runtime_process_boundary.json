@@ -1,0 +1,57 @@
+{
+  "parent": {
+    "pid": 464279,
+    "cmdline": "/usr/bin/python3 /home/lyapunov/bone_drill/bone_ws/install/pus6_motor_driver/lib/pus6_motor_driver/motor_driver_node --ros-args -r __node:=pus6_motor_driver_node --params-file /home/lyapunov/bone_drill/bone_ws/install/pus6_motor_driver/share/pus6_motor_driver/config/three_process.yaml --params-file /home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j13_ladrc_params.yaml --params-file /tmp/launch_params_gmb6k0s2 ",
+    "tasks": {
+      "464279": "motor_driver_no",
+      "464293": "motor_drive-ust",
+      "464294": "motor_drive-ust",
+      "464336": "motor_driver_no",
+      "464337": "motor_driver_no",
+      "464338": "dds.shm.wdog",
+      "464348": "dds.ev.0",
+      "464349": "dds.udp.7416",
+      "464350": "dds.udp.7400",
+      "464351": "dds.shm.7417",
+      "464352": "dds.udp.7417",
+      "464353": "dds.asyn.0.0",
+      "464354": "dds.shm.7003",
+      "464355": "dds.udp.7003",
+      "464356": "motor_driver_no",
+      "464378": "motor_driver_no"
+    }
+  },
+  "child": {
+    "pid": 464357,
+    "cmdline": "/usr/bin/python3 /home/lyapunov/bone_drill/bone_ws/install/pus6_motor_driver/lib/python3.12/site-packages/pus6_motor_driver/j14_uart_child_main.py --fd-cmd 44 --fd-fb 45 --config {\"production\": true, \"feedback_bridge\": true, \"enable_coordinated_handshake\": true, \"telemetry_mode\": \"qualification\", \"telemetry_capacity_cycles\": 32768, \"output_dir\": \"/home/lyapunov/bone_drill/results/j14/j14_a2_q3_r2_ladrc_60s\", \"epoch\": 28465295878301, \"port\": \"/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0\", \"baudrate\": 921600, \"hardware_mode\": \"active\", \"servo_speed\": 50, \"maintenance_mode\": true, \"target_timeout_sec\": 0.2, \"reconnect_max_jump_steps\": 80, \"max_servo_duration_s\": 0.0} ",
+    "tasks": {
+      "464357": "python3"
+    }
+  },
+  "bridge": {
+    "pid": 464358,
+    "cmdline": "/usr/bin/python3 /home/lyapunov/bone_drill/bone_ws/install/pus6_motor_driver/lib/python3.12/site-packages/pus6_motor_driver/j14_feedback_bridge_main.py --fd 46 --config {\"production\": true, \"feedback_bridge\": true, \"enable_coordinated_handshake\": true, \"telemetry_mode\": \"qualification\", \"telemetry_capacity_cycles\": 32768, \"output_dir\": \"/home/lyapunov/bone_drill/results/j14/j14_a2_q3_r2_ladrc_60s\", \"epoch\": 28465295878301, \"port\": \"/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0\", \"baudrate\": 921600, \"hardware_mode\": \"active\", \"servo_speed\": 50, \"maintenance_mode\": true, \"target_timeout_sec\": 0.2, \"reconnect_max_jump_steps\": 80, \"max_servo_duration_s\": 0.0} ",
+    "tasks": {
+      "464358": "python3",
+      "464359": "python3-ust",
+      "464360": "python3-ust",
+      "464366": "python3",
+      "464367": "python3",
+      "464368": "dds.shm.wdog",
+      "464369": "dds.ev.0",
+      "464370": "dds.udp.7418",
+      "464371": "dds.udp.7400",
+      "464372": "dds.shm.7419",
+      "464373": "dds.udp.7419",
+      "464374": "dds.asyn.0.0",
+      "464375": "dds.shm.7004",
+      "464376": "dds.udp.7004",
+      "464377": "python3"
+    }
+  },
+  "motor_uart_fuser": {
+    "returncode": 0,
+    "stdout": " 464357",
+    "stderr": "/dev/ttyUSB0:       \n"
+  }
+}

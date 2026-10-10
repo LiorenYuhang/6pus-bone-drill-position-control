@@ -1,0 +1,399 @@
+{
+  "mode": "feedforward_ladrc",
+  "hardware_mode": "active",
+  "startup": "PASS",
+  "active": true,
+  "start_epoch_ns": 1791626822848527003,
+  "start_monotonic_ns": 6072444672182,
+  "pre_serial": {
+    "free": true,
+    "returncode": 1,
+    "owners": "",
+    "detail": ""
+  },
+  "startup_home": {
+    "state": "HOME_CONFIRMED",
+    "phase": "startup",
+    "already_home": true,
+    "motion_start_ns": null,
+    "confirmation_samples": [
+      {
+        "count": 26,
+        "rx_ns": [
+          6074404837272,
+          6074404837272,
+          6074404837272,
+          6074404837272,
+          6074404837272,
+          6074404837272
+        ],
+        "steps": [
+          998,
+          998,
+          1002,
+          999,
+          998,
+          1002
+        ]
+      },
+      {
+        "count": 27,
+        "rx_ns": [
+          6074425077055,
+          6074425077055,
+          6074425077055,
+          6074425077055,
+          6074425077055,
+          6074425077055
+        ],
+        "steps": [
+          998,
+          998,
+          1002,
+          999,
+          998,
+          1002
+        ]
+      },
+      {
+        "count": 28,
+        "rx_ns": [
+          6074445413808,
+          6074445413808,
+          6074445413808,
+          6074445413808,
+          6074445413808,
+          6074445413808
+        ],
+        "steps": [
+          998,
+          998,
+          1002,
+          999,
+          998,
+          1002
+        ]
+      },
+      {
+        "count": 29,
+        "rx_ns": [
+          6074465165050,
+          6074465165050,
+          6074465165050,
+          6074465165050,
+          6074465165050,
+          6074465165050
+        ],
+        "steps": [
+          998,
+          998,
+          1002,
+          999,
+          998,
+          1002
+        ]
+      },
+      {
+        "count": 30,
+        "rx_ns": [
+          6074485228933,
+          6074485228933,
+          6074485228933,
+          6074485228933,
+          6074485228933,
+          6074485228933
+        ],
+        "steps": [
+          998,
+          998,
+          1002,
+          999,
+          998,
+          1001
+        ]
+      }
+    ],
+    "target": [
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000
+    ],
+    "initial_feedback": [
+      998,
+      999,
+      1002,
+      999,
+      998,
+      1002
+    ],
+    "start_ns": 6074390087615,
+    "tolerance": [
+      995,
+      1005
+    ],
+    "required_consecutive_samples": 5,
+    "home_target_publish_count": 0,
+    "source": "J10 WorkspaceMeasurementHarness.publish_target_pose / _home_feedback_in_band / _home_timeout_from_feedback",
+    "timeout_s": 1.5333333333333334,
+    "end_ns": 6074487521870,
+    "feedback": [
+      998,
+      998,
+      1002,
+      999,
+      998,
+      1001
+    ],
+    "per_axis_rx_done_ns": [
+      6074485228933,
+      6074485228933,
+      6074485228933,
+      6074485228933,
+      6074485228933,
+      6074485228933
+    ],
+    "consecutive_samples": 5,
+    "authority_released_ns": 6074488038099
+  },
+  "active_monotonic_ns": 6077164383726,
+  "stop_reason": "RuntimeError('Base IMU age timeout (>100ms)')",
+  "home_recovery": {
+    "state": "SKIPPED",
+    "reason": "safety policy"
+  },
+  "command_chain": {
+    "counts": {
+      "child_command": 1489,
+      "timed_feedback": 1489,
+      "raw_feedback": 1473,
+      "joint_feedback": 1477,
+      "platform": 5810,
+      "base": 5786,
+      "target": 1326,
+      "ik": 1326,
+      "command": 1326
+    },
+    "last_rx": {
+      "child_command": 6103.666133757,
+      "timed_feedback": 6103.666436321,
+      "raw_feedback": 6103.667148259,
+      "joint_feedback": 6103.667345916,
+      "platform": 6103.68366138,
+      "base": 6103.567231859,
+      "target": 6103.66263143,
+      "ik": 6103.664098271,
+      "command": 6103.678046188
+    },
+    "command_min": [
+      876,
+      713,
+      705,
+      679,
+      727,
+      833
+    ],
+    "command_max": [
+      1333,
+      1283,
+      1174,
+      1136,
+      1294,
+      1309
+    ],
+    "child_command_min": [
+      876,
+      713,
+      705,
+      679,
+      727,
+      833
+    ],
+    "child_command_max": [
+      1333,
+      1283,
+      1174,
+      1136,
+      1294,
+      1309
+    ],
+    "feedback": {
+      "steps": [
+        1264,
+        896,
+        805,
+        756,
+        1110,
+        1191
+      ],
+      "faults": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "currents": [
+        80,
+        87,
+        114,
+        121,
+        120,
+        44
+      ],
+      "rx_ns": [
+        6103664889191,
+        6103664889191,
+        6103664889191,
+        6103664889191,
+        6103664889191,
+        6103664889191
+      ]
+    }
+  },
+  "child_final": {
+    "pid": 138053,
+    "cycles": 1495,
+    "fault": "parent_shutdown",
+    "closed": true,
+    "servo_start_ns": 6073818324479,
+    "motion_stop_ns": 6103704821715,
+    "hardware_write_count": null,
+    "pause_success": true
+  },
+  "pause_ack_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "serial_release": {
+    "free": true,
+    "returncode": 1,
+    "owners": "",
+    "detail": ""
+  },
+  "residual_processes": [],
+  "hardware_write_count": null,
+  "stop_monotonic_ns": 6109886800046,
+  "stop_epoch_ns": 1791626860290659146,
+  "parent_command_delivery": {
+    "source": [
+      "parent_ipc.jsonl",
+      "child_cycles.jsonl"
+    ],
+    "retained_parent_sends": 1327,
+    "max_parent_seq": 1327,
+    "retained_child_command_cycles": 300,
+    "max_child_seq": 1326
+  },
+  "driver_join_status": {
+    "bridge_joined": {
+      "event": "bridge_joined",
+      "ns": 6103926532560,
+      "bridge_returncode": 0
+    },
+    "child_joined": {
+      "event": "child_joined",
+      "ns": 6103936763852,
+      "child_returncode": 0
+    }
+  },
+  "ros_node_exit_errors": [],
+  "legacy_ros_shutdown_exception": false,
+  "runtime_host_status": {
+    "kinematics_node_host": {
+      "role": "kinematics_node",
+      "pid": 137980,
+      "ppid": 137968,
+      "pgid": 137968,
+      "state": "exited",
+      "args": [
+        "/home/lyapunov/bone_drill/bone_ws/install/pus6_kinematics/lib/pus6_kinematics/kinematics_node",
+        "--ros-args",
+        "-r",
+        "__node:=pus6_kinematics_node",
+        "--params-file",
+        "/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j13_ladrc_params.yaml"
+      ],
+      "start_ns": 6073187491011,
+      "node_name": "/pus6_kinematics_node",
+      "executor": "SingleThreadedExecutor",
+      "returncode": 0,
+      "end_ns": 6109574475736
+    },
+    "motor_driver_node_host": {
+      "role": "motor_driver_node",
+      "pid": 137979,
+      "ppid": 137968,
+      "pgid": 137968,
+      "state": "exited",
+      "args": [
+        "/home/lyapunov/bone_drill/bone_ws/install/pus6_motor_driver/lib/pus6_motor_driver/motor_driver_node",
+        "--ros-args",
+        "-r",
+        "__node:=pus6_motor_driver_node",
+        "--params-file",
+        "/home/lyapunov/bone_drill/bone_ws/install/pus6_motor_driver/share/pus6_motor_driver/config/three_process.yaml",
+        "--params-file",
+        "/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j13_ladrc_params.yaml",
+        "--params-file",
+        "/tmp/launch_params_hb1dudh_"
+      ],
+      "start_ns": 6073172236806,
+      "node_name": "/pus6_motor_driver_node",
+      "executor": "SingleThreadedExecutor",
+      "returncode": 0,
+      "end_ns": 6103945084237
+    },
+    "control_node_host": {
+      "role": "control_node",
+      "pid": 137981,
+      "ppid": 137968,
+      "pgid": 137968,
+      "state": "exited",
+      "args": [
+        "/home/lyapunov/bone_drill/bone_ws/install/pus6_control/lib/pus6_control/control_node",
+        "--ros-args",
+        "-r",
+        "__node:=pus6_control_node",
+        "--params-file",
+        "/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j13_ladrc_params.yaml"
+      ],
+      "start_ns": 6073177720410,
+      "node_name": "/pus6_control_node",
+      "executor": "SingleThreadedExecutor",
+      "returncode": 0,
+      "end_ns": 6109562750589
+    },
+    "fk_node_host": {
+      "role": "fk_node",
+      "pid": 137982,
+      "ppid": 137968,
+      "pgid": 137968,
+      "state": "exited",
+      "args": [
+        "/home/lyapunov/bone_drill/bone_ws/install/pus6_kinematics/lib/pus6_kinematics/fk_node",
+        "--ros-args",
+        "-r",
+        "__node:=pus6_fk_node",
+        "--params-file",
+        "/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j13_ladrc_params.yaml",
+        "--params-file",
+        "/tmp/launch_params_lbmzbt6s"
+      ],
+      "start_ns": 6073172837313,
+      "node_name": "/pus6_fk_node",
+      "executor": "SingleThreadedExecutor",
+      "returncode": 0,
+      "end_ns": 6109558478279
+    }
+  },
+  "safe_shutdown": true,
+  "demo_shutdown_pass": false
+}

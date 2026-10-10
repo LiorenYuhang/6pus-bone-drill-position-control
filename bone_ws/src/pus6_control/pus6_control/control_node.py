@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import rclpy
+import json
+import os
+import time
+from pathlib import Path
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
-from std_msgs.msg import Float64MultiArray, Int32MultiArray
+from std_msgs.msg import Float64MultiArray, Int32MultiArray, Int64MultiArray
 from std_srvs.srv import Trigger
 
 try:
@@ -96,6 +100,18 @@ class Pus6ControlNode(Node):
         self.desired_deltas_sub = self.create_subscription(
             Float64MultiArray, "/pus6/desired_joint_deltas", self._handle_desired_deltas, 10
         )
+        # Communication recovery resets existing shaper state; its algorithm,
+        # gains, rates and existing command/feedback QoS remain unchanged.
+        self._last_communication_anchor_ns = 0
+        self._last_communication_anchor_payload = None
+        self._static_qualification = os.environ.get('PUS6_J14_RECOVERY_STAGE') == 'static_resume'
+        self._static_recovery_reference = None
+        self._pending_static_anchor_ack = None
+        self._static_sync_record = None
+        self._communication_anchor_ack = self.create_publisher(
+            Int64MultiArray, '/pus6/communication_reanchor_ack', 10)
+        self._communication_anchor_sub = self.create_subscription(
+            Int64MultiArray, '/pus6/communication_reanchor', self._handle_communication_reanchor, 10)
 
         # Services
         self.startup_srv = self.create_service(
@@ -122,8 +138,43 @@ class Pus6ControlNode(Node):
             ]
 
     def _handle_desired_deltas(self, msg: Float64MultiArray) -> None:
+        if self._static_recovery_reference is not None:
+            return  # A1.5 holds the synchronized reference; old Cartesian debt is not pursued.
         if len(msg.data) == 6:
             self._target_positions = [float(v) for v in msg.data]
+
+    def _handle_communication_reanchor(self, msg: Int64MultiArray) -> None:
+        if len(msg.data) != 7 or msg.data[0] <= 0:
+            return
+        epoch, *positions = list(msg.data)
+        if any(p < 0 or p > 2000 for p in positions) or epoch < self._last_communication_anchor_ns:
+            return
+        if epoch == self._last_communication_anchor_ns and list(msg.data) != self._last_communication_anchor_payload:
+            return
+        if epoch > self._last_communication_anchor_ns:
+            if self._static_qualification:
+                self._static_sync_record = dict(epoch_ns=epoch,
+                    old_target=self._target_positions, old_motion_state=self.controller.get_motion_state(),
+                    fresh_raw_steps=list(positions), sync_start_ns=time.monotonic_ns())
+            measured = [(float(p)-float(home))/self.controller.steps_per_meter
+                        for p,home in zip(positions,self.operating_home_steps)]
+            self.controller.reset(initial_positions=measured)
+            self._current_positions = list(measured)
+            self._target_positions = list(measured)
+            self._last_time = self.get_clock().now()
+            self._last_communication_anchor_ns = epoch
+            self._last_communication_anchor_payload = list(msg.data)
+            if self._static_qualification:
+                self._static_recovery_reference = list(measured)
+                self._pending_static_anchor_ack = [epoch, *positions]
+                self._static_sync_record.update(reanchor_target_meters=list(measured),
+                    reset_motion_state=self.controller.get_motion_state(), sync_done_ns=time.monotonic_ns(),
+                    reset_api='JointTrajectoryController.reset -> StatefulJerkLimitedShaper.reset_state')
+        if self._static_qualification:
+            return  # ACK follows the next ordinary Control/Shaper cycle, not a raw-command shortcut.
+        ack = Int64MultiArray()
+        ack.data = [epoch, *positions]
+        self._communication_anchor_ack.publish(ack)
 
     def _handle_startup_home(self, request: Trigger.Request, response: Trigger.Response) -> Trigger.Response:
         self._target_positions = [0.0] * 6
@@ -176,6 +227,19 @@ class Pus6ControlNode(Node):
             steps_msg = Int32MultiArray()
             steps_msg.data = raw_steps
             self.cmd_steps_pub.publish(steps_msg)
+
+            if self._pending_static_anchor_ack is not None:
+                ack = Int64MultiArray(data=[*self._pending_static_anchor_ack, *raw_steps])
+                self._static_sync_record.update(first_shaped_raw_target=list(raw_steps),
+                    first_control_command_ns=time.monotonic_ns(),
+                    first_command_motion_state=self.controller.get_motion_state(), shaper_sync_result=True)
+                directory = os.environ.get('PUS6_J14_RECOVERY_AUDIT_DIR')
+                if directory:
+                    with (Path(directory)/'shaper_reanchor_audit.jsonl').open('a') as stream:
+                        stream.write(json.dumps(self._static_sync_record)+'\n')
+                print('J14_SHAPER_SYNC '+json.dumps(self._static_sync_record), flush=True)
+                self._communication_anchor_ack.publish(ack)
+                self._pending_static_anchor_ack = None
 
             # Publish tracking diagnostics [max_error_mm, mean_error_mm, dt, seq]
             errors_mm = [abs(c - cur) * 1e3 for c, cur in zip(cmd, self._current_positions)]

@@ -1,0 +1,40 @@
+{
+  "head": "feba8fd00c392ecaab93b53138db7c1d06bce000",
+  "branch": "main",
+  "tags": [
+    "v1.0-j10-axis-wise-workspace-qualified",
+    "v1.0-j11-attitude-stabilization-frozen",
+    "v1.0-j11-m1-feedforward-hardware-qualified",
+    "v1.0-j12-classical-dynamic-performance-frozen",
+    "v1.0-j13-ladrc-attitude-residual-control-qualified",
+    "v1.0-j5-pre-assembly-frozen",
+    "v1.0-j7-servo-hardware-frozen",
+    "v1.0-j8-active-servo-hardware-qualified",
+    "v1.0-j9-e1d-scientific-closeout"
+  ],
+  "active_processes": [],
+  "serial_ports": {
+    "/dev/ttyUSB0": {
+      "exists": true,
+      "free": true,
+      "fuser_returncode": 1,
+      "fuser_stdout": "",
+      "fuser_stderr": ""
+    },
+    "/dev/ttyACM0": {
+      "exists": true,
+      "free": true,
+      "fuser_returncode": 1,
+      "fuser_stdout": "",
+      "fuser_stderr": ""
+    },
+    "/dev/ttyACM1": {
+      "exists": true,
+      "free": true,
+      "fuser_returncode": 1,
+      "fuser_stdout": "",
+      "fuser_stderr": ""
+    }
+  },
+  "status_summary": 114
+}

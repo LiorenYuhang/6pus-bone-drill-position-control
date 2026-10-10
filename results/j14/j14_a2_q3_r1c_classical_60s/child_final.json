@@ -1,0 +1,10 @@
+{
+  "pid": 369180,
+  "cycles": 459,
+  "fault": "parent_lease_expired",
+  "closed": true,
+  "servo_start_ns": 22844118079902,
+  "motion_stop_ns": 22853298160191,
+  "hardware_write_count": null,
+  "pause_success": true
+}

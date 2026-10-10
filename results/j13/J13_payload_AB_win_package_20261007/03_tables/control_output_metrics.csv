@@ -1,0 +1,4 @@
+axis,classical_u_act_rms_deg,classical_u_act_peak_deg,classical_sat_percent,ladrc_u_act_rms_deg,ladrc_u_act_peak_deg,ladrc_sat_percent,clamp_limit_deg,notes
+Roll,0.022,0.059,0.0%,0.093,0.228,0.0%,±0.5,Both controllers operate within linear unconstrained region
+Pitch,0.045,0.129,0.0%,0.277,0.5,16.4%,±0.5,LADRC Pitch hit ±0.5 deg clamp during 16.4% of ACTIVE phase due to large disturbance
+Yaw,0.019,0.093,0.0%,0.038,0.113,0.0%,±0.5,LADRC Yaw provides smooth residual control without saturation

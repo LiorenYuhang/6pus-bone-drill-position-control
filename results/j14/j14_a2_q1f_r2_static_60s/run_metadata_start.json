@@ -1,0 +1,28 @@
+{
+  "stage": "A2-Q1F",
+  "run_id": 2,
+  "hardware": true,
+  "command": [
+    "ros2",
+    "launch",
+    "pus6_bringup",
+    "pus6_system.launch.py",
+    "hardware_mode:=active",
+    "config_file:=/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j13_ladrc_params.yaml",
+    "driver_audit_directory:=/home/lyapunov/bone_drill/results/j14/j14_a2_q1f_r2_static_60s",
+    "servo_run_duration_s:=60.0",
+    "driver_telemetry_mode:=qualification"
+  ],
+  "duration_s": 60,
+  "preflight": {
+    "processes": [],
+    "serial": {
+      "returncode": 1,
+      "owners": "",
+      "free": true
+    }
+  },
+  "hardware_write_count": null,
+  "experimental_environment_flags": {},
+  "start_ns": 6693376299827
+}

@@ -1,0 +1,2 @@
+heartbeat_seq,timestamp_ns,expected_ns,wake_ns,delay_ms,system_load_1m,process_count
+216,28466825716079,28466775734029,28466825716079,49.982,1.71,422

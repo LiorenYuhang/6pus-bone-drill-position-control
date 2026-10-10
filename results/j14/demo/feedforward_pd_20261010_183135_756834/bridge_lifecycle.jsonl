@@ -1,0 +1,4 @@
+{"event": "bridge_started", "ns": 7546726144034, "pid": 165937}
+{"event": "bridge_ready", "ns": 7546726290876, "pid": 165937}
+{"event": "bridge_observed_servo_start", "ns": 7546735396976, "servo_start_ns": 7546727172372}
+{"event": "bridge_stopped", "ns": 7595192384906, "total_received": 2421, "drop_count": 0, "max_ipc_age_ms": 1.978512, "max_feedback_gap_ms": 23.6811, "ipc_watchlist_count": 0, "gap_watchlist_count": 0, "exit_reason": "child_feedback_eof", "health_ok": false, "pid": 165937}

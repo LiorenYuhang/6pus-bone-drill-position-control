@@ -1,0 +1,94 @@
+# Stage J13-2A1: LADRC Shadow-Mode Parameters & Retained Classical Control Baseline
+# Mode: Strictly SHADOW MODE (LADRC executes in parallel, LOG ONLY, NO control authority)
+# Real control is 100% governed by the qualified J11 Classical P/PD controller.
+
+j13_ladrc_shadow_runner:
+  ros__parameters:
+    # --------------------------------------------------------------------------
+    # LADRC Shadow Channel Parameters (J13 Conservative Hardware Start)
+    # --------------------------------------------------------------------------
+    # Roll Channel: b0=20.0 s^-1, omega_c=0.8 rad/s, omega_o=2.5 rad/s
+    ladrc_b0_roll: 20.0
+    ladrc_omega_c_roll: 0.8
+    ladrc_omega_o_roll: 2.5
+    ladrc_max_residual_roll_deg: 0.5
+
+    # Pitch Channel: b0=10.0 s^-1, omega_c=1.0 rad/s, omega_o=4.0 rad/s
+    ladrc_b0_pitch: 10.0
+    ladrc_omega_c_pitch: 1.0
+    ladrc_omega_o_pitch: 4.0
+    ladrc_max_residual_pitch_deg: 0.5
+
+    # Yaw Channel: b0=6.0 s^-1, omega_c=0.25 rad/s, omega_o=1.2 rad/s (Independent!)
+    ladrc_b0_yaw: 6.0
+    ladrc_omega_c_yaw: 0.25
+    ladrc_omega_o_yaw: 1.2
+    ladrc_max_residual_yaw_deg: 0.5
+
+    # --------------------------------------------------------------------------
+    # Retained Classical P/PD Controller Parameters (J11 Frozen Production)
+    # --------------------------------------------------------------------------
+    kp_roll: 0.05
+    kp_pitch: 0.05
+    kp_yaw: 0.025
+
+    ki_roll: 0.0
+    ki_pitch: 0.0
+    ki_yaw: 0.0
+
+    kd_roll: 0.0
+    kd_pitch: 0.0015
+    kd_yaw: 0.0015
+
+    derivative_enabled: true
+    derivative_lpf_cutoff_hz: 5.0
+
+    max_residual_roll_deg: 0.5
+    max_residual_pitch_deg: 0.5
+    max_residual_yaw_deg: 0.5
+
+    max_integral_roll_deg_s: 2.0
+    max_integral_pitch_deg_s: 2.0
+    max_integral_yaw_deg_s: 4.0
+
+    # Timing & Freshness bounds
+    control_rate_hz: 50.0
+    min_dt_s: 0.001
+    max_dt_s: 0.100
+    max_platform_imu_age_s: 0.100
+    max_base_imu_age_s: 0.100
+
+# Retained Driver & Kinematics Configuration
+pus6_motor_driver_node:
+  ros__parameters:
+    port: "/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0"
+    baudrate: 921600
+    timeout: 0.05
+    write_rate_hz: 50.0
+    poll_rate_hz: 10.0
+    hardware_mode: "mock"
+    auto_connect: true
+    auto_configure: false
+    speed: 50
+    mode: 2
+    max_current_mA: 500
+    motor_ids: [1, 2, 3, 4, 5, 6]
+    maintenance_mode: true
+    reconnect_max_jump_steps: 80
+    feedback_loss_policy: "age_based"
+
+pus6_kinematics_node:
+  ros__parameters:
+    envelope_max_xy_m: 0.045
+    envelope_max_z_delta_m: 0.025
+    envelope_max_angle_rad: 1.50
+    enforce_software_envelope: false
+
+pus6_control_node:
+  ros__parameters:
+    control_rate_hz: 50.0
+    max_speed_m_per_sec: 0.005
+    max_accel_m_per_sec2: 0.050
+    max_jerk_m_per_sec3: 0.500
+    omega_n: 20.0
+    maintenance_mode: true

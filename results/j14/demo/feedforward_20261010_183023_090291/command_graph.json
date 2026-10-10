@@ -1,0 +1,51 @@
+{
+  "/pus6/target_cartesian_pose": {
+    "publishers": [
+      "j11_base_feedforward_runner"
+    ],
+    "subscribers": [
+      "j14_demo_observer",
+      "pus6_kinematics_node"
+    ]
+  },
+  "/pus6/desired_joint_deltas": {
+    "publishers": [
+      "pus6_kinematics_node"
+    ],
+    "subscribers": [
+      "j14_demo_observer",
+      "pus6_control_node"
+    ]
+  },
+  "/pus6/command_joint_steps": {
+    "publishers": [
+      "pus6_control_node"
+    ],
+    "subscribers": [
+      "j11_base_feedforward_runner",
+      "j14_demo_observer",
+      "pus6_motor_driver_node"
+    ]
+  },
+  "/pus6/joint_feedback/timed": {
+    "publishers": [
+      "pus6_feedback_bridge_node"
+    ],
+    "subscribers": [
+      "j14_a2_q3_feedback_relay",
+      "j11_base_feedforward_runner",
+      "j14_demo_observer",
+      "j14_demo_observer",
+      "pus6_fk_node"
+    ]
+  },
+  "/pus6/joint_states": {
+    "publishers": [
+      "j14_a2_q3_feedback_relay"
+    ],
+    "subscribers": [
+      "j14_demo_observer",
+      "pus6_control_node"
+    ]
+  }
+}

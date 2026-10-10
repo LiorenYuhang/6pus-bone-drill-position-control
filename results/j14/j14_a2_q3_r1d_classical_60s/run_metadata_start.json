@@ -1,0 +1,20 @@
+{
+  "stage": "A2-Q3",
+  "run_id": "Q3-R1",
+  "mode": "classical",
+  "hardware": true,
+  "hardware_mode": "active",
+  "duration_s": 60.0,
+  "driver_telemetry_capacity_cycles": 32768,
+  "preflight": {
+    "processes": [],
+    "serial": {
+      "returncode": 1,
+      "owners": "",
+      "free": true
+    }
+  },
+  "hardware_write_count": null,
+  "start_ns": 28316872313502,
+  "start_epoch_ns": 1791549944828017619
+}

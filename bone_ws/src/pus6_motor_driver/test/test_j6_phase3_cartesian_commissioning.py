@@ -24,7 +24,7 @@ from run_j6_phase3_cartesian_commissioning import (  # noqa: E402
     make_mock_controller,
     run_j6_phase3_cartesian_commissioning,
 )
-from pus6_motor_driver.safety import HardwareMode, SafetyViolation, TargetValidationError  # noqa: E402
+from pus6_motor_driver.safety import HardwareMode, MAX_CURRENT_MA, SafetyViolation, TargetValidationError  # noqa: E402
 from pus6_motor_driver.six_motor_controller import SixMotorController  # noqa: E402
 
 
@@ -148,7 +148,7 @@ def test_forward_stops_on_abnormal_current_and_records_pause():
     session.home_transition(home_authorized=True, duration_s=0.01)
     session.confirm_home(observations=SAFE_OBSERVATIONS)
     session.preview_cartesian()
-    controller.bus.currents[1] = 501
+    controller.bus.currents[1] = MAX_CURRENT_MA + 1
     with pytest.raises(SafetyViolation):
         session.forward_motion(forward_authorized=True, duration_s=0.01)
     report = session.finalise()

@@ -1,0 +1,45 @@
+{
+  "total_cycles_recorded": 21,
+  "total_stall_events_recorded": 1,
+  "stalls_gt_50ms_count": 1,
+  "stalls_gt_100ms_count": 1,
+  "stalls_gt_150ms_count": 1,
+  "stalls_gt_200ms_count": 1,
+  "max_missing_interval_ms": 1093.452,
+  "worst_stall_time_budget": {
+    "worst_stall_cycle": 20,
+    "total_missing_interval_ms": 1093.452,
+    "inter_callback_gap_ms": 1065.21,
+    "callback_execution_total_ms": 28.242,
+    "wake_lateness_ms": 1051.681,
+    "timer_dispatch_delay_ms": 1051.681,
+    "scheduler_gap_ms": 0.0,
+    "in_callback_breakdown_ms": {
+      "target_lock_wait_ms": 0.112,
+      "slew_processing_ms": 0.011,
+      "preflight_check_ms": 0.006,
+      "pre_transport_ms": 0.002,
+      "transport_total_ms": 7.37,
+      "uart_tx_ms": 3.894,
+      "uart_drain_ms": 2.854,
+      "uart_total_ms": 6.748,
+      "post_transport_ms": 0.067,
+      "ingest_feedback_ms": 0.0,
+      "telem_total_ms": 0.0,
+      "ros_pub_total_ms": 0.0,
+      "other_in_callback_ms": 20.674
+    },
+    "cpu_and_system": {
+      "thread_cpu_delta_ms": 25.158,
+      "process_cpu_delta_ms": 1130.784,
+      "gc_pause_ms": 0.0,
+      "vol_ctx_switches_delta": 3483,
+      "invol_ctx_switches_delta": 1,
+      "vol_ctx_switches": 3671,
+      "invol_ctx_switches": 5,
+      "native_thread_id": 587550
+    },
+    "stall_classification": "A_TIMER_DISPATCH_DELAY_PYTHON_GIL_OR_BUSY",
+    "percentage_accounted_for": 100.0
+  }
+}

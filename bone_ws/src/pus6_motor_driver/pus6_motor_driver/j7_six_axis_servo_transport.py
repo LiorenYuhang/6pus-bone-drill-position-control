@@ -16,7 +16,7 @@ import threading
 import time
 
 try:
-    from .j7_real_uart_adapter import RxDrainAudit
+    from .j7_real_uart_adapter import J7AdapterWriteTimeout, RxDrainAudit, RxDrainMetrics, SerialWriteMetric
     from .j7_servo_transport import (
         RxResidualRecord,
         RxSafetyError,
@@ -45,7 +45,7 @@ try:
         validate_target_vector,
     )
 except ImportError:  # pragma: no cover - direct module execution fallback.
-    from j7_real_uart_adapter import RxDrainAudit  # type: ignore
+    from j7_real_uart_adapter import J7AdapterWriteTimeout, RxDrainAudit, RxDrainMetrics, SerialWriteMetric  # type: ignore
     from j7_servo_transport import (  # type: ignore
         RxResidualRecord,
         RxSafetyError,
@@ -111,6 +111,7 @@ class SixAxisTxRecord:
     requested_bytes: int = 0
     written_bytes: int = 0
     error: str | None = None
+    serial_write_metric: SerialWriteMetric | None = None
 
 
 @dataclass(frozen=True)
@@ -178,6 +179,7 @@ class J7SixAxisServoTransport:
         clock_ns: Callable[[], int] | None = None,
         sleep_fn: Callable[[float], None] | None = None,
         pause_callback: Callable[[str], None] | None = None,
+        recoverable_write_timeouts: bool = False,
     ) -> None:
         if cycle_rate_hz != 50.0:
             raise ValueError("J7-C5 six-axis Servo transport requires a fixed 50 Hz cycle")
@@ -197,6 +199,15 @@ class J7SixAxisServoTransport:
         self._clock_ns = clock_ns or time.monotonic_ns
         self._sleep_fn = sleep_fn or time.sleep
         self._pause_callback = pause_callback
+        self.recoverable_write_timeouts = recoverable_write_timeouts
+        self.communication_transient = False
+        self.recovery_feedback_only = False
+        self.recovery_static_targets = None
+        self._static_first_cycle_id = None
+        self._static_last_cycle_id = None
+        self._static_first_deadline_ns = None
+        self._recovery_verification = False
+        self._last_recovery_verification_audit = None
 
         self._lock = threading.RLock()
         self._parser = FrameStreamParser(expected_header=RSP_FRAME_HEADER)
@@ -308,6 +319,15 @@ class J7SixAxisServoTransport:
         validate_target_vector(targets)
         with self._lock:
             self._ensure_running_locked()
+            if self.recovery_static_targets is not None:
+                if tuple(targets) != self.recovery_static_targets:
+                    raise ServoTransportError("static recovery forbids trajectory continuation")
+                expected = self._static_first_cycle_id if self._static_last_cycle_id is None else self._static_last_cycle_id + 1
+                if cycle_id != expected:
+                    raise ServoTransportError("static recovery requires a new consecutive transaction epoch")
+                if self._static_last_cycle_id is None and self._static_first_deadline_ns is not None and self._clock_ns() >= self._static_first_deadline_ns:
+                    raise ServoTransportError("existing 1000ms freshness boundary expired before first resume write")
+                self._static_last_cycle_id = cycle_id
             if self._configured is None:
                 raise ServoTransportError("configure_servo() must succeed before motion TX")
 
@@ -380,6 +400,7 @@ class J7SixAxisServoTransport:
                             requested_bytes=len(frame),
                             written_bytes=len(frame) if written is None else written,
                             error=None,
+                            serial_write_metric=getattr(self.bus, "last_write_metric", None),
                         )
                     )
             except Exception as exc:
@@ -387,6 +408,41 @@ class J7SixAxisServoTransport:
                 transport_err_phase = f"write_id{motor_id}"
                 transport_err_mid = motor_id
                 transport_err_cls = type(exc).__name__
+                if isinstance(exc, J7AdapterWriteTimeout):
+                    # Preserve the failed write before STOP writes can overwrite adapter metrics.
+                    tx_end_ns = self._clock_ns()
+                    records.append(SixAxisTxRecord(
+                        motor_id=motor_id, cycle_id=cycle_id, target_position=target,
+                        target_timestamp_ns=timestamp_ns, tx_start_ns=tx_start_ns,
+                        tx_end_ns=tx_end_ns, response_wait=False, retry_count=0,
+                        residual_frames_before=residual_before if not records else len(self._residual),
+                        residual_frames_after=len(self._residual),
+                        duration_ns=tx_end_ns - tx_start_ns,
+                        cpu_duration_ns=time.thread_time_ns() - tx_cpu_start,
+                        requested_bytes=len(frame), written_bytes=-1,
+                        error="SerialTimeoutException",
+                        serial_write_metric=exc.write_metric,
+                    ))
+                    starts = [record.tx_start_ns for record in records]
+                    failed_audit = SixAxisCycleAudit(
+                        cycle_id=cycle_id, target_timestamp_ns=timestamp_ns,
+                        cycle_start_ns=cycle_start_ns, cycle_end_ns=tx_end_ns,
+                        cycle_jitter_ns=cycle_jitter_ns, target_age_ns=cycle_start_ns - timestamp_ns,
+                        tx_records=tuple(records), tx_skew_ns=max(starts) - min(starts),
+                        batch_complete_ns=tx_end_ns,
+                        deadline_miss=(tx_end_ns - cycle_start_ns) > self.period_ns,
+                        prior_rx_drain_wall_ns=prior_rx_drain_wall_ns,
+                        prior_rx_drain_cpu_ns=prior_rx_drain_cpu_ns,
+                        prior_rx_drained_frames=residual_before,
+                        inter_frame_wait_total_ns=inter_frame_wait_total_ns,
+                        error_phase=transport_err_phase, error_motor_id=motor_id,
+                        error_class="SerialTimeoutException",
+                    )
+                    self._cycles.append(failed_audit)
+                    exc.cycle_audit = failed_audit
+                    if self.recoverable_write_timeouts and not self._recovery_verification:
+                        self.communication_transient = True
+                        raise
                 self.stop("motion_write_failure")
                 raise
 
@@ -395,10 +451,24 @@ class J7SixAxisServoTransport:
             drain_fn = getattr(self.bus, "drain_motion_feedbacks", None)
             t_motion_drain_start_ns = self._clock_ns()
             t_motion_drain_cpu_start = time.thread_time_ns()
+            drain_iterations = 0
+            cum_in_waiting_calls = 0
+            cum_read_calls = 0
+            cum_bytes_read = 0
+            max_read_lat_ns = 0
             if drain_fn is not None:
                 deadline_ns = self._clock_ns() + int(self.rx_drain_budget_s * 1e9)
                 while True:
+                    drain_iterations += 1
                     new_fbs = drain_fn()
+                    rx_m = getattr(self.bus, "last_rx_drain_metrics", None)
+                    if rx_m is not None:
+                        cum_in_waiting_calls += getattr(rx_m, "in_waiting_calls", 0)
+                        cum_read_calls += getattr(rx_m, "read_calls", 0)
+                        cum_bytes_read += getattr(rx_m, "bytes_read", 0)
+                        lat = getattr(rx_m, "max_read_latency_ns", 0)
+                        if lat > max_read_lat_ns:
+                            max_read_lat_ns = lat
                     feedbacks.update(new_fbs)
                     if len(feedbacks) >= len(MOTOR_IDS) or self._clock_ns() >= deadline_ns:
                         break
@@ -407,7 +477,20 @@ class J7SixAxisServoTransport:
             t_motion_drain_cpu_end = time.thread_time_ns()
             motion_drain_wall_ns = t_motion_drain_end_ns - t_motion_drain_start_ns
             motion_drain_cpu_ns = t_motion_drain_cpu_end - t_motion_drain_cpu_start
-            rx_metrics = getattr(self.bus, "last_rx_drain_metrics", None)
+            rx_metrics = None
+            if drain_fn is not None:
+                rx_metrics = RxDrainMetrics(
+                    timestamp_start_ns=t_motion_drain_start_ns,
+                    timestamp_end_ns=t_motion_drain_end_ns,
+                    wall_duration_ns=motion_drain_wall_ns,
+                    cpu_duration_ns=motion_drain_cpu_ns,
+                    in_waiting_calls=cum_in_waiting_calls,
+                    read_calls=cum_read_calls,
+                    bytes_read=cum_bytes_read,
+                    max_read_latency_ns=max_read_lat_ns,
+                    feedbacks_extracted=len(feedbacks),
+                    drain_iterations=drain_iterations,
+                )
 
             batch_complete_ns = self._clock_ns()
             cycle_end_ns = batch_complete_ns
@@ -591,6 +674,73 @@ class J7SixAxisServoTransport:
                 self._pause_sent = True
                 self._pause_callback(self._stop_reason)
 
+    def verify_recovery_hold(self, positions: list[int], *, cycle_id: int) -> SixAxisCycleAudit:
+        """A new measured-position transaction, never a retry of the failed batch."""
+        with self._lock:
+            if self.recovery_feedback_only or self.recovery_static_targets is not None:
+                raise ServoTransportError("fresh-state qualification inhibits all target writes")
+            if not self.communication_transient or self._stopped:
+                raise ServoTransportError("no recoverable communication transient")
+            self._recovery_verification = True
+            try:
+                audit = self.send_cycle(positions, cycle_id=cycle_id)
+                self._last_recovery_verification_audit = audit
+                return audit
+            finally:
+                self._recovery_verification = False
+
+    def begin_recovery_feedback_only(self) -> None:
+        with self._lock:
+            if self._stopped or not self.communication_transient:
+                raise ServoTransportError("recovery-only communication requires a pending transient")
+            self.recovery_feedback_only = True
+
+    def request_recovery_status(self, motor_id, **kwargs):
+        with self._lock:
+            if self._stopped or not self.communication_transient or not self.recovery_feedback_only:
+                raise ServoTransportError("recovery feedback path is not armed")
+            return self.bus.request_recovery_status(motor_id, **kwargs)
+
+    def authorize_static_resume(self, targets, *, fresh_positions, first_cycle_id, jump_limit, first_deadline_ns=None):
+        """Release only the synchronized Control/Shaper reference, never ACTIVE."""
+        with self._lock:
+            if self._stopped or not self.communication_transient or not self.recovery_feedback_only:
+                raise ServoTransportError("static resume requires a paused recovery epoch")
+            validate_target_vector(targets)
+            if len(fresh_positions) != len(MOTOR_IDS):
+                raise ServoTransportError("static resume requires six fresh positions")
+            if not isinstance(first_cycle_id, int) or not self._cycles or first_cycle_id <= self._cycles[-1].cycle_id:
+                raise ServoTransportError("static resume must start after the failed transaction")
+            if max(abs(t-p) for t,p in zip(targets,fresh_positions)) > jump_limit:
+                raise ServoTransportError("static resume exceeds existing recovery jump boundary")
+            self.recovery_static_targets = tuple(targets)
+            self._static_first_cycle_id = first_cycle_id
+            self._static_last_cycle_id = None
+            self._static_first_deadline_ns = first_deadline_ns
+            self.recovery_feedback_only = False
+
+    def confirm_static_resume(self, audit):
+        with self._lock:
+            if self._stopped or self.recovery_static_targets is None or audit.cycle_id != self._static_first_cycle_id:
+                raise ServoTransportError("not the first static resume transaction")
+            if not self._cycles or audit is not self._cycles[-1] or set(audit.feedbacks) != set(MOTOR_IDS):
+                raise ServoTransportError("first static transaction requires six new feedbacks")
+            self.communication_transient = False
+            self._delivery_uncertain = False
+
+    def complete_communication_recovery(self, audit: SixAxisCycleAudit) -> None:
+        with self._lock:
+            if self.recovery_feedback_only or self.recovery_static_targets is not None:
+                raise ServoTransportError("fresh-state qualification cannot resume motion")
+            if self._stopped or not self.communication_transient:
+                raise ServoTransportError("cannot resume a latched transport")
+            if audit is not self._last_recovery_verification_audit:
+                raise ServoTransportError("cannot resume using an old transaction snapshot")
+            if set(audit.feedbacks) != set(MOTOR_IDS) or audit.error_class is not None:
+                raise ServoTransportError("recovery requires a complete fresh transaction")
+            self.communication_transient = False
+            self._delivery_uncertain = False
+
     def audit_snapshot(self) -> SixAxisServoTransportAudit:
         with self._lock:
             return SixAxisServoTransportAudit(
@@ -606,8 +756,12 @@ class J7SixAxisServoTransport:
             )
 
     def _ensure_running_locked(self) -> None:
+        if self.recovery_feedback_only:
+            raise ServoTransportError("recovery-only communication inhibits motion")
         if self._stopped:
             raise ServoTransportError("transport is stopped")
+        if self.communication_transient and not self._recovery_verification and self.recovery_static_targets is None:
+            raise ServoTransportError("communication recovery required before motion")
 
 
 __all__ = [

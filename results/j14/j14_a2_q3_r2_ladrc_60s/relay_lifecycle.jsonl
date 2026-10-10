@@ -1,0 +1,2 @@
+{"event": "relay_started", "monotonic_ns": 28467127401797, "pid": 464400}
+{"event": "relay_stopped", "monotonic_ns": 28530704680377, "pid": 464400, "raw_steps_received": 3172, "raw_steps_published": 3172, "first_input_seq": 77, "last_input_seq": 3251, "last_raw_steps": [1000, 1002, 1000, 999, 995, 999], "joint_states_received": 3169, "joint_states_published": 3169, "last_joint_state_positions": [0.025, 0.025050000000000003, 0.025, 0.024975, 0.024875, 0.024975], "total_received": 3172, "total_published": 3172, "exit_reason": "clean_shutdown"}

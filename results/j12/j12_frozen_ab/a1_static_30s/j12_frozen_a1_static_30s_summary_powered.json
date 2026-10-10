@@ -1,0 +1,8 @@
+{
+  "stage": "j12_frozen_a1_static_30s",
+  "mode": "POWERED REAL EXECUTION",
+  "hardware_write_count": 1446,
+  "total_cycles": 1500,
+  "final_state": "ACTIVE",
+  "fault_reason": ""
+}

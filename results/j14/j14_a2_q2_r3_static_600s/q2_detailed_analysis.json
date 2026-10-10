@@ -1,0 +1,181 @@
+{
+  "run_id": "Q2-R3",
+  "duration_s": 600.0,
+  "servo_wall_duration_s": 600.010167961,
+  "nominal_slot_count": 30000.5084,
+  "executed_child_cycles": 29995,
+  "bridge_cycles": 29995,
+  "is_contiguous": true,
+  "bridge_is_contiguous": true,
+  "ipc_drop_count": 0,
+  "duplicate_cycles": 0,
+  "deadline_reset_count": 3,
+  "deadline_resets": [
+    {
+      "cycle_seq": 10465,
+      "next_cycle_seq": 10466,
+      "cycle_wall_dur_ms": 40.263253,
+      "overdue_ms": 20.508189,
+      "skipped_slots": 1,
+      "prev_expected_ns": 9334813305645,
+      "curr_expected_ns": 9334853813834
+    },
+    {
+      "cycle_seq": 16976,
+      "next_cycle_seq": 16977,
+      "cycle_wall_dur_ms": 60.410068,
+      "overdue_ms": 40.717244,
+      "skipped_slots": 2,
+      "prev_expected_ns": 9465053813834,
+      "curr_expected_ns": 9465114531078
+    },
+    {
+      "cycle_seq": 23487,
+      "next_cycle_seq": 23488,
+      "cycle_wall_dur_ms": 68.375108,
+      "overdue_ms": 48.725104,
+      "skipped_slots": 2,
+      "prev_expected_ns": 9595314531078,
+      "curr_expected_ns": 9595383256182
+    }
+  ],
+  "phase_displacement_skipped_estimate": 5,
+  "nominal_minus_executed": 6,
+  "slot_execution_ratio": 99.9833,
+  "cycle_durations_gt20_count": 4,
+  "cycle_durations_gt20": [
+    [
+      3954,
+      27.082636,
+      27.080412
+    ],
+    [
+      10465,
+      40.263253,
+      40.264628
+    ],
+    [
+      16976,
+      60.410068,
+      60.412656
+    ],
+    [
+      23487,
+      68.375108,
+      68.311541
+    ]
+  ],
+  "cycle_intervals_gt25_count": 4,
+  "cycle_intervals_gt25": [
+    [
+      3954,
+      3955,
+      27.168997
+    ],
+    [
+      10465,
+      10466,
+      40.358578
+    ],
+    [
+      16976,
+      16977,
+      60.564601
+    ],
+    [
+      23487,
+      23488,
+      68.541268
+    ]
+  ],
+  "hb_stalls_gt20ms_count": 0,
+  "warning_283_3ms_count": 0,
+  "hard_stop_1000ms_count": 0,
+  "wake_gt30ms_count": 0,
+  "gap_gt100ms_count": 0,
+  "age_gt100ms_count": 0,
+  "distributions": {
+    "serial_write_ms": {
+      "n": 179970,
+      "P50": 0.03674,
+      "P95": 0.096828,
+      "P99": 0.145481,
+      "P99_9": 0.243531,
+      "Max": 3.670301,
+      "Min": 0.00548
+    },
+    "wrapper_wall_ms": {
+      "n": 179970,
+      "P50": 0.055769,
+      "P95": 0.141692,
+      "P99": 0.201844,
+      "P99_9": 0.308213,
+      "Max": 3.691697,
+      "Min": 0.011457
+    },
+    "cycle_wall_ms": {
+      "n": 29995,
+      "P50": 7.035376,
+      "P95": 7.815921,
+      "P99": 8.291951,
+      "P99_9": 11.156574,
+      "Max": 68.375108,
+      "Min": 5.933973
+    },
+    "cycle_interval_ms": {
+      "n": 29994,
+      "P50": 19.999728,
+      "P95": 20.120009,
+      "P99": 20.163781,
+      "P99_9": 20.264715,
+      "Max": 68.541268,
+      "Min": 12.795519
+    },
+    "wake_lateness_ms": {
+      "n": 29995,
+      "P50": 0.188147,
+      "P95": 0.301127,
+      "P99": 0.341226,
+      "P99_9": 0.453997,
+      "Max": 7.304446,
+      "Min": 0.008837
+    },
+    "thread_cpu_ms": {
+      "n": 29995,
+      "P50": 7.017706,
+      "P95": 7.777937,
+      "P99": 8.250651,
+      "P99_9": 11.12208,
+      "Max": 68.311541,
+      "Min": 5.816108
+    },
+    "feedback_ipc_age_ms": {
+      "n": 29995,
+      "P50": 0.535027,
+      "P95": 0.75939,
+      "P99": 0.892594,
+      "P99_9": 1.103328,
+      "Max": 3.112855,
+      "Min": 0.18365
+    },
+    "feedback_gap_ms": {
+      "n": 29994,
+      "P50": 19.997607,
+      "P95": 20.769763,
+      "P99": 21.317378,
+      "P99_9": 23.900493,
+      "Max": 80.774919,
+      "Min": 6.170615
+    }
+  },
+  "safety_checks": {
+    "tx_timeout_count": 0,
+    "hardware_fault_count": 0,
+    "pause_ack_confirmed": true,
+    "serial_free": true,
+    "residual_processes": [],
+    "handshake_valid": true,
+    "production_path_confirmed": true,
+    "unique_publishers_confirmed": true
+  }
+}

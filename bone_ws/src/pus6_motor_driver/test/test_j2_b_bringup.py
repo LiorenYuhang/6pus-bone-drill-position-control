@@ -13,6 +13,7 @@ from run_j2_b_bringup import J2BRunner  # noqa: E402
 from pus6_motor_driver.fake_bus import FakeBus  # noqa: E402
 from pus6_motor_driver.safety import (  # noqa: E402
     HardwareMode,
+    MAX_CURRENT_MA,
     ReadOnlyModeError,
     TargetValidationError,
 )
@@ -378,7 +379,7 @@ def test_j2b_runtime_normal_motion_current_does_not_stop(tmp_path, running_curre
     assert result["post_flight"]["currents_mA"][3] == 0
 
 
-def test_j2b_runtime_current_above_500ma_stops_and_recovers_to_zero(tmp_path):
+def test_j2b_runtime_current_above_frozen_limit_stops_and_recovers_to_zero(tmp_path):
     class OverCurrentBus(FakeBus):
         def request(self, frame: bytes, **kwargs) -> bytes:
             from pus6_motor_driver.protocol import CMD_WR_REGISTER, parse_frame
@@ -388,7 +389,7 @@ def test_j2b_runtime_current_above_500ma_stops_and_recovers_to_zero(tmp_path):
                 self.currents[parsed.motor_id] = 0
             response = super().request(frame, **kwargs)
             if parsed.command == CMD_WR_REGISTER and parsed.register_addr == 0x29:
-                self.currents[parsed.motor_id] = 501
+                self.currents[parsed.motor_id] = MAX_CURRENT_MA + 1
             return response
 
     bus = OverCurrentBus()
@@ -403,7 +404,7 @@ def test_j2b_runtime_current_above_500ma_stops_and_recovers_to_zero(tmp_path):
     ).run()
 
     assert result["outcome"] == "STOP"
-    assert "exceeds threshold 500mA" in result["error"]
+    assert f"exceeds threshold {MAX_CURRENT_MA}mA" in result["error"]
     assert result["stop_confirmation"]["confirmed"] is True
     assert result["post_flight"]["currents_mA"][3] == 0
 

@@ -9,10 +9,16 @@ transport consumers; all physical access is serialized by ``uart_lock``.
 from __future__ import annotations
 
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Callable, Deque, Protocol
 import threading
 import time
+import resource
+from serial import SerialTimeoutException
+
+# J14-A1: A0 retained-window P99=3.144ms; 100--300ms stalls are pathological.
+# This is a per-write failure deadline, not a 20ms cycle scheduling guarantee.
+J14_UART_WRITE_TIMEOUT_S = 0.030
 
 try:
     from .protocol import (
@@ -56,6 +62,18 @@ class J7AdapterTimeout(J7AdapterError):
     """A bounded request or stop response timed out."""
 
 
+class J7AdapterWriteTimeout(J7AdapterError):
+    """Finite serial TX deadline expired; partial frame delivery is unknown."""
+
+    def __init__(self, metric: SerialWriteMetric, timeout_s: float) -> None:
+        self.write_metric = metric
+        self.timeout_s = timeout_s
+        super().__init__(
+            f"SerialTimeoutException: UART write timeout after "
+            f"{metric.wall_duration_ns / 1e6:.3f}ms (deadline={timeout_s * 1000:.1f}ms)"
+        )
+
+
 class J7AdapterRxError(J7AdapterError):
     """RX bytes could not be safely parsed or bounded."""
 
@@ -85,6 +103,16 @@ class RxDrainAudit:
 
 
 @dataclass(frozen=True)
+class TxQueueState:
+    """Read-only tty queue snapshot; unavailable values remain unknown."""
+
+    out_waiting: int | None
+    in_waiting: int | None
+    wall_duration_ns: int
+    error: str | None = None
+
+
+@dataclass(frozen=True)
 class SerialWriteMetric:
     timestamp_start_ns: int
     timestamp_end_ns: int
@@ -93,6 +121,50 @@ class SerialWriteMetric:
     requested_bytes: int
     written_bytes: int
     error: str | None = None
+    configured_timeout_s: float | None = None
+    queue_before: TxQueueState | None = None
+    queue_after: TxQueueState | None = None
+    write_seq: int | None = None
+    native_thread_id: int | None = None
+    process_cpu_duration_ns: int | None = None
+    voluntary_ctx_delta: int | None = None
+    involuntary_ctx_delta: int | None = None
+    snapshot_enter_ns: int | None = None
+    snapshot_exit_ns: int | None = None
+    snapshot_overhead_ns: int | None = None
+    clock_sync_monotonic_before_ns: int | None = None
+    clock_sync_epoch_ns: int | None = None
+    clock_sync_monotonic_after_ns: int | None = None
+
+
+@dataclass(frozen=True)
+class SerialReadMetric:
+    read_seq: int
+    native_thread_id: int
+    t_read_enter_ns: int
+    t_read_exit_ns: int
+    read_wall_ns: int
+    serial_call_wall_ns: int
+    snapshot_overhead_ns: int
+    t_snapshot_enter_ns: int
+    t_snapshot_exit_ns: int
+    thread_cpu_before_ns: int
+    thread_cpu_after_ns: int
+    read_thread_cpu_ns: int
+    process_cpu_before_ns: int
+    process_cpu_after_ns: int
+    read_process_cpu_ns: int
+    vol_ctx_before: int
+    vol_ctx_after: int
+    read_vol_ctx_delta: int
+    invol_ctx_before: int
+    invol_ctx_after: int
+    read_invol_ctx_delta: int
+    in_waiting_before: int
+    requested_read_bytes: int
+    returned_read_bytes: int | None
+    configured_read_timeout_s: float | None
+    read_error: str = ""
 
 
 @dataclass(frozen=True)
@@ -106,6 +178,7 @@ class RxDrainMetrics:
     bytes_read: int
     max_read_latency_ns: int
     feedbacks_extracted: int
+    drain_iterations: int = 1
 
 
 class J7RxOwner:
@@ -283,6 +356,8 @@ class J7UartAdapter:
         rx_owner: J7RxOwner | None = None,
         clock_ns: Callable[[], int] | None = None,
         sleep_fn: Callable[[float], None] | None = None,
+        tx_queue_diagnostics: bool = False,
+        read_observer: Callable[[SerialReadMetric], None] | None = None,
     ) -> None:
         if serial_instance is None:
             raise ValueError("serial_instance is required; this adapter never opens a port")
@@ -292,6 +367,11 @@ class J7UartAdapter:
         self.baudrate = baudrate
         self.timeout_s = timeout_s
         self.min_frame_interval_s = min_frame_interval_s
+        self.tx_queue_diagnostics = tx_queue_diagnostics
+        self.read_observer = read_observer
+        self._read_seq = 0
+        self._write_seq = 0
+        self.last_read_observer_error: str | None = None
         self.rx_owner = rx_owner or J7RxOwner()
         self.uart_lock = threading.RLock()
         self._clock_ns = clock_ns or time.monotonic_ns
@@ -326,9 +406,51 @@ class J7UartAdapter:
         size = self._available()
         if size <= 0:
             return b""
-        t_r_start = time.perf_counter_ns()
-        data = self.serial.read(size)
-        t_r_dur = time.perf_counter_ns() - t_r_start
+        if self.read_observer is None:
+            t_r_start = time.perf_counter_ns()
+            data = self.serial.read(size)
+            t_r_dur = time.perf_counter_ns() - t_r_start
+        else:
+            # All counter pairs surround this one read, never adjacent cycle entries.
+            # Sequential snapshots have small skew, retained as observational overhead.
+            snapshot_enter_ns = time.monotonic_ns()
+            thread_before = time.thread_time_ns()
+            process_before = time.process_time_ns()
+            ru_before = resource.getrusage(resource.RUSAGE_THREAD)
+            data = None
+            read_error = ""
+            enter_ns = time.monotonic_ns()
+            t_r_start = time.perf_counter_ns()
+            try:
+                data = self.serial.read(size)
+            except Exception as exc:
+                read_error = type(exc).__name__
+                raise
+            finally:
+                t_r_dur = time.perf_counter_ns() - t_r_start
+                exit_ns = time.monotonic_ns()
+                ru_after = resource.getrusage(resource.RUSAGE_THREAD)
+                process_after = time.process_time_ns()
+                thread_after = time.thread_time_ns()
+                snapshot_exit_ns = time.monotonic_ns()
+                self._read_seq += 1
+                returned = len(data) if isinstance(data, (bytes, bytearray)) else (0 if data is None else None)
+                metric = SerialReadMetric(
+                    self._read_seq, threading.get_native_id(), enter_ns, exit_ns,
+                    exit_ns - enter_ns, t_r_dur,
+                    max(0, snapshot_exit_ns - snapshot_enter_ns - (exit_ns - enter_ns)),
+                    snapshot_enter_ns, snapshot_exit_ns,
+                    thread_before, thread_after, thread_after - thread_before,
+                    process_before, process_after, process_after - process_before,
+                    ru_before.ru_nvcsw, ru_after.ru_nvcsw, ru_after.ru_nvcsw - ru_before.ru_nvcsw,
+                    ru_before.ru_nivcsw, ru_after.ru_nivcsw, ru_after.ru_nivcsw - ru_before.ru_nivcsw,
+                    size, size, returned, getattr(self.serial, "timeout", None), read_error,
+                )
+                try:
+                    self.read_observer(metric)
+                except Exception as exc:
+                    # Observation failures must not replace data or the original read exception.
+                    self.last_read_observer_error = type(exc).__name__
         self._read_call_count += 1
         if t_r_dur > self._max_read_latency_ns:
             self._max_read_latency_ns = t_r_dur
@@ -365,28 +487,62 @@ class J7UartAdapter:
         """Write one frame without reading or waiting for a response."""
         with self.uart_lock:
             self._wait_frame_interval_locked()
-            t_w_wall_start = time.perf_counter_ns()
+            queue_before = self._read_tx_queue_state() if self.tx_queue_diagnostics else None
+            interval = {}
+            if self.tx_queue_diagnostics:
+                self._write_seq += 1
+                write_tid = threading.get_native_id()
+                sync_before = time.monotonic_ns()
+                sync_epoch = time.time_ns()
+                sync_after = time.monotonic_ns()
+                snapshot_enter = time.perf_counter_ns()
+                process_before = time.process_time_ns()
+                usage_before = resource.getrusage(resource.RUSAGE_THREAD)
             t_w_cpu_start = time.thread_time_ns()
+            t_w_wall_start = time.perf_counter_ns()
             written = None
             try:
-                written = self.serial.write(frame)
+                try:
+                    written = self.serial.write(frame)
+                finally:
+                    # These counters surround this exact call on both success
+                    # and exception. Never substitute adjacent servo entries.
+                    t_w_wall_end = time.perf_counter_ns()
+                    t_w_cpu_end = time.thread_time_ns()
+                    if self.tx_queue_diagnostics:
+                        process_after = time.process_time_ns()
+                        usage_after = resource.getrusage(resource.RUSAGE_THREAD)
+                        snapshot_exit = time.perf_counter_ns()
+                        interval = dict(write_seq=self._write_seq, native_thread_id=write_tid,
+                            process_cpu_duration_ns=process_after-process_before,
+                            voluntary_ctx_delta=usage_after.ru_nvcsw-usage_before.ru_nvcsw,
+                            involuntary_ctx_delta=usage_after.ru_nivcsw-usage_before.ru_nivcsw,
+                            snapshot_enter_ns=snapshot_enter, snapshot_exit_ns=snapshot_exit,
+                            snapshot_overhead_ns=(snapshot_exit-snapshot_enter)-(t_w_wall_end-t_w_wall_start),
+                            clock_sync_monotonic_before_ns=sync_before,
+                            clock_sync_epoch_ns=sync_epoch, clock_sync_monotonic_after_ns=sync_after)
                 if written is not None and written != len(frame):
                     raise J7AdapterError(f"short UART write: {written}/{len(frame)} bytes")
             except Exception as exc:
-                t_w_wall_end = time.perf_counter_ns()
-                t_w_cpu_end = time.thread_time_ns()
                 self._last_write_metric = SerialWriteMetric(
                     timestamp_start_ns=t_w_wall_start,
                     timestamp_end_ns=t_w_wall_end,
                     wall_duration_ns=t_w_wall_end - t_w_wall_start,
                     cpu_duration_ns=t_w_cpu_end - t_w_cpu_start,
                     requested_bytes=len(frame),
-                    written_bytes=0 if written is None else written,
+                    # PySerial does not expose the partial byte count on timeout.
+                    written_bytes=-1 if isinstance(exc, SerialTimeoutException) else (0 if written is None else written),
                     error=type(exc).__name__,
+                    configured_timeout_s=getattr(self.serial, "write_timeout", None),
+                    queue_before=queue_before,
+                    queue_after=self._read_tx_queue_state() if self.tx_queue_diagnostics else None,
+                    **interval,
                 )
+                if isinstance(exc, SerialTimeoutException):
+                    raise J7AdapterWriteTimeout(
+                        self._last_write_metric, self.serial.write_timeout
+                    ) from exc
                 raise J7AdapterError(f"UART write failed: {exc}") from exc
-            t_w_wall_end = time.perf_counter_ns()
-            t_w_cpu_end = time.thread_time_ns()
             self._last_tx_end_ns = self._clock_ns()
             self._last_write_metric = SerialWriteMetric(
                 timestamp_start_ns=t_w_wall_start,
@@ -396,8 +552,28 @@ class J7UartAdapter:
                 requested_bytes=len(frame),
                 written_bytes=len(frame) if written is None else written,
                 error=None,
+                configured_timeout_s=getattr(self.serial, "write_timeout", None),
+                queue_before=queue_before,
+                queue_after=self._read_tx_queue_state() if self.tx_queue_diagnostics else None,
+                **interval,
             )
             return written
+
+    def _read_tx_queue_state(self) -> TxQueueState:
+        """Only read PySerial TIOCOUTQ/TIOCINQ; no drain, flush, reset or retry."""
+        start = time.perf_counter_ns()
+        values = {}
+        errors = []
+        for name in ("out_waiting", "in_waiting"):
+            try:
+                values[name] = int(getattr(self.serial, name))
+            except Exception as exc:
+                values[name] = None
+                errors.append(f"{name}:{type(exc).__name__}")
+        return TxQueueState(
+            values["out_waiting"], values["in_waiting"],
+            time.perf_counter_ns() - start, ";".join(errors) or None,
+        )
 
     def read_available(self) -> bytes:
         """Drain currently available bytes through the single RX owner.
@@ -557,6 +733,100 @@ class J7UartAdapter:
     def audit_snapshot(self) -> tuple[J7RequestAudit, ...]:
         return tuple(self._request_audit)
 
+    def request_recovery_status(self, motor_id, *, refresh_epoch_ns, hard_deadline_ns, observer):
+        """One read-only 0x30 transaction in the paused recovery epoch.
+
+        The ordinary request/read/drain policy is untouched. At the existing
+        request deadline, inspect available RX once before declaring timeout;
+        do not sleep again, extend the wait, or retransmit the query.
+        """
+        from .protocol import CMD_RD_STATUS, pack_read_status_cmd
+
+        if motor_id not in MOTOR_IDS:
+            raise ValueError('recovery status requires ID1..6')
+        record = dict(motor_id=motor_id, refresh_epoch_ns=refresh_epoch_ns,
+                      request_hex=pack_read_status_cmd(motor_id).hex(),
+                      retry_count=0, reads=[], response_received=False)
+
+        def emit(stage):
+            record['stage'] = stage
+            record['monotonic_ns'] = self._clock_ns()
+            observer(record)
+
+        def ingest():
+            while self._available() > 0:
+                data = self._read_chunk()
+                rx_done = self._clock_ns()
+                read_record = dict(rx_done_ns=rx_done, raw_hex=data.hex(), parsed_frames=[])
+                record['reads'].append(read_record)
+                frames = self.rx_owner.ingest(data)
+                read_record['parsed_frames'] = [dict(motor_id=f.motor_id, command=f.command,
+                                                    register=f.register_addr) for f in frames]
+                if 'matched_rx_done_ns' not in record and any(
+                    f.motor_id == motor_id and f.command == CMD_RD_STATUS and f.register_addr == 0
+                    for f in frames
+                ):
+                    record['matched_rx_done_ns'] = rx_done
+                record['last_rx_done_ns'] = rx_done
+                if not data:
+                    break
+
+        with self.uart_lock:
+            try:
+                record['request_start_ns'] = self._clock_ns()
+                record['serial_open'] = getattr(self.serial, 'is_open', None)
+                emit('REQUEST_START')
+                if record['request_start_ns'] <= refresh_epoch_ns:
+                    raise J7AdapterError('recovery query predates pause completion')
+                if record['request_start_ns'] >= hard_deadline_ns:
+                    raise J7AdapterTimeout('existing 1000ms freshness boundary expired')
+                # Drop completed pre-query frames; never use the feedback cache.
+                self._ingest_available_locked()
+                old = self.rx_owner.drain()
+                record['discarded_pre_query_frames'] = [f.raw.hex() for f in old]
+                self.rx_owner._parser.clear()  # Recovery only: discard pre-query partial bytes too.
+                self._wait_frame_interval_locked()
+                record['tx_start_ns'] = self._clock_ns()
+                if record['tx_start_ns'] >= hard_deadline_ns:
+                    raise J7AdapterTimeout('existing 1000ms freshness boundary expired before query')
+                self.write(bytes.fromhex(record['request_hex']))
+                record['tx_done_ns'] = self._clock_ns()
+                record['serial_write_metric'] = asdict(self.last_write_metric)
+                deadline = min(record['tx_done_ns'] + int(self.timeout_s * 1e9), hard_deadline_ns)
+                record['response_wait_deadline_ns'] = deadline
+                emit('QUERY_SENT')
+                final_collection = False
+                while True:
+                    # Completion is checked before expiry, including one final
+                    # collection after a descheduled sleep crosses the deadline.
+                    ingest()
+                    matched = self.rx_owner.take_matching(expected_id=motor_id,
+                        expected_command=CMD_RD_STATUS, expected_register=0)
+                    checked_ns = self._clock_ns()
+                    if checked_ns >= hard_deadline_ns:
+                        raise J7AdapterTimeout('existing 1000ms freshness boundary expired')
+                    if matched is not None:
+                        status = unpack_status_response(matched.raw)
+                        rx_done = record['matched_rx_done_ns']
+                        if rx_done <= refresh_epoch_ns or rx_done < record['tx_done_ns']:
+                            raise J7AdapterError('stale recovery acquisition timestamp')
+                        record.update(response_hex=matched.raw.hex(), response_received=True,
+                            feedback_rx_done_ns=rx_done, status=asdict(status),
+                            fresh_after_pause=True, final_collection=final_collection,
+                            completed_after_wait_deadline=checked_ns > deadline,
+                            rx_owner=asdict(self.rx_owner.audit_snapshot()))
+                        emit('FRESH_RESPONSE_PARSED')
+                        return status, rx_done, record
+                    if checked_ns >= deadline:
+                        raise J7AdapterTimeout('UART recovery status response timeout')
+                    self._sleep_fn(self.min_frame_interval_s)
+                    final_collection = self._clock_ns() >= deadline
+            except Exception as exc:
+                record.update(error=f'{type(exc).__name__}: {exc}',
+                              rx_owner=asdict(self.rx_owner.audit_snapshot()))
+                emit('QUERY_FAILED')
+                raise
+
     def rx_audit_snapshot(self) -> RxOwnerAudit:
         with self.uart_lock:
             return self.rx_owner.audit_snapshot()
@@ -570,6 +840,9 @@ class StopAxisRecord:
     response_received: bool
     timeout: bool
     error: str | None = None
+    request_hex: str = ""
+    response_hex: str = ""
+    status: StatusFeedback | None = None
 
 
 @dataclass(frozen=True)
@@ -583,8 +856,9 @@ class StopAudit:
 class J7StopAdapter:
     """One-shot six-axis ``0x1A`` stop callback for C7/C8 runner wiring."""
 
-    def __init__(self, uart: J7UartAdapter) -> None:
+    def __init__(self, uart: J7UartAdapter, audit_observer: Callable[[StopAudit], None] | None = None) -> None:
         self.uart = uart
+        self.audit_observer = audit_observer
         self._called = False
         self._callback_count = 0
         self._last_audit: StopAudit | None = None
@@ -605,11 +879,13 @@ class J7StopAdapter:
         with self.uart.uart_lock:
             for motor_id in MOTOR_IDS:
                 start_ns = self.uart._clock_ns()
+                request = pack_write_register_cmd(motor_id, PAUSE_ADDR, [1])
                 try:
-                    self.uart.request(
-                        pack_write_register_cmd(motor_id, PAUSE_ADDR, [1]),
+                    response = self.uart.request(
+                        request,
                         expected_id=motor_id,
                         expected_command=CMD_WR_REGISTER,
+                        expected_register=PAUSE_ADDR,
                         retries=0,
                     )
                     records.append(
@@ -619,6 +895,8 @@ class J7StopAdapter:
                             tx_end_ns=self.uart._clock_ns(),
                             response_received=True,
                             timeout=False,
+                            request_hex=request.hex(), response_hex=response.hex(),
+                            status=unpack_status_response(response),
                         )
                     )
                 except J7AdapterTimeout as exc:
@@ -630,6 +908,7 @@ class J7StopAdapter:
                             response_received=False,
                             timeout=True,
                             error=str(exc),
+                            request_hex=request.hex(),
                         )
                     )
                 except Exception as exc:
@@ -641,6 +920,7 @@ class J7StopAdapter:
                             response_received=False,
                             timeout=False,
                             error=str(exc),
+                            request_hex=request.hex(),
                         )
                     )
         self._last_audit = StopAudit(
@@ -649,7 +929,15 @@ class J7StopAdapter:
             success=all(record.response_received for record in records),
             callback_count=self._callback_count,
         )
+        if self.audit_observer is not None:
+            self.audit_observer(self._last_audit)
         return self._last_audit
+
+    def arm_after_confirmed_recovery(self) -> None:
+        """Start a new pause epoch only after an acknowledged successful recovery."""
+        if self._last_audit is None or not self._last_audit.success:
+            raise J7AdapterError("cannot re-arm an unconfirmed pause")
+        self._called = False
 
     def audit_snapshot(self) -> StopAudit | None:
         return self._last_audit

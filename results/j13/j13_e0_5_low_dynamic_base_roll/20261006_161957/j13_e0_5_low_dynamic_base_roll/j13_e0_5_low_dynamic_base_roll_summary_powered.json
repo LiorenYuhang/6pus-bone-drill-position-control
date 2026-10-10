@@ -1,0 +1,13 @@
+{
+  "stage": "j13_e0_5_low_dynamic_base_roll",
+  "mode": "POWERED REAL EXECUTION",
+  "controller_mode": "shadow",
+  "active_axis": "none",
+  "takeover_cycle_index": 55,
+  "command_jump_at_takeover_rad": 9.268410578581765e-09,
+  "command_jump_at_takeover_deg": 5.310408089471406e-07,
+  "hardware_write_count": 1377,
+  "total_cycles": 1432,
+  "final_state": "FAULT",
+  "fault_reason": "Driver fatal latch detected via /rosout: Timeout recovery target rejected: max jump 89 steps > limit 80 steps. Target generator must re-anchor before resuming."
+}

@@ -1,0 +1,89 @@
+{
+  "run_directory": "/home/lyapunov/bone_drill/results/j14/j14_a2_q1f_r1_static_30s",
+  "nominal_slots": 1500,
+  "executed_cycles": 1500,
+  "bridge_cycles": 1500,
+  "nominal_minus_executed": 0,
+  "deadline_reset_count": 0,
+  "deadline_resets": [],
+  "skipped_nominal_slots_estimate": 0,
+  "phase_shift_slots": 0.0,
+  "tx_timeout_count": 0,
+  "fault_cycles": 0,
+  "ipc_missing_sequences": [],
+  "duplicate_cycles": 0,
+  "motion_write_records": 9000,
+  "queue_snapshot_records": 0,
+  "pause_ack_confirmed": true,
+  "serial_free": true,
+  "residual_processes": [],
+  "shutdown_exception": true,
+  "measurements": {
+    "serial_write_ms": {
+      "n": 9000,
+      "P50": 0.034392,
+      "P95": 0.082214,
+      "P99": 0.113598,
+      "P99_9": 0.202192,
+      "Max": 0.390253
+    },
+    "wrapper_wall_ms": {
+      "n": 9000,
+      "P50": 0.050862,
+      "P95": 0.120037,
+      "P99": 0.158413,
+      "P99_9": 0.26063,
+      "Max": 0.423418
+    },
+    "cycle_wall_ms": {
+      "n": 1500,
+      "P50": 6.835097,
+      "P95": 7.288598,
+      "P99": 7.700733,
+      "P99_9": 8.346688,
+      "Max": 9.495147
+    },
+    "cycle_interval_ms": {
+      "n": 1499,
+      "P50": 19.999301,
+      "P95": 20.098388,
+      "P99": 20.13456,
+      "P99_9": 20.169082,
+      "Max": 20.186248
+    },
+    "wake_lateness_ms": {
+      "n": 1500,
+      "P50": 0.162596,
+      "P95": 0.264877,
+      "P99": 0.290424,
+      "P99_9": 0.376431,
+      "Max": 0.413314
+    },
+    "thread_cpu_ms": {
+      "n": 1500,
+      "P50": 6.819402,
+      "P95": 7.281359,
+      "P99": 7.6855,
+      "P99_9": 8.33734,
+      "Max": 9.472103
+    },
+    "feedback_ipc_age_ms": {
+      "n": 1500,
+      "P50": 0.438617,
+      "P95": 0.617005,
+      "P99": 0.737662,
+      "P99_9": 0.84042,
+      "Max": 2.382708
+    },
+    "feedback_gap_ms": {
+      "n": 1499,
+      "P50": 19.995029,
+      "P95": 20.573778,
+      "P99": 20.84613,
+      "P99_9": 21.677362,
+      "Max": 22.17038
+    }
+  },
+  "obvious_hot_path_stall": false,
+  "Q1F_PASS": true
+}

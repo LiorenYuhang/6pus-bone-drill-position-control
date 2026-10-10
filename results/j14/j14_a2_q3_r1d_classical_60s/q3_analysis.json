@@ -1,0 +1,286 @@
+{
+  "stage": "A2-Q3",
+  "run_id": "Q3-R1",
+  "mode": "classical",
+  "hardware": true,
+  "duration_s": 60.0,
+  "nominal_slots": 3000,
+  "driver_session_cycles": 3529,
+  "driver_bridge_cycles": 3529,
+  "controller_total_cycles": 2999,
+  "controller_active_cycles": 2945,
+  "controller_planned_cycles": 3000,
+  "executed_cycles": 3529,
+  "bridge_cycles": 3529,
+  "nominal_minus_executed": -529,
+  "deadline_reset_count": 0,
+  "deadline_resets": [],
+  "skipped_nominal_slots_estimate": 0,
+  "phase_shift_slots": 0.0,
+  "tx_timeout_count": 0,
+  "fault_cycles": 0,
+  "ipc_missing_sequences": [],
+  "duplicate_cycles": 0,
+  "motion_write_records": 21174,
+  "pause_ack_confirmed": true,
+  "serial_free": true,
+  "residual_processes": [],
+  "host_heartbeat_stalls_gt20ms": 0,
+  "warning_283_3ms_count": 0,
+  "hard_stop_1000ms_count": 0,
+  "measurements": {
+    "serial_write_ms": {
+      "n": 21174,
+      "P50": 0.0376,
+      "P95": 0.0784,
+      "P99": 0.0991,
+      "P99_9": 0.1989,
+      "Max": 1.6107,
+      "Min": 0.0055
+    },
+    "wrapper_wall_ms": {
+      "n": 21174,
+      "P50": 0.057,
+      "P95": 0.1159,
+      "P99": 0.1503,
+      "P99_9": 0.2507,
+      "Max": 1.6536,
+      "Min": 0.0104
+    },
+    "cycle_wall_ms": {
+      "n": 3529,
+      "P50": 6.802,
+      "P95": 7.2629,
+      "P99": 7.6177,
+      "P99_9": 9.656,
+      "Max": 11.9829,
+      "Min": 5.8902
+    },
+    "cycle_interval_ms": {
+      "n": 3528,
+      "P50": 20.0001,
+      "P95": 20.0993,
+      "P99": 20.144,
+      "P99_9": 20.2108,
+      "Max": 20.6866,
+      "Min": 19.2062
+    },
+    "wake_lateness_ms": {
+      "n": 3529,
+      "P50": 0.1427,
+      "P95": 0.2441,
+      "P99": 0.2854,
+      "P99_9": 0.3758,
+      "Max": 0.9231,
+      "Min": 0.0703
+    },
+    "thread_cpu_ms": {
+      "n": 3529,
+      "P50": 6.7788,
+      "P95": 7.2382,
+      "P99": 7.5848,
+      "P99_9": 9.6538,
+      "Max": 11.9479,
+      "Min": 5.8907
+    },
+    "feedback_ipc_age_ms": {
+      "n": 3529,
+      "P50": 0.4548,
+      "P95": 0.5842,
+      "P99": 0.6657,
+      "P99_9": 0.8772,
+      "Max": 1.3358,
+      "Min": 0.1899
+    },
+    "feedback_gap_ms": {
+      "n": 3528,
+      "P50": 20.0049,
+      "P95": 20.5697,
+      "P99": 20.9373,
+      "P99_9": 23.0394,
+      "Max": 24.1627,
+      "Min": 14.5835
+    }
+  },
+  "controller_active_evidence": {
+    "found": true,
+    "csv_path": "/home/lyapunov/bone_drill/results/j14/j14_a2_q3_r1d_classical_60s/j14_a2_q3_r1_classical_telemetry_powered.csv",
+    "total_records": 2999,
+    "active_records": 2945,
+    "algorithm_active": true,
+    "actuation_active": true,
+    "physical_response": true,
+    "base_so3_magnitude_deg": {
+      "n": 2945,
+      "P50": 8.8016,
+      "P95": 17.0385,
+      "P99": 19.0192,
+      "P99_9": 22.0228,
+      "Max": 22.191,
+      "Min": 0.001
+    },
+    "base_attitude_deg": {
+      "roll": {
+        "min": -17.3512,
+        "max": 14.519,
+        "range": 31.8702,
+        "mean": -1.4304
+      },
+      "pitch": {
+        "min": -19.0561,
+        "max": 12.5511,
+        "range": 31.6073,
+        "mean": -0.9236
+      },
+      "yaw": {
+        "min": -22.1132,
+        "max": 15.1274,
+        "range": 37.2406,
+        "mean": -1.0918
+      }
+    },
+    "platform_so3_error_deg": {
+      "n": 2945,
+      "P50": 9.0621,
+      "P95": 21.7038,
+      "P99": 27.6619,
+      "P99_9": 29.6672,
+      "Max": 29.9079,
+      "Min": 0.001
+    },
+    "platform_attitude_deg": {
+      "roll": {
+        "min": -13.431502800789376,
+        "max": 15.225621150230426,
+        "range": 28.6571
+      },
+      "pitch": {
+        "min": -16.74799456484889,
+        "max": 19.993023233169488,
+        "range": 36.741
+      },
+      "yaw": {
+        "min": -22.109666599564314,
+        "max": 29.011550339222936,
+        "range": 51.1212
+      }
+    },
+    "controller_output_deg": {
+      "roll": {
+        "min": -0.5,
+        "max": 0.5,
+        "range": 1.0,
+        "mean": 0.008
+      },
+      "pitch": {
+        "min": -0.5,
+        "max": 0.5,
+        "range": 1.0,
+        "mean": -0.0195
+      },
+      "yaw": {
+        "min": -0.5,
+        "max": 0.5,
+        "range": 1.0,
+        "mean": -0.0295
+      }
+    },
+    "motor_commands": {
+      "axis_1": {
+        "min": 798.0,
+        "max": 1322.0,
+        "range": 524.0,
+        "mean": 1033.1847
+      },
+      "axis_2": {
+        "min": 751.0,
+        "max": 1241.0,
+        "range": 490.0,
+        "mean": 1008.8384
+      },
+      "axis_3": {
+        "min": 749.0,
+        "max": 1264.0,
+        "range": 515.0,
+        "mean": 995.8166
+      },
+      "axis_4": {
+        "min": 690.0,
+        "max": 1207.0,
+        "range": 517.0,
+        "mean": 971.4238
+      },
+      "axis_5": {
+        "min": 762.0,
+        "max": 1256.0,
+        "range": 494.0,
+        "mean": 995.4812
+      },
+      "axis_6": {
+        "min": 746.0,
+        "max": 1260.0,
+        "range": 514.0,
+        "mean": 1010.0733
+      }
+    },
+    "active_evidence_pass": true
+  },
+  "static_baseline_comparison": {
+    "serial_write_ms": {
+      "static_P50": 0.033933,
+      "active_P50": 0.0376,
+      "delta_P50": 0.0037,
+      "static_P99": 0.104406,
+      "active_P99": 0.0991,
+      "delta_P99": -0.0053,
+      "static_Max": 0.222165,
+      "active_Max": 1.6107,
+      "delta_Max": 1.3885
+    },
+    "wrapper_wall_ms": {
+      "static_P50": 0.0502,
+      "active_P50": 0.057,
+      "delta_P50": 0.0068,
+      "static_P99": 0.148866,
+      "active_P99": 0.1503,
+      "delta_P99": 0.0014,
+      "static_Max": 0.358754,
+      "active_Max": 1.6536,
+      "delta_Max": 1.2948
+    },
+    "cycle_wall_ms": {
+      "static_P50": 6.81058,
+      "active_P50": 6.802,
+      "delta_P50": -0.0086,
+      "static_P99": 7.59762,
+      "active_P99": 7.6177,
+      "delta_P99": 0.0201,
+      "static_Max": 11.471005,
+      "active_Max": 11.9829,
+      "delta_Max": 0.5119
+    },
+    "feedback_ipc_age_ms": {
+      "static_P50": 0.441695,
+      "active_P50": 0.4548,
+      "delta_P50": 0.0131,
+      "static_P99": 0.691924,
+      "active_P99": 0.6657,
+      "delta_P99": -0.0262,
+      "static_Max": 0.983718,
+      "active_Max": 1.3358,
+      "delta_Max": 0.3521
+    },
+    "feedback_gap_ms": {
+      "static_P50": 20.004841,
+      "active_P50": 20.0049,
+      "delta_P50": 0.0001,
+      "static_P99": 20.850362,
+      "active_P99": 20.9373,
+      "delta_P99": 0.0869,
+      "static_Max": 24.063334,
+      "active_Max": 24.1627,
+      "delta_Max": 0.0994
+    }
+  },
+  "verdict": "PASS"
+}

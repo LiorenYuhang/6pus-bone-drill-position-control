@@ -1,0 +1,4 @@
+{"event": "serial_owner", "ns": 27350400013671, "pid": 442874, "hardware_mode": "mock"}
+{"event": "pause_complete", "ns": 27655114035460, "success": true}
+{"event": "serial_closed", "ns": 27655114049359}
+{"event": "child_exit", "ns": 27655412495617}

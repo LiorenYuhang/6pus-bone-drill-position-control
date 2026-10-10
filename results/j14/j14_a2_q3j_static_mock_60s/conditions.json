@@ -1,0 +1,11 @@
+{
+  "hardware_mode": "mock",
+  "ros_domain_id": "143",
+  "start_wall": "2026-10-09T20:35:08+0800",
+  "duration_s": 60.0,
+  "static": true,
+  "command_rate_hz": 0,
+  "producer": "software sine steps +/- 8; phase shifted six axes",
+  "entry": "production_driver.main",
+  "instrumentation": "transparent stage-local wrappers"
+}

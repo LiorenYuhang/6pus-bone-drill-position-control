@@ -1,0 +1,7 @@
+controller_group,axis,controller_type,b0,omega_c_rad_s,omega_o_rad_s,kp,ki,kd,base_feedforward_so3,residual_clamp_deg
+Classical,Roll,P,N/A,N/A,N/A,0.05,0.0,0.0,enabled,±0.5
+Classical,Pitch,PD,N/A,N/A,N/A,0.05,0.0,0.0015,enabled,±0.5
+Classical,Yaw,PD,N/A,N/A,N/A,0.025,0.0,0.0015,enabled,±0.5
+3-axis LADRC,Roll,First-Order Linear ADRC,20.0,0.8,2.5,N/A,N/A,N/A,enabled,±0.5
+3-axis LADRC,Pitch,First-Order Linear ADRC,10.0,1.0,4.0,N/A,N/A,N/A,enabled,±0.5
+3-axis LADRC,Yaw,First-Order Linear ADRC,6.0,0.25,1.2,N/A,N/A,N/A,enabled,±0.5

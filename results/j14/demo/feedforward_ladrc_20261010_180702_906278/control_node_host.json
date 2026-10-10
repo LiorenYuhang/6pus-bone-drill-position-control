@@ -1,0 +1,20 @@
+{
+  "role": "control_node",
+  "pid": 137981,
+  "ppid": 137968,
+  "pgid": 137968,
+  "state": "exited",
+  "args": [
+    "/home/lyapunov/bone_drill/bone_ws/install/pus6_control/lib/pus6_control/control_node",
+    "--ros-args",
+    "-r",
+    "__node:=pus6_control_node",
+    "--params-file",
+    "/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j13_ladrc_params.yaml"
+  ],
+  "start_ns": 6073177720410,
+  "node_name": "/pus6_control_node",
+  "executor": "SingleThreadedExecutor",
+  "returncode": 0,
+  "end_ns": 6109562750589
+}

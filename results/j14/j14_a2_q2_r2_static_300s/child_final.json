@@ -1,0 +1,10 @@
+{
+  "pid": 161754,
+  "cycles": 15000,
+  "fault": "window_complete",
+  "closed": true,
+  "servo_start_ns": 8755759451263,
+  "motion_stop_ns": 9055759624084,
+  "hardware_write_count": null,
+  "pause_success": true
+}

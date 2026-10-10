@@ -1,0 +1,13 @@
+{
+  "stage": "j13_2b2_roll_active_20s",
+  "mode": "POWERED REAL EXECUTION",
+  "controller_mode": "roll_active",
+  "active_axis": "roll",
+  "takeover_cycle_index": 80,
+  "command_jump_at_takeover_rad": 7.454066268793582e-07,
+  "command_jump_at_takeover_deg": 4.270865374127013e-05,
+  "hardware_write_count": 916,
+  "total_cycles": 995,
+  "final_state": "FAULT",
+  "fault_reason": "Driver fatal latch detected via /rosout: J7 driver STOP latched: scheduler_deadline_exceeded"
+}

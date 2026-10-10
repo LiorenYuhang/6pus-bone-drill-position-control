@@ -1,0 +1,160 @@
+[
+  {
+    "event": "start",
+    "role": "robot",
+    "pid": 164333,
+    "command": [
+      "ros2",
+      "launch",
+      "--launch-prefix",
+      "/usr/bin/python3 /home/lyapunov/bone_drill/bone_ws/scripts/j14_demo_node_host.py",
+      "--launch-prefix-filter",
+      "^(motor_driver_node|kinematics_node|control_node|fk_node)$",
+      "pus6_bringup",
+      "pus6_system.launch.py",
+      "hardware_mode:=active",
+      "config_file:=/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j11_feedforward_params.yaml",
+      "driver_audit_directory:=/home/lyapunov/bone_drill/results/j14/demo/feedforward_20261010_183023_090291",
+      "driver_telemetry_mode:=production",
+      "servo_run_duration_s:=0.0"
+    ],
+    "start_call_ns": 7472990688467,
+    "monotonic_ns": 7472991290870
+  },
+  {
+    "event": "start",
+    "role": "relay",
+    "pid": 164449,
+    "command": [
+      "/usr/bin/python3",
+      "/home/lyapunov/bone_drill/bone_ws/scripts/j14_demo_relay_host.py",
+      "--out-dir",
+      "/home/lyapunov/bone_drill/results/j14/demo/feedforward_20261010_183023_090291"
+    ],
+    "start_call_ns": 7474073495092,
+    "monotonic_ns": 7474073959047
+  },
+  {
+    "event": "start",
+    "role": "base_imu",
+    "pid": 164501,
+    "command": [
+      "/home/lyapunov/bone_drill/bone_ws/install/h30_imu/lib/h30_imu/h30_imu_node",
+      "--ros-args",
+      "-r",
+      "__ns:=/pus6/imu_base",
+      "-p",
+      "port:=/dev/serial/by-id/usb-1a86_USB_Single_Serial_5B32028000-if00",
+      "-p",
+      "baud_rate:=460800",
+      "-p",
+      "frame_id:=pus6_base_imu_link",
+      "-p",
+      "world_frame:=world",
+      "-p",
+      "imu_topic:=/pus6/imu_base/data"
+    ],
+    "start_call_ns": 7476243092545,
+    "monotonic_ns": 7476243943734
+  },
+  {
+    "event": "start",
+    "role": "platform_imu",
+    "pid": 164502,
+    "command": [
+      "/home/lyapunov/bone_drill/bone_ws/install/h30_imu/lib/h30_imu/h30_imu_node",
+      "--ros-args",
+      "-r",
+      "__ns:=/pus6/imu_platform",
+      "-p",
+      "port:=/dev/serial/by-id/usb-1a86_USB_Single_Serial_5B0B029000-if00",
+      "-p",
+      "baud_rate:=460800",
+      "-p",
+      "frame_id:=pus6_platform_imu_link",
+      "-p",
+      "world_frame:=world",
+      "-p",
+      "imu_topic:=/pus6/imu_platform/data"
+    ],
+    "start_call_ns": 7476244409561,
+    "monotonic_ns": 7476245070216
+  },
+  {
+    "event": "start",
+    "role": "controller",
+    "pid": 164537,
+    "command": [
+      "/usr/bin/python3",
+      "/home/lyapunov/bone_drill/bone_ws/scripts/j14_demo_controller.py",
+      "--mode",
+      "feedforward",
+      "--out-dir",
+      "/home/lyapunov/bone_drill/results/j14/demo/feedforward_20261010_183023_090291",
+      "--hardware-mode",
+      "active"
+    ],
+    "start_call_ns": 7476595652193,
+    "monotonic_ns": 7476596496722
+  },
+  {
+    "event": "driver_pause_request",
+    "pid": 164344,
+    "ns": 7507435446609,
+    "signal": "SIGINT",
+    "state": "exited",
+    "returncode": 0,
+    "end_ns": 7507865931767,
+    "process_exit_confirmed": true
+  },
+  {
+    "event": "stop",
+    "role": "controller",
+    "pid": 164537,
+    "monotonic_ns": 7507866701154,
+    "signal": null,
+    "escalation": false,
+    "returncode": 0,
+    "elapsed_s": 3.477e-05
+  },
+  {
+    "event": "stop",
+    "role": "relay",
+    "pid": 164449,
+    "monotonic_ns": 7507871179784,
+    "signal": "SIGINT",
+    "escalation": false,
+    "returncode": 0,
+    "elapsed_s": 0.26412061
+  },
+  {
+    "event": "stop",
+    "role": "base_imu",
+    "pid": 164501,
+    "monotonic_ns": 7508136227950,
+    "signal": "SIGINT",
+    "escalation": false,
+    "returncode": 0,
+    "elapsed_s": 0.163962726
+  },
+  {
+    "event": "stop",
+    "role": "platform_imu",
+    "pid": 164502,
+    "monotonic_ns": 7508300912846,
+    "signal": "SIGINT",
+    "escalation": false,
+    "returncode": 0,
+    "elapsed_s": 0.163779269
+  },
+  {
+    "event": "stop",
+    "role": "robot",
+    "pid": 164333,
+    "monotonic_ns": 7508465419198,
+    "signal": "SIGINT",
+    "escalation": false,
+    "returncode": 0,
+    "elapsed_s": 5.280316876
+  }
+]

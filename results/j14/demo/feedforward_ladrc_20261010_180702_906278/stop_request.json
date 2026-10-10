@@ -1,0 +1,5 @@
+{
+  "action": "safety_pause",
+  "reason": "RuntimeError('Base IMU age timeout (>100ms)')",
+  "ns": 6103683967274
+}

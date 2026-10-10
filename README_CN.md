@@ -1,6 +1,6 @@
 # 6PUS 骨科并联机器人防抖控制与感知框架
 
-> [English](README.md) | [中文]  
+> [English](README.md) | [中文]
 > **面向 6-PUS 并联骨科手术机器人的 ROS 2 实时感知与主动防抖控制系统**
 
 ---
@@ -173,7 +173,7 @@ bash bone_ws/scripts/run_j11_demo_feedforward_pd.sh
   - 在手持大动态晃动下验证了经典前馈+P/PD抗扰性能，观测到的实测有效物理角速度峰值达 `92.33°/s`（P95 = `46.16°/s`）。
   - 全动态测试中电机电流温和，实测峰值仅 `468 mA`（无任何样本超过 500 mA）。明确高动态主要瓶颈为控制残差饱和（±0.5°）与执行器跟踪滞后，**绝非电流受限（Not Current Limited）**。
   - 主机端生产过流保护正式与执行器硬件内部保护对齐统一为 `MAX_CURRENT_MA = 1500`。
-  - 详细总结：[`agent_docs/J12_FINAL_SUMMARY.md`](./agent_docs/J12_FINAL_SUMMARY.md)；交接文档：[`agent_docs/J12_TO_J13_HANDOFF.md`](./agent_docs/J12_TO_J13_HANDOFF.md)。
+  - 详细总结：[`agent_docs/stages/J12/J12_FINAL_SUMMARY.md`](./agent_docs/stages/J12/J12_FINAL_SUMMARY.md)；交接文档：[`agent_docs/stages/J12/J12_TO_J13_HANDOFF.md`](./agent_docs/stages/J12/J12_TO_J13_HANDOFF.md)。
 
 ### J13 一阶线性 ADRC 姿态残差控制与偏心负载真机验证（阶段结果）
 
@@ -227,13 +227,42 @@ bash bone_ws/scripts/run_j11_demo_feedforward_pd.sh
   - Pitch 存在明显的残差限幅饱和（16.37%）；
   - 底层 runtime timing long-tail 移交 J14 专班攻关。
 - **详细文档与交接**：
-  - 详细总结：[`agent_docs/J13_FINAL_SUMMARY.md`](./agent_docs/J13_FINAL_SUMMARY.md)
-  - 阶段交接：[`agent_docs/J13_TO_J14_HANDOFF.md`](./agent_docs/J13_TO_J14_HANDOFF.md)
+  - 详细总结：[`agent_docs/stages/J13/J13_FINAL_SUMMARY.md`](./agent_docs/stages/J13/J13_FINAL_SUMMARY.md)
+  - 阶段交接：[`agent_docs/stages/J13/J13_TO_J14_HANDOFF.md`](./agent_docs/stages/J13/J13_TO_J14_HANDOFF.md)
 
-**下一阶段**：J14 — 长时运行与通信可靠性攻关 (Long-Duration Runtime & Communication Reliability)
-- **J14-A**：10 分钟连续运行与通信可靠性资格认证（消除 UART 同步阻塞与调度饥饿，确保 50Hz 闭环连续稳定运行）。
-- **J14-Q1**：ROS 2 QoS Deadline / Liveliness 故障检测能力独立表征（STANDBY / PLANNED 非阻塞支线）。
-- **J14-B**：在 J14-A 资格认证 PASS 后，开展偏心负载 + 人工末端瞬态扰动下的 Classical vs 3-axis LADRC 对比。
+### J14-A 长时运行与通信可靠性攻关 (阶段闭环成果)
+
+- **状态**：**CLOSED / FROZEN** (Release Tag：`v1.0-j14-a-three-process-runtime-reliability-qualified`)。
+- **生产解耦架构**：
+  - **Parent Node**：`SingleThreadedExecutor` 单线程内联回调处理（消除多线程 wait-set scanning 竞争，解决动态话题负载下的 IPC 租约饥饿机制）；
+  - **UART Child**：独立子进程，RS485 串口物理独占 owner (`/dev/ttyUSB0` @ 921600 baud)；
+  - **Feedback Bridge**：独立子进程，底层电机反馈 IPC 独占 consumer (`AF_UNIX SOCK_SEQPACKET` @ 50 Hz)；
+  - **Compatibility Relay**：外部 ROS 话题转换适配器，零直接串口或指令仲裁权限。
+- **真实硬件资格认证与结果**：
+  1. **Q3-R1D (Classical P/PD Active 60s)**：**PASS**（3529 driver 周期，2945 ACTIVE 周期 @ 50 Hz，0 故障停机，双 IMU age < 57 ms）；
+  2. **Q3-R2 (3-axis LADRC Active 60s)**：**PASS**（3539 driver 周期，2942 ACTIVE 周期 @ 50 Hz，0 故障停机，双 IMU age < 66 ms，LESO 观测器状态全程有界稳定）；
+  3. **三个官方 Demo 实机确认**：全部三个 Demo 均已由用户在真实硬件上完整确认（**HUMAN HARDWARE CONFIRMATION = PASS**），走通完整生命周期：Startup HOME → Dual-IMU 预检 → ACTIVE → 操作员 Ctrl+C → 受控 Shutdown HOME → Pause 6/6 → 串口干净释放与 0 残留进程。
+- **官方 Demo 运行命令**：
+
+```bash
+# 1. Base SO(3) 纯前馈模式
+cd /home/lyapunov/bone_drill
+bash bone_ws/scripts/run_j14_demo_feedforward.sh
+
+# 2. Base SO(3) 前馈 + 经典任务空间 P/PD 闭环
+cd /home/lyapunov/bone_drill
+bash bone_ws/scripts/run_j14_demo_feedforward_pd.sh
+
+# 3. Base SO(3) 前馈 + 三轴一阶 LADRC 残差闭环
+cd /home/lyapunov/bone_drill
+bash bone_ws/scripts/run_j14_demo_feedforward_ladrc.sh
+```
+
+- **详细文档与交接**：
+  - 阶段权威总结：[`agent_docs/stages/J14/J14_FINAL_SUMMARY.md`](./agent_docs/stages/J14/J14_FINAL_SUMMARY.md)
+  - 跨阶段交接规范：[`agent_docs/stages/J14/J14_TO_NEXT_STAGE_HANDOFF.md`](./agent_docs/stages/J14/J14_TO_NEXT_STAGE_HANDOFF.md)
+  - 生产驱动架构说明：[`docs/J14_PRODUCTION_DRIVER.md`](./docs/J14_PRODUCTION_DRIVER.md)
+  - Demo 操作指南：[`docs/J14_DEMO_ENTRYPOINTS.md`](./docs/J14_DEMO_ENTRYPOINTS.md)
 
 ### 文档
 

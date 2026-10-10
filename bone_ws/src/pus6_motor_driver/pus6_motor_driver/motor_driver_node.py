@@ -5,7 +5,10 @@ from __future__ import annotations
 import logging
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
+from pathlib import Path
+import os
+import tempfile
 from typing import Any
 from enum import Enum
 import rclpy
@@ -40,7 +43,8 @@ try:
     from .six_motor_controller import SixAxisStateSnapshot, SixMotorController
     from .j7_six_axis_servo_transport import J7SixAxisServoTransport, ServoRxPolicy
     from .j7_servo_feedback_scheduler import J7ServoFeedbackScheduler
-    from .j7_real_uart_adapter import J7UartAdapter, J7StopAdapter
+    from .j7_real_uart_adapter import J7UartAdapter, J7StopAdapter, J7AdapterWriteTimeout, J14_UART_WRITE_TIMEOUT_S
+    from .communication_recovery import CommunicationRecovery, append_evidence
     from .fake_bus import MockServoBus
     from .stall_diagnostic_recorder import J11StallDiagnosticRecorder
 except ImportError:
@@ -65,7 +69,8 @@ except ImportError:
     from six_motor_controller import SixAxisStateSnapshot, SixMotorController
     from j7_six_axis_servo_transport import J7SixAxisServoTransport, ServoRxPolicy
     from j7_servo_feedback_scheduler import J7ServoFeedbackScheduler
-    from j7_real_uart_adapter import J7UartAdapter, J7StopAdapter
+    from j7_real_uart_adapter import J7UartAdapter, J7StopAdapter, J7AdapterWriteTimeout, J14_UART_WRITE_TIMEOUT_S
+    from pus6_motor_driver.communication_recovery import CommunicationRecovery, append_evidence
     from fake_bus import MockServoBus
     try:
         from stall_diagnostic_recorder import J11StallDiagnosticRecorder
@@ -103,7 +108,7 @@ class ServoTelemetrySnapshot:
     dispatched_targets: list[int]
     tx_start_ns: list[int]
     tx_end_ns: list[int]
-    diag_data: list[float]
+    diag_data: list[float] | tuple[int | float, ...]
     benchmark_seq_id: int
     t_entry_ns: int
 
@@ -300,6 +305,15 @@ class Pus6MotorDriverNode(Node):
             if (J11StallDiagnosticRecorder is not None and self.enable_runtime_diagnostics)
             else None
         )
+        self._communication_recovery = None
+        self._recovery_in_progress = False
+        self._fresh_state_only = os.environ.get('PUS6_J14_RECOVERY_STAGE') == 'fresh_state_only'
+        self._fresh_state_hold = False
+        self._static_resume = os.environ.get('PUS6_J14_RECOVERY_STAGE') == 'static_resume'
+        self._static_recovery_target = None
+        self._reanchor_first_target = None
+        self._reanchor_ack = threading.Event()
+        self._reanchor_expected = None
 
         # Segmented Timing and Contention Instrumentation
         self._last_worker_start_ns: int = 0
@@ -327,6 +341,10 @@ class Pus6MotorDriverNode(Node):
 
         # Dedicated Callback Groups for thread decoupling in MultiThreadedExecutor
         self.sub_cb_group = MutuallyExclusiveCallbackGroup()
+        self._comm_anchor_pub = self.create_publisher(Int64MultiArray, '/pus6/communication_reanchor', 10)
+        self._comm_anchor_sub = self.create_subscription(
+            Int64MultiArray, '/pus6/communication_reanchor_ack', self._on_communication_reanchor_ack,
+            10, callback_group=self.sub_cb_group)
         self.worker_cb_group = MutuallyExclusiveCallbackGroup()
         self.poll_cb_group = MutuallyExclusiveCallbackGroup()
 
@@ -389,6 +407,12 @@ class Pus6MotorDriverNode(Node):
 
         self.joint_names = [f"motor_{mid}" for mid in MOTOR_IDS]
         self.is_j7_servo_active = bool(self.use_j7_servo and not self.enable_j2_f0_instrumentation and abs(self.write_rate_hz - 50.0) < 1e-3)
+        # J14-A1.8: isolate only the performance-diagnostics channel.
+        # Feedback/fault publications and the default execution path stay live.
+        self._defer_driver_diagnostics = (
+            os.environ.get('PUS6_J14_DEFER_DRIVER_DIAGNOSTICS') == '1'
+            and self.is_j7_servo_active and self.telemetry_publish_mode == 'async_latest'
+        )
 
         if p_auto_connect:
             if self.is_j7_servo_active:
@@ -476,7 +500,7 @@ class Pus6MotorDriverNode(Node):
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
                 timeout=min(0.005, p_timeout),
-                write_timeout=None,
+                write_timeout=J14_UART_WRITE_TIMEOUT_S,
             )
             ser.reset_input_buffer()
             ser.reset_output_buffer()
@@ -485,9 +509,12 @@ class Pus6MotorDriverNode(Node):
                 baudrate=p_baudrate,
                 timeout_s=0.010,
                 min_frame_interval_s=0.0001,
+                tx_queue_diagnostics=self.enable_runtime_diagnostics,
+                read_observer=(self._stall_recorder.record_single_read
+                               if self._stall_recorder is not None else None),
             )
 
-        self.j7_stop_adapter = J7StopAdapter(self.j7_adapter)
+        self.j7_stop_adapter = J7StopAdapter(self.j7_adapter, audit_observer=self._persist_pause_audit)
         self.j7_writer = J7SixAxisServoTransport(
             self.j7_adapter,
             cycle_rate_hz=self.write_rate_hz,
@@ -495,6 +522,7 @@ class Pus6MotorDriverNode(Node):
             min_frame_interval_s=0.0006,
             rx_drain_budget_s=0.0040,
             pause_callback=self.j7_stop_adapter,
+            recoverable_write_timeouts=True,
         )
         max_fb_age_s = 1.0 if self.feedback_loss_policy == "age_based" else None
         self.j7_feedback = J7ServoFeedbackScheduler(
@@ -565,6 +593,9 @@ class Pus6MotorDriverNode(Node):
         """Atomic Latest-Value-Wins buffer update with timeout recovery gating."""
         now_ns = time.perf_counter_ns()
         with self._target_lock:
+            if self._recovery_in_progress or self._fresh_state_hold or self._static_recovery_target is not None:
+                # Do not accumulate commands produced by an old shaper trajectory.
+                return
             # If recovering from a timed-out state, verify jump threshold against last confirmed position
             if self._stream_timed_out:
                 last_known = self._last_commanded_steps or (
@@ -594,6 +625,102 @@ class Pus6MotorDriverNode(Node):
                 consumed=False,
             )
             self._target_in_count += 1
+
+    def _communication_audit_dir(self) -> Path:
+        if self.hardware_mode != HardwareMode.ACTIVE or self.mock_bus is not None:
+            return Path(tempfile.gettempdir()) / f'j14_mock_recovery_{os.getpid()}_{id(self)}'
+        if self._stall_recorder is not None:
+            return self._stall_recorder.get_effective_output_dir()
+        for name in ('/tmp/j14_latest_run_dir', '/tmp/j11_latest_run_dir'):
+            pointer = Path(name)
+            if pointer.exists() and pointer.read_text().strip():
+                return Path(pointer.read_text().strip())
+        return Path(tempfile.gettempdir()) / f'j14_communication_recovery_{os.getpid()}'
+
+    def _persist_pause_audit(self, audit) -> None:
+        record = asdict(audit)
+        record['source'] = 'mock' if self.mock_bus is not None or self.hardware_mode == HardwareMode.MOCK else 'hardware'
+        append_evidence(self._communication_audit_dir() / 'stop_pause_audit.jsonl', record)
+
+    def _on_communication_reanchor_ack(self, msg) -> None:
+        if self._static_resume:
+            payload = list(msg.data)
+            if len(payload) == 13 and self._reanchor_expected is not None and payload[:7] == self._reanchor_expected:
+                self._reanchor_first_target = payload[7:]
+                self._reanchor_ack.set()
+            return
+        if self._reanchor_expected is not None and list(msg.data) == self._reanchor_expected:
+            self._reanchor_ack.set()
+
+    def _reanchor_communication_state(self, positions, epoch_ns, deadline_ns) -> bool:
+        old = dict(old_command=self._last_commanded_steps,
+                   old_latest_target=asdict(self._latest_target) if self._latest_target is not None else None,
+                   old_last_write_ns=self._last_write_stamp_ns)
+        with self._target_lock:
+            self._latest_target = None
+            self._last_commanded_steps = list(positions)
+            self._last_write_stamp_ns = time.monotonic_ns()
+            self._last_target_rx_time_ns = 0
+            self._stream_timed_out = True  # Existing jump admission checks use the fresh anchor.
+        self._reanchor_expected = [epoch_ns, *positions]
+        self._reanchor_first_target = None
+        self._reanchor_ack.clear()
+        while self._comm_anchor_pub.get_subscription_count() == 0:
+            if time.monotonic_ns() >= deadline_ns:
+                return False
+            time.sleep(.010)
+        msg = Int64MultiArray()
+        msg.data = self._reanchor_expected
+        self._comm_anchor_pub.publish(msg)
+        confirmed = self._reanchor_ack.wait(max(0.0, (deadline_ns-time.monotonic_ns())/1e9))
+        if self._static_resume:
+            append_evidence(self._communication_audit_dir()/'driver_reanchor_audit.jsonl',
+                dict(epoch_ns=epoch_ns, before=old, fresh_positions=list(positions),
+                     new_last_command=list(self._last_commanded_steps), latest_target_cleared=self._latest_target is None,
+                     stream_timed_out=self._stream_timed_out, reanchor_confirmed=confirmed,
+                     first_control_shaper_target=self._reanchor_first_target, reanchor_done_ns=time.monotonic_ns()))
+        return confirmed
+
+    def _recover_communication_timeout(self, exc, candidate_targets) -> None:
+        self._recovery_in_progress = True
+        try:
+            if self._communication_recovery is None:
+                self._communication_recovery = CommunicationRecovery(
+                    self.j7_writer, self.j7_stop_adapter, self.j7_feedback,
+                    reanchor=self._reanchor_communication_state,
+                    audit_path=self._communication_audit_dir() / 'communication_recovery_events.jsonl',
+                    recovery_jump_limit=self.reconnect_max_jump_steps,
+                    fresh_state_only=self._fresh_state_only, static_resume=self._static_resume,
+                    first_resume_target=lambda: self._reanchor_first_target)
+            result = self._communication_recovery.recover(exc, candidate_targets,
+                old_command=self._last_commanded_steps)
+            for sample in result.feedback_audit.samples:
+                self._latest_positions_steps[sample.motor_id] = sample.position
+                self._latest_currents[sample.motor_id] = sample.current_mA
+                self._latest_faults[sample.motor_id] = sample.fault
+                self._latest_rx_done_ns[sample.motor_id] = sample.timestamp_ns
+            if self._fresh_state_only:
+                self._fresh_state_hold = True
+                if self._stall_recorder is not None:
+                    self._stall_recorder.finish_cycle()
+                self.get_logger().warn('J14-A1.4 REFRESH_STATE PASS: HOLD; motion inhibited; no re-anchor or resume')
+                return
+            if self._static_resume:
+                self._static_recovery_target = list(result.event['first_resume_target'])
+                self._uart_cycle_seq = result.event['first_resume_cycle_seq']
+                if self._stall_recorder is not None:
+                    self._stall_recorder.finish_cycle()
+                self.get_logger().warn('J14-A1.5 REANCHOR PASS: next production cycle resumes static reference only')
+                return
+            self._uart_cycle_seq = result.verification_audit.cycle_id + 1
+            if self._stall_recorder is not None:
+                self._stall_recorder.finish_cycle()
+            self.get_logger().warn(
+                f'COMMUNICATION_TRANSIENT recovered: cycle={exc.cycle_audit.cycle_id} '
+                f'ID{exc.cycle_audit.error_motor_id}, pause=6/6, fresh_feedback=6/6, '
+                f'recovery_count={self._communication_recovery.recovery_count}')
+        finally:
+            self._recovery_in_progress = False
 
     def _execute_safety_preflight(self, targets_steps: list[int]) -> bool:
         """Exhaustive safety preflight check right before issuing 6-axis UART command."""
@@ -774,7 +901,11 @@ class Pus6MotorDriverNode(Node):
         return "j7_transport_stopped"
 
     def _on_feedback_timeout_warning(self, msg: str) -> None:
+        t0 = time.perf_counter_ns()
         self.get_logger().warn(msg, throttle_duration_sec=1.0)
+        dur_ms = (time.perf_counter_ns() - t0) / 1e6
+        if self._stall_recorder is not None:
+            self._stall_recorder.record_warning_log_duration(dur_ms)
 
     def _latch_j7_fault(self, reason: str) -> None:
         if not self._j7_fault_latched:
@@ -873,13 +1004,14 @@ class Pus6MotorDriverNode(Node):
             if record_stall and self._stall_recorder is not None:
                 self._stall_recorder.mark_pub_timed_command((t_tc2 - t_tc1) / 1e6)
 
-        t_diag1 = time.perf_counter_ns()
-        diag_msg = Float64MultiArray()
-        diag_msg.data = list(snap.diag_data)
-        self.driver_diagnostics_pub.publish(diag_msg)
-        t_diag2 = time.perf_counter_ns()
-        if record_stall and self._stall_recorder is not None:
-            self._stall_recorder.mark_pub_diagnostics((t_diag2 - t_diag1) / 1e6)
+        if not self._defer_driver_diagnostics:
+            t_diag1 = time.perf_counter_ns()
+            diag_msg = Float64MultiArray()
+            diag_msg.data = list(snap.diag_data)
+            self.driver_diagnostics_pub.publish(diag_msg)
+            t_diag2 = time.perf_counter_ns()
+            if record_stall and self._stall_recorder is not None:
+                self._stall_recorder.mark_pub_diagnostics((t_diag2 - t_diag1) / 1e6)
 
         if self.publish_raw_diagnostics:
             t_raw1 = time.perf_counter_ns()
@@ -912,6 +1044,8 @@ class Pus6MotorDriverNode(Node):
     def _execute_servo_cycle(self, expected_start_ns: int = 0) -> None:
         """High-rate UART worker: dispatches latest target with watchdog, preflight, and segmented telemetry."""
         if self.is_j7_servo_active and self.j7_writer is not None:
+            if self._fresh_state_hold:
+                return
             if self._j7_fault_latched:
                 return
             if self.j7_writer.stopped or (self.j7_feedback is not None and self.j7_feedback.stopped):
@@ -937,7 +1071,9 @@ class Pus6MotorDriverNode(Node):
                 if self.j7_feedback is not None and getattr(self.j7_feedback, "feedback_loss_policy", "") == "age_based":
                     feedback_in_warning = self.j7_feedback.is_feedback_stale_warning(t_entry_ns)
 
-                if feedback_in_warning:
+                if self._static_recovery_target is not None:
+                    candidate_targets = list(self._static_recovery_target)
+                elif feedback_in_warning:
                     # Warning state: do not expand new compensation commands based on stale feedback; hold recent safe target
                     if self._last_commanded_steps is not None:
                         candidate_targets = list(self._last_commanded_steps)
@@ -966,6 +1102,9 @@ class Pus6MotorDriverNode(Node):
             if self._stall_recorder is not None:
                 self._stall_recorder.mark_preflight_done()
             if not preflight_ok:
+                if self._static_recovery_target is not None:
+                    self._communication_recovery.fail_static_resume(
+                        DriverError('existing safety preflight failure'), 'FIRST_RESUME_WRITE' if not self._communication_recovery.static_event.get('resume_success') else 'STATIC_HOLD')
                 self.get_logger().error("Aborting J7 Servo UART write cycle due to safety preflight failure.")
                 if self._stall_recorder is not None:
                     self._stall_recorder.record_fault_cycle("safety_preflight_failure", fault_phase="T3_preflight")
@@ -1026,7 +1165,11 @@ class Pus6MotorDriverNode(Node):
                     self._stall_recorder.mark_ingest_done(gap_ms)
 
                 if self.j7_feedback.stopped or self.j7_writer.stopped:
+                    if self._static_recovery_target is not None:
+                        raise DriverError(self._j7_stop_reason())
                     self._latch_j7_fault(self._j7_stop_reason())
+                if self._static_recovery_target is not None:
+                    self._communication_recovery.observe_static_cycle(servo_audit, feedback_audit)
                 self._feedback_transaction_ms = max(0.0, (feedback_audit.transaction_end_ns - feedback_audit.transaction_start_ns) / 1e6)
                 self._rx_classification_ms = max(0.0, (feedback_audit.rx_drain_end_ns - feedback_audit.rx_drain_start_ns) / 1e6)
                 stop_snapshot = self.j7_feedback.audit_snapshot().watchdog_stop_snapshot
@@ -1075,7 +1218,14 @@ class Pus6MotorDriverNode(Node):
                         float(self._feedback_transaction_ms),
                         float(self._worker_total_ms),
                         float(self._watchdog_stop_age_ms),
-                    ],
+                    ] if not self._defer_driver_diagnostics else (
+                        self._target_in_count, self._target_overwrite_count,
+                        self._target_consumed_count, self._deadline_miss_count,
+                        self._last_target_age_ms, self._worker_start_to_start_ms,
+                        self._last_write_duration_ms, self._rx_classification_ms,
+                        self._feedback_transaction_ms, self._worker_total_ms,
+                        self._watchdog_stop_age_ms,
+                    ),
                     benchmark_seq_id=self._benchmark_seq_id,
                     t_entry_ns=t_entry_ns,
                 )
@@ -1101,7 +1251,12 @@ class Pus6MotorDriverNode(Node):
 
                 self._worker_total_ms = (time.perf_counter_ns() - t_entry_ns) / 1e6
                 if self._stall_recorder is not None:
-                    fb_age_max = max(getattr(feedback_audit, "per_axis_feedback_age_ms", [0.0])) if hasattr(feedback_audit, "per_axis_feedback_age_ms") else 0.0
+                    # Existing sample age is measured at ingest, before refreshing valid axes.
+                    # It includes feedback staleness across the completed TX/drain interval.
+                    fb_age_max = max(
+                        (sample.feedback_age_ns / 1e6 for sample in feedback_audit.samples if sample is not None),
+                        default=0.0,
+                    )
                     self._stall_recorder.finish_cycle(
                         fault_reason=self._j7_fault_reason or "",
                         feedback_age_max_ms=fb_age_max,
@@ -1109,6 +1264,26 @@ class Pus6MotorDriverNode(Node):
 
             except Exception as exc:
                 self._worker_total_ms = (time.perf_counter_ns() - t_entry_ns) / 1e6
+                failed_audit = getattr(exc, "cycle_audit", None)
+                if failed_audit is not None:
+                    self.get_logger().error(
+                        f"UART TX failure: cycle_seq={failed_audit.cycle_id} "
+                        f"motor_id={failed_audit.error_motor_id} "
+                        f"classification={failed_audit.error_class}: {exc}"
+                    )
+                    if self._stall_recorder is not None:
+                        self._stall_recorder.mark_transport_exit(failed_audit)
+                if self._static_recovery_target is not None:
+                    first = not self._communication_recovery.static_event.get('resume_success', False)
+                    phase = ('FIRST_RESUME_WRITE' if locals().get('servo_audit') is None else 'FIRST_RESUME_FEEDBACK') if first else 'STATIC_HOLD'
+                    self.j7_writer.stop('communication_static_resume_failed')
+                    self._communication_recovery.fail_static_resume(exc, phase, locals().get('servo_audit'))
+                elif isinstance(exc, J7AdapterWriteTimeout) and self.j7_writer.communication_transient:
+                    try:
+                        self._recover_communication_timeout(exc, candidate_targets)
+                        return
+                    except Exception as recovery_exc:
+                        self.get_logger().error(f'Communication recovery failed: {recovery_exc}')
                 fault_reason = self._j7_stop_reason() if (self.j7_writer.stopped or (self.j7_feedback is not None and self.j7_feedback.stopped)) else f"worker_exception: {exc}"
                 if self._stall_recorder is not None:
                     self._stall_recorder.record_fault_cycle(fault_reason, fault_phase="worker_exception")
@@ -1504,6 +1679,17 @@ class Pus6MotorDriverNode(Node):
         if self._servo_thread is not None and self._servo_thread.is_alive():
             self._servo_thread_stop_event.set()
             self._servo_thread.join(timeout=1.0)
+        if self._defer_driver_diagnostics and self._latest_telemetry_snapshot is not None:
+            # Latest-only export after UART stops. No new queue, worker, or
+            # shared lock; per-cycle failure evidence stays in the existing ring.
+            if self._servo_thread is None or not self._servo_thread.is_alive():
+                try:
+                    snap = self._latest_telemetry_snapshot
+                    append_evidence(self._communication_audit_dir()/'driver_diagnostics_deferred.jsonl',
+                        dict(cycle_seq=snap.uart_cycle_seq, retention='latest_only',
+                             workload='driver_diagnostics', data=[float(x) for x in snap.diag_data]))
+                except Exception as exc:
+                    self.get_logger().warn(f'Error dumping deferred driver diagnostics: {exc}')
         if self._stall_recorder is not None:
             try:
                 self._stall_recorder.dump()
@@ -1516,6 +1702,10 @@ class Pus6MotorDriverNode(Node):
                     self.j7_stop_adapter.stop_all("shutdown")
                 except Exception as exc:
                     self.get_logger().error(f"Error during J7 shutdown stop_all: {exc}")
+            # The node owns this serial handle; close it after the existing one-shot pause path.
+            serial_handle = getattr(self.j7_adapter, "serial", None)
+            if serial_handle is not None:
+                serial_handle.close()
         elif self.controller.is_connected:
             if self.hardware_mode == HardwareMode.ACTIVE:
                 try:
@@ -1527,9 +1717,13 @@ class Pus6MotorDriverNode(Node):
         super().destroy_node()
 
 
-def main(args: list[str] | None = None) -> None:
+def legacy_debug_main(args: list[str] | None = None) -> None:
     rclpy.init(args=args)
-    node = Pus6MotorDriverNode()
+    if os.environ.get('PUS6_J14_SEPARATE_UART_PROCESS') == '1':
+        from .j14_process_driver import J14ProcessMotorDriverNode
+        node = J14ProcessMotorDriverNode()
+    else:
+        node = Pus6MotorDriverNode()
     executor = MultiThreadedExecutor(num_threads=3)
     executor.add_node(node)
     try:
@@ -1538,7 +1732,16 @@ def main(args: list[str] | None = None) -> None:
         pass
     finally:
         node.destroy_node()
-        rclpy.shutdown()
+        if os.environ.get('PUS6_J14_SEPARATE_UART_PROCESS') == '1':
+            if rclpy.ok():
+                rclpy.shutdown()
+        else:
+            rclpy.shutdown()
+
+
+def main(args: list[str] | None = None) -> None:
+    from .production_driver import main as production_main
+    production_main(args)
 
 
 if __name__ == "__main__":

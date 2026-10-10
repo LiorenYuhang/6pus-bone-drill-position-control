@@ -1,0 +1,27 @@
+{
+  "raw_steps_received": 2401,
+  "raw_steps_published": 2401,
+  "first_input_seq": 20,
+  "last_input_seq": 2420,
+  "last_raw_steps": [
+    1000,
+    1000,
+    1000,
+    998,
+    999,
+    999
+  ],
+  "joint_states_received": 2404,
+  "joint_states_published": 2404,
+  "last_joint_state_positions": [
+    0.025,
+    0.025,
+    0.025,
+    0.02495,
+    0.024975,
+    0.024975
+  ],
+  "total_received": 2401,
+  "total_published": 2401,
+  "exit_reason": "clean_shutdown"
+}

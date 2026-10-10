@@ -1,0 +1,67 @@
+{
+  "/joint_states": [
+    {
+      "node_name": "pus6_feedback_bridge_node",
+      "namespace": "/",
+      "type": "sensor_msgs/msg/JointState",
+      "qos": {
+        "reliability": "RELIABLE",
+        "durability": "VOLATILE",
+        "history": "UNKNOWN",
+        "depth": 0
+      }
+    }
+  ],
+  "/pus6/joint_feedback/timed": [
+    {
+      "node_name": "pus6_feedback_bridge_node",
+      "namespace": "/",
+      "type": "pus6_msgs/msg/TimedJointFeedback",
+      "qos": {
+        "reliability": "BEST_EFFORT",
+        "durability": "VOLATILE",
+        "history": "UNKNOWN",
+        "depth": 0
+      }
+    }
+  ],
+  "/pus6/joint_command/timed": [
+    {
+      "node_name": "pus6_feedback_bridge_node",
+      "namespace": "/",
+      "type": "pus6_msgs/msg/TimedJointCommand",
+      "qos": {
+        "reliability": "BEST_EFFORT",
+        "durability": "VOLATILE",
+        "history": "UNKNOWN",
+        "depth": 0
+      }
+    }
+  ],
+  "/pus6/joint_steps_raw": [
+    {
+      "node_name": "_NODE_NAME_UNKNOWN_",
+      "namespace": "_NODE_NAMESPACE_UNKNOWN_",
+      "type": "std_msgs/msg/Int32MultiArray",
+      "qos": {
+        "reliability": "BEST_EFFORT",
+        "durability": "VOLATILE",
+        "history": "UNKNOWN",
+        "depth": 0
+      }
+    }
+  ],
+  "/pus6/joint_states": [
+    {
+      "node_name": "_NODE_NAME_UNKNOWN_",
+      "namespace": "_NODE_NAMESPACE_UNKNOWN_",
+      "type": "sensor_msgs/msg/JointState",
+      "qos": {
+        "reliability": "RELIABLE",
+        "durability": "VOLATILE",
+        "history": "UNKNOWN",
+        "depth": 0
+      }
+    }
+  ]
+}

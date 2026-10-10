@@ -1,0 +1,37 @@
+{
+  "parameters": {
+    "driver_architecture": "three_process",
+    "enable_coordinated_handshake": true,
+    "driver_telemetry_mode": "qualification",
+    "driver_audit_directory": "/home/lyapunov/bone_drill/results/j14/j14_a2_q3j_active_mock_60s",
+    "servo_run_duration_s": 0.0,
+    "driver_telemetry_capacity_cycles": 32768,
+    "servo_scheduler_mode": "dedicated_thread",
+    "telemetry_publish_mode": "async_latest",
+    "feedback_loss_policy": "age_based",
+    "reconnect_max_jump_steps": 80,
+    "target_timeout_sec": 0.2,
+    "write_rate_hz": 50.0,
+    "baudrate": 921600,
+    "use_j7_servo": true,
+    "enable_j2_f0_instrumentation": false,
+    "hardware_mode": "mock"
+  },
+  "child_configuration": {
+    "production": true,
+    "feedback_bridge": true,
+    "enable_coordinated_handshake": true,
+    "telemetry_mode": "qualification",
+    "telemetry_capacity_cycles": 32768,
+    "output_dir": "/home/lyapunov/bone_drill/results/j14/j14_a2_q3j_active_mock_60s",
+    "epoch": 27257405057696,
+    "port": "/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0",
+    "baudrate": 921600,
+    "hardware_mode": "mock",
+    "servo_speed": 50,
+    "maintenance_mode": false,
+    "target_timeout_sec": 0.2,
+    "reconnect_max_jump_steps": 80,
+    "max_servo_duration_s": 0.0
+  }
+}

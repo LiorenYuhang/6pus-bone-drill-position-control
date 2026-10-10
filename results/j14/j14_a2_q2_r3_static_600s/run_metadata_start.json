@@ -1,0 +1,31 @@
+{
+  "stage": "A2-Q2",
+  "run_id": "Q2-R3",
+  "hardware": true,
+  "command": [
+    "ros2",
+    "launch",
+    "pus6_bringup",
+    "pus6_system.launch.py",
+    "hardware_mode:=active",
+    "config_file:=/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j13_ladrc_params.yaml",
+    "driver_audit_directory:=/home/lyapunov/bone_drill/results/j14/j14_a2_q2_r3_static_600s",
+    "servo_run_duration_s:=600.0",
+    "driver_telemetry_mode:=qualification",
+    "driver_telemetry_capacity_cycles:=32768"
+  ],
+  "duration_s": 600.0,
+  "expected_cycles": 30000,
+  "driver_telemetry_capacity_cycles": 32768,
+  "preflight": {
+    "processes": [],
+    "serial": {
+      "returncode": 1,
+      "owners": "",
+      "free": true
+    }
+  },
+  "hardware_write_count": null,
+  "start_ns": 9124368382900,
+  "start_epoch_ns": 1791530752511830428
+}

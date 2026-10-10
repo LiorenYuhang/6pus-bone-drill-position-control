@@ -1,0 +1,160 @@
+[
+  {
+    "event": "start",
+    "role": "robot",
+    "pid": 137968,
+    "command": [
+      "ros2",
+      "launch",
+      "--launch-prefix",
+      "/usr/bin/python3 /home/lyapunov/bone_drill/bone_ws/scripts/j14_demo_node_host.py",
+      "--launch-prefix-filter",
+      "^(motor_driver_node|kinematics_node|control_node|fk_node)$",
+      "pus6_bringup",
+      "pus6_system.launch.py",
+      "hardware_mode:=active",
+      "config_file:=/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j13_ladrc_params.yaml",
+      "driver_audit_directory:=/home/lyapunov/bone_drill/results/j14/demo/feedforward_ladrc_20261010_180702_906278",
+      "driver_telemetry_mode:=production",
+      "servo_run_duration_s:=0.0"
+    ],
+    "start_call_ns": 6072803907160,
+    "monotonic_ns": 6072804539582
+  },
+  {
+    "event": "start",
+    "role": "relay",
+    "pid": 138075,
+    "command": [
+      "/usr/bin/python3",
+      "/home/lyapunov/bone_drill/bone_ws/scripts/j14_demo_relay_host.py",
+      "--out-dir",
+      "/home/lyapunov/bone_drill/results/j14/demo/feedforward_ladrc_20261010_180702_906278"
+    ],
+    "start_call_ns": 6073824911356,
+    "monotonic_ns": 6073825437060
+  },
+  {
+    "event": "start",
+    "role": "base_imu",
+    "pid": 138104,
+    "command": [
+      "/home/lyapunov/bone_drill/bone_ws/install/h30_imu/lib/h30_imu/h30_imu_node",
+      "--ros-args",
+      "-r",
+      "__ns:=/pus6/imu_base",
+      "-p",
+      "port:=/dev/serial/by-id/usb-1a86_USB_Single_Serial_5B32028000-if00",
+      "-p",
+      "baud_rate:=460800",
+      "-p",
+      "frame_id:=pus6_base_imu_link",
+      "-p",
+      "world_frame:=world",
+      "-p",
+      "imu_topic:=/pus6/imu_base/data"
+    ],
+    "start_call_ns": 6074495108904,
+    "monotonic_ns": 6074496101793
+  },
+  {
+    "event": "start",
+    "role": "platform_imu",
+    "pid": 138105,
+    "command": [
+      "/home/lyapunov/bone_drill/bone_ws/install/h30_imu/lib/h30_imu/h30_imu_node",
+      "--ros-args",
+      "-r",
+      "__ns:=/pus6/imu_platform",
+      "-p",
+      "port:=/dev/serial/by-id/usb-1a86_USB_Single_Serial_5B0B029000-if00",
+      "-p",
+      "baud_rate:=460800",
+      "-p",
+      "frame_id:=pus6_platform_imu_link",
+      "-p",
+      "world_frame:=world",
+      "-p",
+      "imu_topic:=/pus6/imu_platform/data"
+    ],
+    "start_call_ns": 6074496618017,
+    "monotonic_ns": 6074497364730
+  },
+  {
+    "event": "start",
+    "role": "controller",
+    "pid": 138139,
+    "command": [
+      "/usr/bin/python3",
+      "/home/lyapunov/bone_drill/bone_ws/scripts/j14_demo_controller.py",
+      "--mode",
+      "feedforward_ladrc",
+      "--out-dir",
+      "/home/lyapunov/bone_drill/results/j14/demo/feedforward_ladrc_20261010_180702_906278",
+      "--hardware-mode",
+      "active"
+    ],
+    "start_call_ns": 6074642931307,
+    "monotonic_ns": 6074643448864
+  },
+  {
+    "event": "driver_pause_request",
+    "pid": 137979,
+    "ns": 6103684241969,
+    "signal": "SIGINT",
+    "state": "exited",
+    "returncode": 0,
+    "end_ns": 6104095596135,
+    "process_exit_confirmed": true
+  },
+  {
+    "event": "stop",
+    "role": "controller",
+    "pid": 138139,
+    "monotonic_ns": 6104096267008,
+    "signal": null,
+    "escalation": false,
+    "returncode": 1,
+    "elapsed_s": 2.5815e-05
+  },
+  {
+    "event": "stop",
+    "role": "relay",
+    "pid": 138075,
+    "monotonic_ns": 6104096616208,
+    "signal": "SIGINT",
+    "escalation": false,
+    "returncode": 0,
+    "elapsed_s": 0.163759931
+  },
+  {
+    "event": "stop",
+    "role": "base_imu",
+    "pid": 138104,
+    "monotonic_ns": 6104260851504,
+    "signal": "SIGINT",
+    "escalation": false,
+    "returncode": 0,
+    "elapsed_s": 0.113677019
+  },
+  {
+    "event": "stop",
+    "role": "platform_imu",
+    "pid": 138105,
+    "monotonic_ns": 6104375218201,
+    "signal": "SIGINT",
+    "escalation": false,
+    "returncode": 0,
+    "elapsed_s": 0.163932094
+  },
+  {
+    "event": "stop",
+    "role": "robot",
+    "pid": 137968,
+    "monotonic_ns": 6104540118503,
+    "signal": "SIGINT",
+    "escalation": false,
+    "returncode": 0,
+    "elapsed_s": 5.276767242
+  }
+]

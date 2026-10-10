@@ -1,0 +1,64 @@
+{
+  "stage": "A2-Q1F",
+  "run_id": 1,
+  "hardware": true,
+  "command": [
+    "ros2",
+    "launch",
+    "pus6_bringup",
+    "pus6_system.launch.py",
+    "hardware_mode:=active",
+    "config_file:=/home/lyapunov/bone_drill/bone_ws/src/h30_imu/config/j13_ladrc_params.yaml",
+    "driver_audit_directory:=/home/lyapunov/bone_drill/results/j14/j14_a2_q1f_r1_static_30s",
+    "servo_run_duration_s:=30.0",
+    "driver_telemetry_mode:=qualification"
+  ],
+  "duration_s": 30,
+  "preflight": {
+    "processes": [],
+    "serial": {
+      "returncode": 1,
+      "owners": "",
+      "free": true
+    }
+  },
+  "hardware_write_count": null,
+  "experimental_environment_flags": {},
+  "start_ns": 6609221870521,
+  "rmw": "rmw_fastrtps_cpp",
+  "end_ns": 6641034607778,
+  "stop_reason": "window_complete",
+  "launch_returncode": 0,
+  "child_final": {
+    "pid": 121000,
+    "cycles": 1500,
+    "fault": "window_complete",
+    "closed": true,
+    "servo_start_ns": 6610387356692,
+    "motion_stop_ns": 6640387494518,
+    "hardware_write_count": null,
+    "pause_success": true
+  },
+  "child_returncode": 0,
+  "bridge_returncode": 0,
+  "cycles": 1500,
+  "bridge_cycles": 1500,
+  "tx_timeout_count": 0,
+  "hardware_fault_count": 0,
+  "packet_drop_count": 0,
+  "missing_cycle_sequences": [],
+  "first_cycle_seq": 0,
+  "duplicate_cycles": 0,
+  "handshake_valid": true,
+  "production_path_confirmed": true,
+  "unique_publishers_confirmed": true,
+  "pause_ack_confirmed": true,
+  "residual_processes": [],
+  "serial_after": {
+    "returncode": 1,
+    "owners": "",
+    "free": true
+  },
+  "shutdown_exception": true,
+  "r2_admissible": true
+}
