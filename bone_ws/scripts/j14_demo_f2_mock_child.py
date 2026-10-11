@@ -26,7 +26,12 @@ original_write=uart.MockServoBus.write
 class HeldPositions(dict):
     def __setitem__(self,key,value):super().__setitem__(key,1020)
 def initialize(bus,*args,**kwargs):
-    kwargs['initial_positions']=[1000]*6 if scenario in ('already_home','startup_fault','invalid_feedback') else [1090,1221,1163,912,786,842]
+    if scenario=='park':
+        kwargs['initial_positions']=[0]*6
+    elif scenario in ('already_home','startup_fault','invalid_feedback'):
+        kwargs['initial_positions']=[1000]*6
+    else:
+        kwargs['initial_positions']=[1090,1221,1163,912,786,842]
     original_init(bus,*args,**kwargs)
     if scenario=='startup_timeout':bus.positions=HeldPositions({i:1020 for i in range(1,7)})
     (out/'mock_initial_state.json').write_text(json.dumps(dict(scenario=scenario,positions=list(bus.positions.values()),hardware_mode='mock'))+'\n')

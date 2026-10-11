@@ -1,6 +1,6 @@
-"""Demo startup/normal-stop adapter for the existing J10 Cartesian HOME path.
+"""Demo startup joint trajectory and normal-stop Cartesian HOME adapter.
 
-Never owns a publisher or UART. Uses the calling stage's sole target publisher and
+Never owns a publisher or UART. Uses the calling stage's sole command publisher and
 imports the existing HOME predicate, timeout and sample-count default.
 """
 from __future__ import annotations
@@ -18,6 +18,7 @@ from pus6_motor_driver.safety import (
     OPERATING_HOME_RAW_STEPS, MAX_CURRENT_MA, FEEDBACK_LOWER_LIMIT, FEEDBACK_UPPER_LIMIT,
 )
 from pus6_motor_driver.j7_servo_feedback_scheduler import DEFAULT_HARD_STOP_FEEDBACK_AGE_S
+from pus6_control.joint_trajectory_controller import compute_synchronized_step_point
 
 HOME_SAMPLES=inspect.signature(run_workspace_measurement_experiment).parameters['home_consecutive_samples'].default
 
@@ -58,15 +59,22 @@ def recover_home(node,feedback,out,stop,request_reader,*,phase="shutdown",allow_
     import rclpy
     start=time.monotonic_ns()
     path=out/("startup_home.json" if phase=="startup" else "home_recovery.json")
-    already=allow_already_home and _home_feedback_in_band(feedback["steps"])
+    already=allow_already_home and _home_feedback_in_band(feedback.get("steps", []))
     result=dict(state='HOME_RECOVERY',phase=phase,already_home=already,motion_start_ns=None,confirmation_samples=[],target=list(OPERATING_HOME_RAW_STEPS),
-                initial_feedback=list(feedback['steps']),start_ns=start,
+                initial_feedback=list(feedback.get('steps', [])),start_ns=start,
                 tolerance=[HOME_MEASUREMENT_BAND_LOWER,HOME_MEASUREMENT_BAND_UPPER],
                 required_consecutive_samples=HOME_SAMPLES,home_target_publish_count=0,
-                source='J10 WorkspaceMeasurementHarness.publish_target_pose / _home_feedback_in_band / _home_timeout_from_feedback')
-    timeout=_home_timeout_from_feedback(feedback['steps'],OPERATING_HOME_RAW_STEPS)
+                source='J10 WorkspaceMeasurementHarness / pus6_control.compute_synchronized_step_point')
+    timeout=_home_timeout_from_feedback(feedback.get('steps', []),OPERATING_HOME_RAW_STEPS)
     result['timeout_s']=timeout
     write_json(path,result)
+
+    start_steps=[max(0,min(2000,int(round(s)))) for s in feedback.get('steps',[])] if feedback.get('steps') else list(OPERATING_HOME_RAW_STEPS)
+    target_steps=list(OPERATING_HOME_RAW_STEPS)
+    d_max=max((abs(t-s) for s,t in zip(start_steps,target_steps)),default=0)
+    traj_duration=max(2.0,(d_max*1.875)/200.0) if d_max>0 else 0.5
+    motion_t0=None
+
     deadline=time.monotonic()+timeout
     last_count=feedback['count'];consecutive=0
     last_axes=list(feedback['rx_ns'])
@@ -84,13 +92,33 @@ def recover_home(node,feedback,out,stop,request_reader,*,phase="shutdown",allow_
             break
         if already and not _home_feedback_in_band(feedback['steps']):
             already=False;result['already_home']=False;consecutive=0;result['confirmation_samples']=[]
-        # One HOME algorithm for both phases; startup can confirm without a pose.
+            start_steps=[max(0,min(2000,int(round(s)))) for s in feedback['steps']]
+            d_max=max(abs(t-s) for s,t in zip(start_steps,target_steps))
+            traj_duration=max(2.0,(d_max*1.875)/200.0) if d_max>0 else 0.5
+            motion_t0=None
+            result['motion_start_ns']=None
         if not already and time.monotonic()>=next_publish:
+            now=time.monotonic()
             if result['motion_start_ns'] is None:
                 result['motion_start_ns']=time.monotonic_ns()
-            WorkspaceMeasurementHarness.publish_target_pose(node,0.,0.,node.z0,0.,0.,0.)
+                motion_t0=now
+            if phase=="startup":
+                elapsed=now-(motion_t0 or now)
+                pt=compute_synchronized_step_point(start_steps,target_steps,elapsed,traj_duration)
+                clamped_pt=[max(0,min(2000,int(round(s)))) for s in pt]
+                if hasattr(node,'cmd_steps_pub') and node.cmd_steps_pub is not None:
+                    from std_msgs.msg import Int32MultiArray
+                    node.cmd_steps_pub.publish(Int32MultiArray(data=clamped_pt))
+                elif hasattr(node,'target_pose_pub') and node.target_pose_pub is not None:
+                    from std_msgs.msg import Int32MultiArray
+                    try:
+                        node.target_pose_pub.publish(Int32MultiArray(data=clamped_pt))
+                    except TypeError:
+                        WorkspaceMeasurementHarness.publish_target_pose(node,0.,0.,getattr(node,'z0',.132612268),0.,0.,0.)
+            else:
+                WorkspaceMeasurementHarness.publish_target_pose(node,0.,0.,node.z0,0.,0.,0.)
             result['home_target_publish_count']+=1
-            next_publish=time.monotonic()+.02
+            next_publish=now+.02
         rclpy.spin_once(node,timeout_sec=.002)
         reason=feedback_failure(node,feedback)
         if reason:
@@ -109,7 +137,7 @@ def recover_home(node,feedback,out,stop,request_reader,*,phase="shutdown",allow_
                 result['state']='HOME_CONFIRMED'
                 break
     else:
-        result.update(state='HOME_TIMEOUT',reason='HOME RECOVERY TIMEOUT')
+        result.update(state='HOME_TIMEOUT',reason='STARTUP HOME TIMEOUT' if phase=='startup' else 'HOME RECOVERY TIMEOUT')
     result.update(end_ns=time.monotonic_ns(),feedback=list(feedback['steps']),
                   per_axis_rx_done_ns=list(feedback['rx_ns']),consecutive_samples=consecutive)
     write_json(path,result)

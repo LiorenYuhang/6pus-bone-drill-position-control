@@ -14,7 +14,7 @@ from j14_demo_controller import MODES,ROOT,write_json
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--mode',choices=MODES,default='feedforward')
-    parser.add_argument('--scenario',choices=('normal','already_home','startup_timeout','startup_fault','invalid_feedback','hardware_fault','controller_exit','relay_exit'),default='normal')
+    parser.add_argument('--scenario',choices=('normal','park','already_home','startup_timeout','startup_fault','invalid_feedback','hardware_fault','controller_exit','relay_exit'),default='normal')
     parser.add_argument('--out-dir',type=Path,required=True)
     args=parser.parse_args()
     args.out_dir.mkdir(parents=True,exist_ok=False)
@@ -43,7 +43,7 @@ def main():
                         observed_deadline=time.monotonic()+2
                         while not observed.exists() and time.monotonic()<observed_deadline:time.sleep(.01)
                         assert observed.exists(),'Mock bus injection not observed'
-                    if args.scenario in ('normal','already_home'):
+                    if args.scenario in ('normal','park','already_home'):
                         proc.send_signal(signal.SIGINT)
                     elif args.scenario in ('controller_exit','relay_exit'):
                         role='controller' if args.scenario=='controller_exit' else 'relay'
@@ -62,7 +62,7 @@ def main():
     events=json.loads((session/'processes.json').read_text())
     counts=result.get('command_chain',{}).get('counts',{})
     home=result.get('home_recovery',{})
-    expected='HOME_CONFIRMED' if args.scenario in ('normal','already_home') else 'SKIPPED'
+    expected='HOME_CONFIRMED' if args.scenario in ('normal','park','already_home') else 'SKIPPED'
     pause=next(e for e in events if e['event']=='driver_pause_request')
     resource_stops=[e for e in events if e['event']=='stop' and e['role']!='controller']
     startup_failure=args.scenario in ('startup_timeout','startup_fault','invalid_feedback')
@@ -77,8 +77,8 @@ def main():
         hardware_write_count=result['hardware_write_count']==0,
         no_serial_open=json.loads((session/'mock_serial_guard.json').read_text())['serial_open_attempts']==0,
         ros_clean=not result['ros_node_exit_errors'] and not result['legacy_ros_shutdown_exception'],
-        returncode=proc.returncode==(0 if args.scenario in ('normal','already_home') else 1))
-    if args.scenario in ('normal','already_home') and 'feedback' in home:
+        returncode=proc.returncode==(0 if args.scenario in ('normal','park','already_home') else 1))
+    if args.scenario in ('normal','park','already_home') and 'feedback' in home:
         checks.update(actual_feedback=all(995<=s<=1005 for s in home['feedback']),
             fresh_feedback=all(t>home['start_ns'] for t in home['per_axis_rx_done_ns']),
             five_samples=home['consecutive_samples']>=5,

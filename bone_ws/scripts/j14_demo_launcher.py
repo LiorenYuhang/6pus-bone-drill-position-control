@@ -231,9 +231,10 @@ def graph(node):
 
 
 def startup_home(observer, feedback, owned, out, stop):
-    from geometry_msgs.msg import PoseStamped
     from pus6_kinematics.analytical_6pus import Analytical6PusKinematics
     from j14_demo_home import feedback_failure, recover_home
+    from std_msgs.msg import Int32MultiArray
+    from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
     print('Checking OPERATING_HOME...', flush=True)
     owned.check()
     reason=feedback_failure(observer,feedback)
@@ -242,39 +243,39 @@ def startup_home(observer, feedback, owned, out, stop):
                     home_target_publish_count=0,end_ns=time.monotonic_ns())
         write_json(out/'startup_home.json',result)
         return result
-    # Sole Cartesian authority until HOME completion. Destroy the endpoint before
-    # spawning the controller, which then owns the same normal command path.
+    # In startup, controller is kept disabled until HOME is confirmed.
+    # No Cartesian publisher should exist yet.
     if observer.get_publishers_info_by_topic('/pus6/target_cartesian_pose'):
         raise RuntimeError('Cartesian command authority already in use')
-    write_json(out/'startup_command_admission.json',dict(feedback=feedback,monotonic_ns=time.monotonic_ns()))
-    wait_ready(lambda:(out/'startup_shaper_ready.json').exists(),
-               'Feedback-anchored shaper',5.0,stop,owned,observer)
-    # Recheck live feedback after the lifecycle handshake, before any HOME pose.
-    owned.check()
-    reason=feedback_failure(observer,feedback)
-    if reason:
-        result=dict(state='SKIPPED',phase='startup',reason=reason,
-                    home_target_publish_count=0,end_ns=time.monotonic_ns())
-        write_json(out/'startup_home.json',result)
-        return result
+
     observer.z0=Analytical6PusKinematics().nominal_height
-    from types import SimpleNamespace
-    publishers=[]
-    def publish(msg):
-        if not publishers:
-            print('Returning to OPERATING_HOME...',flush=True)
-            publishers.append(observer.create_publisher(PoseStamped,'/pus6/target_cartesian_pose',10))
-        publishers[0].publish(msg)
-    observer.target_pose_pub=SimpleNamespace(publish=publish)
+    control_cmd_qos = QoSProfile(
+        history=HistoryPolicy.KEEP_LAST,
+        depth=1,
+        reliability=ReliabilityPolicy.BEST_EFFORT,
+        durability=DurabilityPolicy.VOLATILE,
+    )
+    cmd_pub = observer.create_publisher(Int32MultiArray, '/pus6/command_joint_steps', control_cmd_qos)
+    observer.cmd_steps_pub = cmd_pub
     try:
         result=recover_home(observer,feedback,out,stop,lambda:(owned.check() or {}),
                             phase='startup',allow_already_home=True)
     finally:
-        if publishers:
-            observer.destroy_publisher(publishers[0])
-        observer.target_pose_pub=None
+        observer.destroy_publisher(cmd_pub)
+        observer.cmd_steps_pub = None
+
     result['authority_released_ns']=time.monotonic_ns()
     write_json(out/'startup_home.json',result)
+
+    # ONLY after HOME is confirmed do we admit control_node and initialize its shaper!
+    if result['state'] == 'HOME_CONFIRMED':
+        owned.check()
+        write_json(out/'startup_command_admission.json',dict(
+            feedback={key:list(value) if isinstance(value,list) else value
+                      for key,value in feedback.items()},
+            monotonic_ns=time.monotonic_ns()))
+        wait_ready(lambda:(out/'startup_shaper_ready.json').exists(),
+                   'Feedback-anchored shaper',5.0,stop,owned,observer)
     return result
 
 
