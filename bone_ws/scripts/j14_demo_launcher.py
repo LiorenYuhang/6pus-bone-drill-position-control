@@ -301,7 +301,7 @@ def await_home(owned, observer, out, interrupted):
         rclpy.spin_once(observer,timeout_sec=.01)
 
 
-def run_demo(mode, hardware_mode='mock', out=None):
+def run_demo(mode, hardware_mode='mock', out=None, record_telemetry=False):
     import rclpy
     from rclpy.signals import SignalHandlerOptions
     if mode not in MODES or hardware_mode not in ('mock', 'active'):
@@ -376,8 +376,11 @@ def run_demo(mode, hardware_mode='mock', out=None):
                                          '-p', 'world_frame:=world', '-p', f'imu_topic:=/pus6/imu_{role}/data'])
         wait_ready(lambda: all(time.monotonic()-counts['last_rx'].get(k,0)<0.1 for k in ('base','platform')),
                    'Dual IMU', 10.0, stop, owned, observer)
-        owned.start('controller', [sys.executable, str(SCRIPTS/'j14_demo_controller.py'), '--mode', mode,
-                                   '--out-dir', str(out), '--hardware-mode', hardware_mode])
+        controller_command = [sys.executable, str(SCRIPTS/'j14_demo_controller.py'), '--mode', mode,
+                              '--out-dir', str(out), '--hardware-mode', hardware_mode]
+        if record_telemetry:
+            controller_command.append('--record-telemetry')
+        owned.start('controller', controller_command)
         state_path = out / 'controller_state.json'
         wait_ready(lambda: state_path.exists() and json.loads(state_path.read_text())['state']=='ACTIVE',
                    'Controller preflight / ACTIVE', 15.0, stop, owned, observer)
@@ -517,8 +520,10 @@ def main():
     parser.add_argument('--mode', choices=MODES, required=True)
     parser.add_argument('--hardware-mode', choices=('mock','active'), default='mock')
     parser.add_argument('--out-dir', type=Path)
+    parser.add_argument('--record-telemetry', action='store_true',
+                        help='Continuously save telemetry.csv and metadata.json (default: off)')
     args = parser.parse_args()
-    return run_demo(args.mode, args.hardware_mode, args.out_dir)
+    return run_demo(args.mode, args.hardware_mode, args.out_dir, args.record_telemetry)
 
 
 if __name__ == '__main__':
