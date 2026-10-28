@@ -6,6 +6,8 @@
 
 位置工作区从 `/home/lyapunov/bone_drill` 移至 `/home/lyapunov/6pus_bone_drill_position_control`，旧路径是兼容符号链接。保留该链接是为了已有实验脚本、生成的 ROS 安装元数据和绝对符号链接继续解析；不能把它当作独立备份。IMU 用户服务原来未启用且未运行，其安装后的 unit 与仓库模板/安装脚本已改至新路径。历史文档和实验脚本的旧路径未批量改写，以免破坏证据；使用旧路径依赖兼容链接。位置工作区现有 overlay 导入显示旧路径文本，经链接解析至迁移后的工作区；隔离构建在 `/tmp/6pus-position-install`。链接不能在完成全量路径与生成产物迁移前删除。
 
+验证时发现该 IMU 服务所需的 `up/sensor/IMU/install/setup.bash` 不存在。已在该工作区离线执行 `colcon build --symlink-install`，确认 setup 可加载并能解析 `h30_imu`；服务仍为 inactive、disabled，没有启动传感器。
+
 力矩工作区是完整独立复制，含原有未提交文件；其复制的旧构建目录可能指向位置工程，研究验证必须使用单独构建目录。两个工作树原有未提交工作保留。仅在力矩仓库新增研究 mock，不替换位置控制路径。
 
 ## 尚未满足的公开条件
