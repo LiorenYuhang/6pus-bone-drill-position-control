@@ -4,7 +4,7 @@ After=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=/bin/bash -lc 'source /opt/ros/jazzy/setup.bash && source /home/lyapunov/bone_drill/up/sensor/IMU/install/setup.bash && exec ros2 launch h30_imu h30.launch.py'
+ExecStart=/bin/bash -lc 'source /opt/ros/jazzy/setup.bash && source /home/lyapunov/6pus_bone_drill_position_control/up/sensor/IMU/install/setup.bash && exec ros2 launch h30_imu h30.launch.py'
 Restart=always
 RestartSec=2
 

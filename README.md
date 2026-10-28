@@ -1,4 +1,4 @@
-# 6PUS-Anti-Vibration
+# 6PUS Bone Drill Position Control
 
 > [English] | [中文](README_CN.md)
 > **A ROS 2 based real-time sensing and control framework for a 6PUS parallel surgical robot with active vibration suppression.**
@@ -7,7 +7,7 @@
 
 ## 1. Project Overview
 
-**6PUS-Anti-Vibration** is an open ROS 2 sensing and motion-control framework for a 6-PUS (Prismatic-Universal-Spherical) parallel manipulator / Stewart platform, developed for orthopaedic robotics research. It combines Cartesian motion, trajectory shaping, and high-frequency multi-sensor observation for active attitude stabilization. Current capabilities, hardware validation, and limitations are described below.
+**6PUS Bone Drill Position Control** is a ROS 2 sensing and motion-control framework for a 6-PUS (Prismatic-Universal-Spherical) parallel manipulator / Stewart platform, developed for bone drill active stabilization in orthopaedic robotics research. It combines Cartesian motion, trajectory shaping, and high-frequency multi-sensor observation for active attitude stabilization. Current capabilities, hardware validation, and limitations are described below.
 
 ---
 
@@ -95,7 +95,7 @@ The [internal documentation index](./agent_docs/README.md) retains stage history
 The repository is structured with a strict separation of concerns between code, human/agent documentation, and machine-generated experimental artifacts:
 
 ```text
-/home/lyapunov/bone_drill/
+/home/lyapunov/6pus_bone_drill_position_control/
 ├── bone_ws/                               <-- [ROS 2 Workspace] Source packages, nodes, unit tests, experiment scripts
 │   ├── src/
 │   │   ├── pus6_msgs/                     # Custom ROS 2 msg definitions (TimedJointFeedback, FkStateStamped, etc.)
@@ -157,8 +157,8 @@ Any third-party researcher can build, inspect, and verify the codebase without a
 
 ```bash
 # Clone the repository
-git clone https://github.com/lyapunov/bone_drill.git
-cd bone_drill
+git clone https://github.com/LiorenYuhang/6pus-bone-drill-position-control.git
+cd 6pus-bone-drill-position-control
 
 # Source ROS 2 environment
 source /opt/ros/jazzy/setup.bash
@@ -190,6 +190,11 @@ Use the [raw evidence index](./results/README.md) to locate recorded datasets an
 
 ## 6. Safety Guardrails & Real-Hardware Operation
 
-- **Zero-Motion Default**: All nodes, tests, and runners default to `Mock / FakeBus` mode.
+- **Offline testing**: Use the explicitly identified Mock / FakeBus tests; do not assume every script is hardware-free.
 - **Explicit Authorization**: Activating the physical RS485 bus (`--real-hardware` / `hardware_mode:=active`) requires a confirmed operating reference, physical emergency-stop readiness, and explicit human confirmation. Active stabilization uses `OPERATING_HOME`, not `STORAGE_PARK`.
 - **Zero-Retry Motion Commands**: Write commands on the RS485 bus never retry automatically; communication anomalies trigger a controlled single pause command (0x1A) and an orderly stop.
+
+
+## 7. Licenses and references
+
+No repository-wide license has been established. ROS package manifests contain license metadata, which does not by itself grant a repository-wide license. Third-party components retain their own notices; see the STMicroelectronics notice in `STM32/sensor/IMU/Core/Src/system_stm32h7xx.c`. Redistribution rights and the completeness of third-party license materials require review. See the linked technical references above for the underlying methods and evidence.
